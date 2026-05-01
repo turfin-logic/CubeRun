@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Drift</title>
+    <meta name="description" content="A fast-paced cyberpunk survival game. Drift, survive, and conquer the neon grid.">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Ad Network Placeholder (e.g., Google AdSense) -->
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+</head>
+<body>
+    <div id="game-container">
+        <!-- The Game Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- UI Overlay -->
+        <div id="ui-layer">
+            <div id="score-display">SCORE: <span id="scoreValue">0</span></div>
+            
+            <!-- Main Menu Screen -->
+            <div id="start-screen" class="screen active">
+                <h1 class="glitch" data-text="NEON DRIFT">NEON DRIFT</h1>
+                <p>Tap or Spacebar to switch gravity</p>
+                <button id="start-btn" class="cyber-btn">START DRIFT</button>
+                <!-- Pre-roll Ad Placeholder -->
+                <div class="ad-container banner-ad" id="main-menu-ad">
+                    <span class="ad-label">ADVERTISEMENT</span>
+                </div>
+            </div>
+
+            <!-- Game Over Screen -->
+            <div id="game-over-screen" class="screen">
+                <h2 class="glitch" data-text="SYSTEM FAILURE">SYSTEM FAILURE</h2>
+                <div class="stats">
+                    <p>FINAL SCORE: <span id="finalScore">0</span></p>
+                    <p>HIGH SCORE: <span id="highScore">0</span></p>
+                </div>
+                
+                <!-- Interstitial Ad Placeholder -->
+                <div class="ad-container interstitial-ad" id="game-over-ad">
+                    <span class="ad-label">ADVERTISEMENT</span>
+                    <div class="mock-ad-content">Loading Sponsor...</div>
+                    <button id="skip-ad-btn" class="skip-btn" style="display: none;">Skip Ad</button>
+                </div>
+
+                <button id="restart-btn" class="cyber-btn" style="display: none;">REBOOT SYSTEM</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="ads.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
