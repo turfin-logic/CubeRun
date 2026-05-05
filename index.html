@@ -3,31 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Drift</title>
-    <meta name="description" content="A fast-paced cyberpunk survival game. Drift, survive, and conquer the neon grid.">
+    <title>NEON DRIFT: BOSS LEVEL 😈</title>
+    <meta name="description" content="Can you survive the sensory overload? Dissonant beats, evil taunts, and hyper-speed gravity swaps. Play at your own risk.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neon-drift-game-tau.vercel.app/">
+    <meta property="og:title" content="NEON DRIFT: BOSS LEVEL 😈">
+    <meta property="og:description" content="Only 1% can pass 500 score. The game that watches you.">
+    <meta property="og:image" content="https://neon-drift-game-tau.vercel.app/logo.png">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://neon-drift-game-tau.vercel.app/">
+    <meta property="twitter:title" content="NEON DRIFT: BOSS LEVEL 😈">
+    <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
+    <meta property="twitter:image" content="https://neon-drift-game-tau.vercel.app/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- Ad Network Placeholder (e.g., Google AdSense) -->
-    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <!-- GameDistribution SDK -->
+    <script>
+        window["GD_OPTIONS"] = {
+            "gameId": "b13fb38f722340388cd26e643ed2d6f8",
+            "onEvent": function(event) {
+                switch (event.name) {
+                    case "SDK_GAME_START":
+                        if (window.resumeGameFromAd) window.resumeGameFromAd();
+                        break;
+                    case "SDK_GAME_PAUSE":
+                        if (window.pauseGameForAd) window.pauseGameForAd();
+                        break;
+                    case "SDK_REWARDED_WATCH_COMPLETE":
+                        if (window.FlutterBridge) window.FlutterBridge.onRewardGranted();
+                        break;
+                }
+            },
+        };
+        (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = 'https://html5.api.gamedistribution.com/main.min.js';
+        }(document, 'script', 'gamedistribution-sdk'));
+    </script>
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            alert("JS Error: " + msg + "\nLine: " + line + "\nCol: " + col);
+            document.body.innerHTML += '<div style="position:fixed;top:0;left:0;z-index:9999;background:red;color:white;padding:10px;font-size:12px;max-width:100vw;">ERROR: ' + msg + '<br>Line: ' + line + '</div>';
+            return false;
+        };
+        window.addEventListener("unhandledrejection", function(e) {
+            alert("Promise Error: " + e.reason);
+        });
+    </script>
+    <!-- Fast APK Detection -->
+    <script>if(window.AdChannel) window.IS_APK = true;</script>
+    <script src="ads.js"></script>
 </head>
 <body>
     <div id="game-container">
-        <!-- The Game Canvas -->
+        <div id="scanner-line"></div>
         <canvas id="gameCanvas"></canvas>
 
-        <!-- UI Overlay -->
         <div id="ui-layer">
-            <div id="score-display">SCORE: <span id="scoreValue">0</span></div>
-            
+
+            <!-- HUD (visible during gameplay) -->
+            <div id="hud">
+                <div id="score-display">SCORE: <span id="scoreValue">0</span></div>
+                <div id="hud-buttons">
+                    <button id="pause-btn" class="hud-btn" title="Pause">⏸</button>
+                    <button id="settings-btn" class="hud-btn" title="Settings">⚙</button>
+                </div>
+            </div>
+
             <!-- Main Menu Screen -->
             <div id="start-screen" class="screen active">
-                <h1 class="glitch" data-text="NEON DRIFT">NEON DRIFT</h1>
+                <div class="unified-logo">
+                    <div class="outer-square"></div>
+                    <div class="inner-square"></div>
+                    <div class="center-dot"></div>
+                </div>
+                <h1 class="glitch" data-text="NEON DRIFT: BOSS LEVEL">NEON DRIFT: BOSS LEVEL</h1>
                 <p>Tap or Spacebar to switch gravity</p>
                 <button id="start-btn" class="cyber-btn">START DRIFT</button>
-                <!-- Pre-roll Ad Placeholder -->
-                <div class="ad-container banner-ad" id="main-menu-ad">
-                    <span class="ad-label">ADVERTISEMENT</span>
+                <button onclick="downloadApk()" class="cyber-btn apk-only" style="margin-top: 15px; font-size: 1rem; padding: 10px 20px; background: var(--neon-pink); box-shadow: 0 0 15px var(--neon-pink);">DOWNLOAD APK</button>
+            </div>
+
+            <!-- Pause Screen -->
+            <div id="pause-screen" class="screen">
+                <h2 class="cyber-text">⏸ PAUSED</h2>
+                <button class="cyber-btn" id="resume-btn">▶ RESUME</button>
+                <button class="cyber-btn" id="settings-from-pause-btn" style="margin-top:12px;">⚙ SETTINGS</button>
+                <button class="cyber-btn" id="quit-btn" style="margin-top:12px; border-color: #555; color: #888;">✕ QUIT TO MENU</button>
+            </div>
+
+            <!-- Settings Screen -->
+            <div id="settings-screen" class="screen">
+                <h2 class="cyber-text">⚙ SETTINGS</h2>
+                <div class="setting-row">
+                    <label>SOUND FX</label>
+                    <button class="toggle-btn" id="sfx-toggle" data-key="sfx">ON</button>
                 </div>
+                <div class="setting-row">
+                    <label>MUSIC</label>
+                    <button class="toggle-btn" id="music-toggle" data-key="music">ON</button>
+                </div>
+                <div class="setting-row">
+                    <label>VIBRATION</label>
+                    <button class="toggle-btn" id="vib-toggle" data-key="vibration">ON</button>
+                </div>
+                <button class="cyber-btn" id="settings-back-btn" style="margin-top:20px;">◀ BACK</button>
             </div>
 
             <!-- Game Over Screen -->
@@ -36,21 +119,27 @@
                 <div class="stats">
                     <p>FINAL SCORE: <span id="finalScore">0</span></p>
                     <p>HIGH SCORE: <span id="highScore">0</span></p>
-                </div>
-                
-                <!-- Interstitial Ad Placeholder -->
-                <div class="ad-container interstitial-ad" id="game-over-ad">
-                    <span class="ad-label">ADVERTISEMENT</span>
-                    <div class="mock-ad-content">Loading Sponsor...</div>
-                    <button id="skip-ad-btn" class="skip-btn" style="display: none;">Skip Ad</button>
+                    <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;">⭐ NEW RECORD!</p>
                 </div>
 
-                <button id="restart-btn" class="cyber-btn" style="display: none;">REBOOT SYSTEM</button>
+                <div id="game-over-btns">
+                    <button id="revive-btn" class="cyber-btn" style="display: none; background: #FFD700; color: black; margin-bottom: 12px;">⚡ WATCH AD TO REVIVE</button>
+                    <button id="restart-btn" class="cyber-btn">REBOOT SYSTEM</button>
+                    <button onclick="downloadApk()" class="cyber-btn apk-only" style="margin-top: 12px; font-size: 1rem; padding: 10px 20px; background: var(--neon-pink);">DOWNLOAD APK</button>
+                </div>
+
+                <div class="sta-container">
+                    <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">SHARE YOUR SCORE</p>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="shareToWhatsApp()" class="cyber-btn" style="background: #25D366; font-size: 0.8rem; padding: 8px 15px;">WhatsApp</button>
+                        <button onclick="shareToTelegram()" class="cyber-btn" style="background: #0088cc; font-size: 0.8rem; padding: 8px 15px;">Telegram</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <script src="ads.js"></script>
+        </div><!-- end ui-layer -->
+    </div><!-- end game-container -->
+
     <script src="game.js"></script>
 </body>
 </html>

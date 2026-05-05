@@ -1,61 +1,61 @@
-// ads.js - Handles Ad Network Integration (Mockup for now)
+// ads.js - GameDistribution SDK Integration
 
 const AdManager = {
-    interstitialTimer: null,
-    
-    // Initialize ad networks
+    isAdPlaying: false,
+
     init() {
-        console.log("AdManager Initialized. Ready to serve ads.");
-        // Normally, you'd initialize Google AdSense or AdMob SDK here.
+        console.log("AdManager initializing...");
+        // Expose hooks for the GD SDK events defined in index.html
+        window.pauseGameForAd = this.pauseForAd.bind(this);
+        window.resumeGameFromAd = this.resumeFromAd.bind(this);
     },
 
-    // Show a banner ad (e.g., on the main menu)
-    showBanner() {
-        console.log("Serving Banner Ad.");
-        const adContainer = document.getElementById('main-menu-ad');
-        if(adContainer) {
-            adContainer.style.display = 'flex';
+    pauseForAd() {
+        console.log("Game Paused for Ad");
+        this.isAdPlaying = true;
+        // In game.js, if GAME_STATE is PAUSED, the loop won't update physics
+        if (typeof GAME_STATE !== 'undefined') {
+            window.PREVIOUS_GAME_STATE = GAME_STATE;
+            GAME_STATE = 'PAUSED';
         }
+        // Mute audio here if we had any
     },
 
-    // Show an interstitial ad (e.g., when the player dies)
-    // Returns a Promise that resolves when the ad is closed
+    resumeFromAd() {
+        console.log("Ad finished. Resuming Game");
+        this.isAdPlaying = false;
+        if (typeof window.PREVIOUS_GAME_STATE !== 'undefined') {
+            GAME_STATE = window.PREVIOUS_GAME_STATE;
+            if (GAME_STATE === 'PLAYING') {
+                if (typeof window.gameLoop === 'function') window.gameLoop();
+            }
+        }
+        
+        // Ensure the restart button is visible after ad finishes
+        const restartBtn = document.getElementById('restart-btn');
+        if (restartBtn) restartBtn.style.display = 'block';
+    },
+
     showInterstitial() {
         return new Promise((resolve) => {
-            console.log("Requesting Interstitial Ad...");
-            
-            const adContainer = document.getElementById('game-over-ad');
-            const skipBtn = document.getElementById('skip-ad-btn');
+            console.log("Requesting GD Interstitial Ad...");
             const restartBtn = document.getElementById('restart-btn');
-            const mockContent = adContainer.querySelector('.mock-ad-content');
-            
-            if(adContainer) {
-                adContainer.style.display = 'flex';
-                skipBtn.style.display = 'none';
-                restartBtn.style.display = 'none'; // Hide restart until ad is done
-                mockContent.textContent = "Loading Sponsor...";
+            if (restartBtn) restartBtn.style.display = 'none'; // Hide until ad finishes
 
-                // Simulate Ad load and unskippable time (3 seconds)
-                setTimeout(() => {
-                    mockContent.textContent = "BUY CYBER-COLA NOW! 50% OFF!";
-                    skipBtn.style.display = 'block'; // Show skip button
-                    
-                    // Allow skipping
-                    skipBtn.onclick = () => {
-                        console.log("Ad Skipped.");
-                        adContainer.style.display = 'none';
-                        restartBtn.style.display = 'block'; // Reveal restart button
-                        resolve();
-                    };
-                }, 3000);
+            if (typeof gdsdk !== 'undefined' && gdsdk.showAd !== 'undefined') {
+                gdsdk.showAd();
+                // The resolution of this promise is handled indirectly by the SDK_GAME_START event
+                // which calls resumeFromAd(). We resolve immediately so the UI can setup.
+                resolve();
             } else {
-                resolve(); // Fallback if container missing
+                console.warn("GD SDK not found. Skipping ad.");
+                if (restartBtn) restartBtn.style.display = 'block';
+                resolve();
             }
         });
     }
 };
 
-// Initialize on load
 window.addEventListener('load', () => {
     AdManager.init();
 });

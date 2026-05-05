@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0, 512, 512);
+            // We need to get the data URL and maybe send it somewhere or just download it?
+            // Actually, I'll just let the agent capture the screenshot of the canvas!
+            // OR I can use console.log to output the base64 and I'll read it!
+            console.log("BASE64_START");
+            console.log(canvas.toDataURL("image/png"));
+            console.log("BASE64_END");
+        };
+        img.src = 'logo.png';
+    </script>
+</body>
+</html>
