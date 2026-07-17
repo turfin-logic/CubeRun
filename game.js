@@ -469,8 +469,12 @@ function gameOver() {
     reviveBtn.textContent = '🚀 REVIVE (WATCH AD)';
     reviveBtn.disabled = false;
 
-    // Removed automatic Interstitial Ad to improve User Experience
-    // FlutterBridge.showInterstitial();
+    // Show Interstitial Ad every 3 deaths to balance revenue and UX
+    if (typeof window.deathCount === 'undefined') window.deathCount = 0;
+    window.deathCount++;
+    if (window.deathCount % 3 === 0) {
+        FlutterBridge.showInterstitial();
+    }
 }
 
 function revivePlayer() {
