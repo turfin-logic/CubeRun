@@ -1,4 +1,4 @@
-// game.js — Neon Drift: Boss Level (Production Build)
+// game.js — CUBE RUN (Production Build)
 // Skill: html5-canvas-mobile-game
 
 const canvas = document.getElementById('gameCanvas');
@@ -131,7 +131,7 @@ function playCreepyMelody() {
     });
 }
 
-function startDrone() {
+function startDrone() { return;
     if (!Settings.music || droneOscs.length > 0) return;
     const ac = getAudio();
     [40,43,60.5].forEach(f => {
@@ -564,11 +564,11 @@ function applyApkMode() {
 window.addEventListener('load',()=>{ applyApkMode(); setTimeout(applyApkMode,800); });
 
 function shareToWhatsApp() {
-    const t=`🔥 I scored ${score} on NEON DRIFT: BOSS LEVEL! 😈 Beat me: https://neon-drift-game-tau.vercel.app/`;
+    const t=`🔥 I scored ${score} on CUBE RUN! 😈 Beat me: https://neon-drift-game-tau.vercel.app/`;
     window.location.href=`https://api.whatsapp.com/send?text=${encodeURIComponent(t)}`;
 }
 function shareToTelegram() {
-    window.location.href=`https://t.me/share/url?url=${encodeURIComponent('https://neon-drift-game-tau.vercel.app/')}&text=${encodeURIComponent(`🔥 I scored ${score} on NEON DRIFT!`)}`;
+    window.location.href=`https://t.me/share/url?url=${encodeURIComponent('https://neon-drift-game-tau.vercel.app/')}&text=${encodeURIComponent(`🔥 I scored ${score} on CUBE RUN!`)}`;
 }
 function downloadApk() {
     window.location.href='https://play.google.com/store/apps/details?id=com.neondrift.bosslevel';
