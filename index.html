@@ -123,18 +123,18 @@
                     <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;">⭐ NEW RECORD!</p>
                 </div>
 
-                <div id="game-over-btns">
-                    <button id="revive-btn" class="cyber-btn" style="display: none; background: #FFD700; color: black; margin-bottom: 12px;">⚡ WATCH AD TO REVIVE</button>
+                <div id="game-over-btns" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                    <button id="revive-btn" class="cyber-btn revive-btn" style="display: none;">⚡ WATCH AD TO REVIVE</button>
                     <button id="restart-btn" class="cyber-btn">REBOOT SYSTEM</button>
-                    <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="cyber-btn mangaverse-btn" style="margin-top: 12px; font-size: 1rem; padding: 10px 20px;">🎮 PLAY MANGAVERSE</button>
-                    <button onclick="downloadApk()" class="cyber-btn apk-only" style="margin-top: 12px; font-size: 1rem; padding: 10px 20px; background: var(--neon-pink);">GET IT ON PLAY STORE</button>
+                    <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="cyber-btn mangaverse-btn" style="font-size: 1rem; padding: 10px 20px; width: 100%;">🎮 PLAY MANGAVERSE</button>
+                    <button onclick="downloadApk()" class="cyber-btn apk-only" style="font-size: 1rem; padding: 10px 20px; background: transparent; width: 100%;">GET IT ON PLAY STORE</button>
                 </div>
 
-                <div class="sta-container">
-                    <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">SHARE YOUR SCORE</p>
+                <div class="sta-container" style="margin-top: 20px;">
+                    <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px; text-align: center;">SHARE YOUR SCORE</p>
                     <div style="display: flex; gap: 10px; justify-content: center;">
-                        <button onclick="shareToWhatsApp()" class="cyber-btn" style="background: #25D366; font-size: 0.8rem; padding: 8px 15px;">WhatsApp</button>
-                        <button onclick="shareToTelegram()" class="cyber-btn" style="background: #0088cc; font-size: 0.8rem; padding: 8px 15px;">Telegram</button>
+                        <button onclick="shareToWhatsApp()" class="social-btn whatsapp">WhatsApp</button>
+                        <button onclick="shareToTelegram()" class="social-btn telegram">Telegram</button>
                     </div>
                 </div>
             </div>

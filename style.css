@@ -330,3 +330,33 @@ p {
     background: linear-gradient(45deg, #8e2de2, #4a00e0) !important;
     box-shadow: 0 0 25px rgba(142, 45, 226, 0.9) !important;
 }
+
+/* UI Fixes */
+.revive-btn {
+    background: #FFD700 !important;
+    color: black !important;
+    border-color: #FFD700 !important;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6) !important;
+}
+.revive-btn:hover {
+    background: #FFCA28 !important;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.9) !important;
+}
+.social-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 8px 20px;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+.social-btn:hover { opacity: 0.8; }
+.social-btn.whatsapp { background: #25D366; }
+.social-btn.telegram { background: #0088cc; }
