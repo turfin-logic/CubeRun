@@ -1,15 +1,15 @@
-// game.js — CUBE RUN (Production Build)
+// game.js â€” CUBE RUN (Production Build)
 // Skill: html5-canvas-mobile-game
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// ─── STATE ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
 let GAME_STATE = STATE.MENU;
 let score = 0, frameCount = 0, baseSpeed = 5, rafId = null, lastTime = 0;
 
-// ─── SPRITES & POOLS (Defined early to prevent ReferenceError) ───────────────
+// â”€â”€â”€ SPRITES & POOLS (Defined early to prevent ReferenceError) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SPRITES = {};
 
 class ObjectPool {
@@ -30,7 +30,7 @@ class ObjectPool {
     releaseAll() { while(this.active.length) this.release(this.active[0]); }
 }
 
-// ─── LAYOUT ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let CEILING, FLOOR;
 function resizeCanvas() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -49,7 +49,7 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// ─── SETTINGS ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const Settings = {
     sfx: true, music: true, vibration: true,
     load() {
@@ -68,21 +68,21 @@ const Settings = {
 Settings.load();
 document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click', () => Settings.toggle(b.dataset.key)));
 
-// ─── SAVE ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ SAVE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SaveData = {
     _k: 'ndSave',
     load() { try { return {...{highScore:0}, ...JSON.parse(localStorage.getItem(this._k)||'{}')}; } catch(e){ return {highScore:0}; }},
     updateHighScore(s) { const d=this.load(); if(s>d.highScore){d.highScore=s;localStorage.setItem(this._k,JSON.stringify(d));return true;} return false; }
 };
 
-// ─── SCREEN HELPERS ──────────────────────────────────────────────────────────
+// â”€â”€â”€ SCREEN HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showScreen(id) { document.getElementById(id).classList.add('active'); }
 function hideScreen(id) { document.getElementById(id).classList.remove('active'); }
 function hideAllScreens() { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); }
 function showHUD() { document.getElementById('hud').classList.add('active'); }
 function hideHUD() { document.getElementById('hud').classList.remove('active'); }
 
-// ─── AUDIO ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ AUDIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let audioCtx = null;
 let droneOscs = [];
 
@@ -161,7 +161,7 @@ function stopDrone() {
 
 function vibrate(p=[50]) { if(Settings.vibration && navigator.vibrate) navigator.vibrate(p); }
 
-// ─── OFF-SCREEN SPRITES (Glow, pre-rendered once) ────────────────────────────
+// â”€â”€â”€ OFF-SCREEN SPRITES (Glow, pre-rendered once) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function createGlowSprite(color, w, h, glow=15) {
     const pad = glow*2, oc=document.createElement('canvas');
     oc.width=w+pad; oc.height=h+pad;
@@ -190,7 +190,7 @@ function initSprites() {
     SPRITES.bgDot2   = createGlowCircle('#7000ff',1,3);
 }
 
-// ─── OBJECT POOLS ────────────────────────────────────────────────────────────
+// â”€â”€â”€ OBJECT POOLS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Obstacle pool
 const obstaclePool = new ObjectPool(
@@ -230,14 +230,14 @@ function initBgParticles() {
     bgParticles.forEach(p=>p.vx=p.baseVx);
 }
 
-// ─── PLAYER ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ PLAYER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const player = {
     x:100, y:0, width:30, height:30,
     gravityDir:1, isSwapping:false, invincible:false,
     trail:[]
 };
 
-// ─── FLUTTER BRIDGE ──────────────────────────────────────────────────────────
+// â”€â”€â”€ FLUTTER BRIDGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FlutterBridge = {
     isFlutter() { return typeof window.AdChannel !== 'undefined'; },
     showInterstitial() { 
@@ -250,7 +250,7 @@ const FlutterBridge = {
                 if(!window._freeRevives) window._freeRevives = 0;
                 if(window._freeRevives < 1) {
                     window._freeRevives++;
-                    console.log("🎁 Sentinel: Granting Free Revive Fallback.");
+                    console.log("ðŸŽ Sentinel: Granting Free Revive Fallback.");
                     resolve();
                 } else {
                     reject('No ads available');
@@ -274,7 +274,7 @@ const FlutterBridge = {
 };
 window.FlutterBridge = FlutterBridge;
 
-// ─── GAME LOOP ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ GAME LOOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function startGameLoop() {
     function loop(ts) {
         if(GAME_STATE!==STATE.PLAYING) return;
@@ -407,7 +407,7 @@ function draw() {
     }
 }
 
-// ─── GAME ACTIONS ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ GAME ACTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function swapGravity() {
     if(GAME_STATE!==STATE.PLAYING) return;
     if(!player.isSwapping){
@@ -466,7 +466,7 @@ function gameOver() {
     // Show revive button with "GET REVIVE" text
     const reviveBtn = document.getElementById('revive-btn');
     reviveBtn.style.display = 'block';
-    reviveBtn.textContent = '🚀 REVIVE (WATCH AD)';
+    reviveBtn.textContent = 'ðŸš€ REVIVE (WATCH AD)';
     reviveBtn.disabled = false;
 
     // Show Interstitial Ad every 3 deaths to balance revenue and UX
@@ -510,7 +510,7 @@ function startGame() {
     startGameLoop();
 }
 
-// ─── INPUT ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ INPUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.addEventListener('keydown', e=>{
     if(e.code==='Space'){ e.preventDefault(); swapGravity(); }
     if(e.key==='Escape') pauseGame();
@@ -518,7 +518,7 @@ window.addEventListener('keydown', e=>{
 window.addEventListener('touchstart', e=>{ if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) swapGravity(); }, {passive:true});
 window.addEventListener('mousedown', e=>{ if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) swapGravity(); });
 
-// ─── UI BUTTONS ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ UI BUTTONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('pause-btn').addEventListener('click', pauseGame);
@@ -538,21 +538,21 @@ document.getElementById('settings-back-btn').addEventListener('click', ()=>{
 // Revive button
 document.getElementById('revive-btn').addEventListener('click', async ()=>{
     const btn=document.getElementById('revive-btn');
-    btn.disabled=true; btn.textContent='⏳ LOADING...';
+    btn.disabled=true; btn.textContent='â³ LOADING...';
     try { 
         await FlutterBridge.showRewarded(); 
         revivePlayer(); 
     }
     catch(e) { 
-        btn.textContent = '❌ TRY AGAIN LATER';
+        btn.textContent = 'âŒ TRY AGAIN LATER';
         setTimeout(() => {
-            btn.textContent = '🚀 REVIVE (WATCH AD)';
+            btn.textContent = 'ðŸš€ REVIVE (WATCH AD)';
             btn.disabled = false;
         }, 2000);
     }
 });
 
-// ─── UTILS ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.pauseGameForAd  = ()=>{ if(GAME_STATE===STATE.PLAYING){ cancelAnimationFrame(rafId); }};
 window.resumeGameFromAd= ()=>{ if(GAME_STATE===STATE.PLAYING) startGameLoop(); };
 
@@ -564,11 +564,11 @@ function applyApkMode() {
 window.addEventListener('load',()=>{ applyApkMode(); setTimeout(applyApkMode,800); });
 
 function shareToWhatsApp() {
-    const t=`🔥 I scored ${score} on CUBE RUN! 😈 Beat me: https://neon-drift-game-tau.vercel.app/`;
-    window.location.href=`https://api.whatsapp.com/send?text=${encodeURIComponent(t)}`;
+    const t='\uD83D\uDD25 I scored '+score+' on CUBE RUN! \uD83D\uDE08 Beat me: https://turfin-logic.github.io/CubeRun/';
+    window.location.href='https://api.whatsapp.com/send?text='+encodeURIComponent(t);
 }
 function shareToTelegram() {
-    window.location.href=`https://t.me/share/url?url=${encodeURIComponent('https://neon-drift-game-tau.vercel.app/')}&text=${encodeURIComponent(`🔥 I scored ${score} on CUBE RUN!`)}`;
+    window.location.href='https://t.me/share/url?url='+encodeURIComponent('https://turfin-logic.github.io/CubeRun/')+'&text='+encodeURIComponent('\uD83D\uDD25 I scored '+score+' on CUBE RUN!');
 }
 function downloadApk() {
     window.location.href='https://play.google.com/store/apps/details?id=com.neondrift.bosslevel';
