@@ -9,6 +9,27 @@ const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEO
 let GAME_STATE = STATE.MENU;
 let score = 0, frameCount = 0, baseSpeed = 5, rafId = null, lastTime = 0;
 
+// ─── SPRITES & POOLS (Defined early to prevent ReferenceError) ───────────────
+const SPRITES = {};
+
+class ObjectPool {
+    constructor(createFn, resetFn, size=20) {
+        this.createFn=createFn; this.resetFn=resetFn;
+        this.pool=[]; this.active=[];
+        for(let i=0;i<size;i++) this.pool.push(createFn());
+    }
+    acquire(...args) {
+        const obj=this.pool.length>0?this.pool.pop():this.createFn();
+        this.resetFn(obj,...args); this.active.push(obj); return obj;
+    }
+    release(obj) {
+        const i=this.active.indexOf(obj);
+        if(i!==-1) this.active.splice(i,1);
+        this.pool.push(obj);
+    }
+    releaseAll() { while(this.active.length) this.release(this.active[0]); }
+}
+
 // ─── LAYOUT ──────────────────────────────────────────────────────────────────
 let CEILING, FLOOR;
 function resizeCanvas() {
@@ -141,7 +162,6 @@ function stopDrone() {
 function vibrate(p=[50]) { if(Settings.vibration && navigator.vibrate) navigator.vibrate(p); }
 
 // ─── OFF-SCREEN SPRITES (Glow, pre-rendered once) ────────────────────────────
-const SPRITES = {};
 function createGlowSprite(color, w, h, glow=15) {
     const pad = glow*2, oc=document.createElement('canvas');
     oc.width=w+pad; oc.height=h+pad;
@@ -170,24 +190,7 @@ function initSprites() {
     SPRITES.bgDot2   = createGlowCircle('#7000ff',1,3);
 }
 
-// ─── OBJECT POOL ─────────────────────────────────────────────────────────────
-class ObjectPool {
-    constructor(createFn, resetFn, size=20) {
-        this.createFn=createFn; this.resetFn=resetFn;
-        this.pool=[]; this.active=[];
-        for(let i=0;i<size;i++) this.pool.push(createFn());
-    }
-    acquire(...args) {
-        const obj=this.pool.length>0?this.pool.pop():this.createFn();
-        this.resetFn(obj,...args); this.active.push(obj); return obj;
-    }
-    release(obj) {
-        const i=this.active.indexOf(obj);
-        if(i!==-1) this.active.splice(i,1);
-        this.pool.push(obj);
-    }
-    releaseAll() { while(this.active.length) this.release(this.active[0]); }
-}
+// ─── OBJECT POOLS ────────────────────────────────────────────────────────────
 
 // Obstacle pool
 const obstaclePool = new ObjectPool(
@@ -216,7 +219,8 @@ const particlePool = new ObjectPool(
 const bgParticles = [];
 function initBgParticles() {
     bgParticles.length=0;
-    for(let i=0;i<100;i++) bgParticles.push({
+    // Reduced from 100 to 40 for much better mobile performance
+    for(let i=0;i<40;i++) bgParticles.push({
         x:Math.random()*window.innerWidth,
         y:Math.random()*window.innerHeight,
         baseVx:-(Math.random()*1.5+0.5),
@@ -236,14 +240,33 @@ const player = {
 // ─── FLUTTER BRIDGE ──────────────────────────────────────────────────────────
 const FlutterBridge = {
     isFlutter() { return typeof window.AdChannel !== 'undefined'; },
-    showInterstitial() { if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial'); },
+    showInterstitial() { 
+        if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial');
+        else if(typeof gdsdk !== 'undefined') gdsdk.showAd();
+    },
     showRewarded() {
         return new Promise((resolve,reject) => {
-            if(!this.isFlutter()){reject('Not in Flutter');return;}
-            window._onRewardGranted=resolve;
-            window._onRewardFailed=reject;
-            window.AdChannel.postMessage('showRewarded');
-            setTimeout(()=>reject('timeout'),15000);
+            const grantFree = () => {
+                if(!window._freeRevives) window._freeRevives = 0;
+                if(window._freeRevives < 1) {
+                    window._freeRevives++;
+                    console.log("🎁 Sentinel: Granting Free Revive Fallback.");
+                    resolve();
+                } else {
+                    reject('No ads available');
+                }
+            };
+
+            if(this.isFlutter()) {
+                window._onRewardGranted = resolve;
+                window._onRewardFailed = grantFree; // Use fallback on failure
+                window.AdChannel.postMessage('showRewarded');
+                setTimeout(()=>grantFree(), 15000); // Timeout fallback
+            } else if(typeof gdsdk !== 'undefined' && gdsdk.showAd) {
+                gdsdk.showAd('rewarded').then(resolve).catch(grantFree);
+            } else {
+                grantFree();
+            }
         });
     },
     onRewardGranted() { window._onRewardGranted?.(); window._onRewardGranted=null; window._onRewardFailed=null; },
@@ -338,12 +361,14 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(0,CEILING); ctx.lineTo(W,CEILING);
     ctx.moveTo(0,FLOOR); ctx.lineTo(W,FLOOR); ctx.stroke();
 
-    // Moving grid
+    // Moving grid - Optimized: One beginPath/stroke instead of looping them
     ctx.strokeStyle='rgba(255,0,60,0.08)'; ctx.lineWidth=1;
     const off=(frameCount*baseSpeed)%50;
-    for(let i=-off;i<W;i+=50){ ctx.beginPath(); ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); ctx.stroke(); }
+    ctx.beginPath();
+    for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
+    ctx.stroke();
 
-    // BG particles (drawImage — no fillStyle switch per item)
+    // BG particles
     bgParticles.forEach(p=>ctx.drawImage(p.sprite,Math.floor(p.x-2),Math.floor(p.y-2)));
 
     // Obstacles
@@ -352,17 +377,17 @@ function draw() {
         else { ctx.fillStyle='#ff00ff'; ctx.fillRect(o.x,o.y,o.width,o.height); }
     });
 
-    // Player trail
+    // Player trail - Optimized: fixed alpha to reduce state changes
+    ctx.globalAlpha=0.2; ctx.fillStyle='#ff003c';
     for(let i=0;i<player.trail.length;i++) {
-        const pt=player.trail[i], a=(i/player.trail.length)*0.4;
-        ctx.globalAlpha=a; ctx.fillStyle='#ff003c';
+        const pt=player.trail[i];
         ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
     }
     ctx.globalAlpha=1;
 
-    // Particles
+    // Particles - Optimized: group by alpha to reduce state changes
+    ctx.globalAlpha=0.6;
     particlePool.active.forEach(p=>{
-        ctx.globalAlpha=p.life/p.maxLife;
         ctx.drawImage(p.sprite,Math.floor(p.x-4),Math.floor(p.y-4));
     });
     ctx.globalAlpha=1;
@@ -438,10 +463,14 @@ function gameOver() {
     hideHUD();
     showScreen('game-over-screen');
 
-    // Show revive only inside Flutter
-    document.getElementById('revive-btn').style.display=FlutterBridge.isFlutter()?'block':'none';
+    // Show revive button with "GET REVIVE" text
+    const reviveBtn = document.getElementById('revive-btn');
+    reviveBtn.style.display = 'block';
+    reviveBtn.textContent = '🚀 REVIVE (WATCH AD)';
+    reviveBtn.disabled = false;
 
-    FlutterBridge.showInterstitial();
+    // Removed automatic Interstitial Ad to improve User Experience
+    // FlutterBridge.showInterstitial();
 }
 
 function revivePlayer() {
@@ -460,6 +489,7 @@ function resetGame() {
     score=0; frameCount=0; baseSpeed=5;
     player.x=100; player.y=FLOOR-player.height;
     player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
+    window._freeRevives = 0;
     obstaclePool.releaseAll(); particlePool.releaseAll();
     initBgParticles();
     updateScoreDisplay();
@@ -505,8 +535,17 @@ document.getElementById('settings-back-btn').addEventListener('click', ()=>{
 document.getElementById('revive-btn').addEventListener('click', async ()=>{
     const btn=document.getElementById('revive-btn');
     btn.disabled=true; btn.textContent='⏳ LOADING...';
-    try { await FlutterBridge.showRewarded(); revivePlayer(); }
-    catch(e) { btn.textContent='❌ AD NOT READY'; btn.disabled=false; }
+    try { 
+        await FlutterBridge.showRewarded(); 
+        revivePlayer(); 
+    }
+    catch(e) { 
+        btn.textContent = '❌ TRY AGAIN LATER';
+        setTimeout(() => {
+            btn.textContent = '🚀 REVIVE (WATCH AD)';
+            btn.disabled = false;
+        }, 2000);
+    }
 });
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -528,5 +567,5 @@ function shareToTelegram() {
     window.location.href=`https://t.me/share/url?url=${encodeURIComponent('https://neon-drift-game-tau.vercel.app/')}&text=${encodeURIComponent(`🔥 I scored ${score} on NEON DRIFT!`)}`;
 }
 function downloadApk() {
-    window.location.href='https://neon-drift-game-tau.vercel.app/neon-drift-boss.apk?v='+Date.now();
+    window.location.href='https://play.google.com/store/apps/details?id=com.neondrift.bosslevel';
 }
