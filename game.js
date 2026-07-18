@@ -473,7 +473,7 @@ function gameOver() {
     if (typeof window.deathCount === 'undefined') window.deathCount = 0;
     window.deathCount++;
     if (window.deathCount % 3 === 0) {
-        FlutterBridge.showInterstitial();
+        // FlutterBridge.showInterstitial();
     }
 }
 
