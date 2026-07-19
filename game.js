@@ -261,7 +261,7 @@ const FlutterBridge = {
                 window._onRewardGranted = resolve;
                 window._onRewardFailed = grantFree; // Use fallback on failure
                 window.AdChannel.postMessage('showRewarded');
-                setTimeout(()=>grantFree(), 15000); // Timeout fallback
+                window._rewardTimeout = setTimeout(()=>grantFree(), 120000); // 120s Timeout fallback for long ads
             } else if(typeof gdsdk !== 'undefined' && gdsdk.showAd) {
                 gdsdk.showAd('rewarded').then(resolve).catch(grantFree);
             } else {
@@ -269,10 +269,11 @@ const FlutterBridge = {
             }
         });
     },
-    onRewardGranted() { window._onRewardGranted?.(); window._onRewardGranted=null; window._onRewardFailed=null; },
-    onRewardFailed()  { window._onRewardFailed?.('Ad not available'); window._onRewardGranted=null; window._onRewardFailed=null; }
+    onRewardGranted() { clearTimeout(window._rewardTimeout); window._onRewardGranted?.(); window._onRewardGranted=null; window._onRewardFailed=null; },
+    onRewardFailed()  { clearTimeout(window._rewardTimeout); window._onRewardFailed?.('Ad not available'); window._onRewardGranted=null; window._onRewardFailed=null; }
 };
 window.FlutterBridge = FlutterBridge;
+window.onAdClose = () => { clearTimeout(window._rewardTimeout); if(window._onRewardFailed) window._onRewardFailed('Ad Closed'); };
 
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
 function startGameLoop() {
