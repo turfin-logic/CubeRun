@@ -250,7 +250,7 @@ const FlutterBridge = {
                 if(!window._freeRevives) window._freeRevives = 0;
                 if(window._freeRevives < 1) {
                     window._freeRevives++;
-                    console.log("ðŸŽ Sentinel: Granting Free Revive Fallback.");
+                    console.log("🛡️ Sentinel: Granting Free Revive Fallback.");
                     resolve();
                 } else {
                     reject('No ads available');
@@ -274,7 +274,7 @@ const FlutterBridge = {
 };
 window.FlutterBridge = FlutterBridge;
 
-// â”€â”€â”€ GAME LOOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ———————————————————————————————————————————————————————————————————————————————————————————————————
 function startGameLoop() {
     function loop(ts) {
         if(GAME_STATE!==STATE.PLAYING) return;
@@ -407,7 +407,7 @@ function draw() {
     }
 }
 
-// â”€â”€â”€ GAME ACTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ———————————————————————————————————————————————————————————————————————————————————————————————————
 function swapGravity() {
     if(GAME_STATE!==STATE.PLAYING) return;
     if(!player.isSwapping){
@@ -466,7 +466,7 @@ function gameOver() {
     // Show revive button with "GET REVIVE" text
     const reviveBtn = document.getElementById('revive-btn');
     reviveBtn.style.display = 'block';
-    reviveBtn.textContent = 'ðŸš€ REVIVE (WATCH AD)';
+    reviveBtn.textContent = '🚀 REVIVE (WATCH AD)';
     reviveBtn.disabled = false;
 
     // Show Interstitial Ad every 3 deaths to balance revenue and UX
@@ -510,7 +510,7 @@ function startGame() {
     startGameLoop();
 }
 
-// â”€â”€â”€ INPUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ———————————————————————————————————————————————————————————————————————————————————————————————————
 window.addEventListener('keydown', e=>{
     if(e.code==='Space'){ e.preventDefault(); swapGravity(); }
     if(e.key==='Escape') pauseGame();
@@ -518,7 +518,7 @@ window.addEventListener('keydown', e=>{
 window.addEventListener('touchstart', e=>{ if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) swapGravity(); }, {passive:true});
 window.addEventListener('mousedown', e=>{ if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) swapGravity(); });
 
-// â”€â”€â”€ UI BUTTONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ———————————————————————————————————————————————————————————————————————————————————————————————————
 document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('pause-btn').addEventListener('click', pauseGame);
@@ -538,15 +538,15 @@ document.getElementById('settings-back-btn').addEventListener('click', ()=>{
 // Revive button
 document.getElementById('revive-btn').addEventListener('click', async ()=>{
     const btn=document.getElementById('revive-btn');
-    btn.disabled=true; btn.textContent='â³ LOADING...';
+    btn.disabled=true; btn.textContent='⏳ LOADING...';
     try { 
         await FlutterBridge.showRewarded(); 
         revivePlayer(); 
     }
     catch(e) { 
-        btn.textContent = 'âŒ TRY AGAIN LATER';
+        btn.textContent = '❌ TRY AGAIN LATER';
         setTimeout(() => {
-            btn.textContent = 'ðŸš€ REVIVE (WATCH AD)';
+            btn.textContent = '🚀 REVIVE (WATCH AD)';
             btn.disabled = false;
         }, 2000);
     }
