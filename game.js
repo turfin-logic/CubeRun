@@ -349,6 +349,14 @@ const FlutterBridge = {
 window.FlutterBridge = FlutterBridge;
 window.onAdClose = () => { clearTimeout(window._rewardTimeout); if(window._onRewardFailed) window._onRewardFailed('Ad Closed'); };
 
+// Global aliases for Android WebView compatibility
+window.onRewardGranted = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardGranted(); };
+window.onRewardFailed = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardFailed(); };
+window._adRewardCallback = (success) => { 
+    if(success && window.FlutterBridge) window.FlutterBridge.onRewardGranted(); 
+    else if(window.FlutterBridge) window.FlutterBridge.onRewardFailed(); 
+};
+
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
 function startGameLoop() {
     function loop(ts) {
