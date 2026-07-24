@@ -98,13 +98,10 @@
                 <p>Tap or Spacebar to switch gravity</p>
                   <div class="mode-selector" style="margin-top: 15px; margin-bottom: 20px;">
                       <label style="color: var(--neon-pink); font-family: 'Space Mono', monospace; font-size: 0.9rem; letter-spacing: 2px;">SELECT MODE:</label>
-                      <div class="custom-dropdown" id="custom-mode-dropdown">
-                          <div class="dropdown-selected">CLASSIC (GRAVITY FLIP)</div>
-                          <div class="dropdown-options">
-                              <div class="dropdown-option active" data-value="CLASSIC">CLASSIC (GRAVITY FLIP)</div>
-                              <div class="dropdown-option" data-value="LASER">LASER (JUMP OVER BEAMS)</div>
-                              <div class="dropdown-option" data-value="TOPDOWN">TOP-DOWN (FREE MOVE)</div>
-                          </div>
+                      <div class="mode-carousel" style="display: flex; align-items: center; justify-content: space-between; background: rgba(20,20,20,0.8); border: 2px solid var(--neon-pink); border-radius: 4px; margin-top: 8px; max-width: 280px; margin-left: auto; margin-right: auto; padding: 5px;">
+                          <button id="mode-prev" class="mode-nav-btn" style="background: transparent; border: none; color: var(--neon-pink); font-size: 1.5rem; cursor: pointer; padding: 0 10px;">◄</button>
+                          <div id="mode-display" style="color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; text-align: center; flex-grow: 1;">CLASSIC (GRAVITY FLIP)</div>
+                          <button id="mode-next" class="mode-nav-btn" style="background: transparent; border: none; color: var(--neon-pink); font-size: 1.5rem; cursor: pointer; padding: 0 10px;">►</button>
                       </div>
                       <input type="hidden" id="mode-select" value="CLASSIC">
                   </div>
@@ -141,6 +138,9 @@
 
             <!-- Game Over Screen -->
             <div id="game-over-screen" class="screen">
+                <button id="menu-btn-icon" style="position: absolute; top: 20px; left: 20px; background: transparent; border: none; color: var(--neon-pink); cursor: pointer; z-index: 10;">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </button>
                 <h2 class="glitch" data-text="SYSTEM FAILURE">SYSTEM FAILURE</h2>
                 <div class="stats">
                     <p>FINAL SCORE: <span id="finalScore">0</span></p>
@@ -151,7 +151,6 @@
                   <div id="game-over-btns" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
                       <button id="revive-btn" class="cyber-btn revive-btn" style="display: none;">🚀 WATCH AD TO REVIVE</button>
                       <button id="restart-btn" class="cyber-btn">REBOOT SYSTEM</button>
-                      <button id="menu-btn" class="cyber-btn" style="font-size: 1rem; padding: 10px 20px; width: 100%; border-color: #05d9e8; box-shadow: 0 0 10px #05d9e8, inset 0 0 10px #05d9e8; text-shadow: 0 0 5px #05d9e8;">RETURN TO MENU</button>
                       <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="cyber-btn mangaverse-btn" style="font-size: 1rem; padding: 10px 20px; width: 100%;">🎮 EXPLORE MANGAVERSE</button>
                       <button onclick="downloadApk()" class="cyber-btn apk-only" style="font-size: 1rem; padding: 10px 20px; background: transparent; width: 100%;">GET IT ON PLAY STORE</button>
                   </div>

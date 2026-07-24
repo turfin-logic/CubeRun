@@ -725,7 +725,7 @@ document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('pause-btn').addEventListener('click', pauseGame);
 document.getElementById('resume-btn').addEventListener('click', resumeGame);
 document.getElementById('quit-btn').addEventListener('click', quitToMenu);
-document.getElementById('menu-btn').addEventListener('click', quitToMenu);
+document.getElementById('menu-btn-icon').addEventListener('click', quitToMenu);
 
 document.getElementById('settings-btn').addEventListener('click', ()=>{
     if(GAME_STATE===STATE.PLAYING) pauseGame();
@@ -776,28 +776,37 @@ function downloadApk() {
     window.location.href='https://neon-drift-game-tau.vercel.app/neon-drift-boss.apk?v='+Date.now();
 }
 
-// Custom Dropdown UI Logic
+// Custom Carousel Mode UI Logic
+const MODES = [
+    { value: 'CLASSIC', label: 'CLASSIC (GRAVITY FLIP)' },
+    { value: 'LASER', label: 'LASER (JUMP OVER BEAMS)' },
+    { value: 'TOPDOWN', label: 'TOP-DOWN (FREE MOVE)' }
+];
+let currentModeIndex = 0;
+
+function updateModeCarousel() {
+    const modeDisplay = document.getElementById('mode-display');
+    const modeInput = document.getElementById('mode-select');
+    if (modeDisplay && modeInput) {
+        modeDisplay.textContent = MODES[currentModeIndex].label;
+        modeInput.value = MODES[currentModeIndex].value;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    const dropdown = document.getElementById('custom-mode-dropdown');
-    if (dropdown) {
-        const selected = dropdown.querySelector('.dropdown-selected');
-        const options = dropdown.querySelector('.dropdown-options');
-        const hiddenInput = document.getElementById('mode-select');
-
-        selected.addEventListener('click', () => options.classList.toggle('show'));
-
-        dropdown.querySelectorAll('.dropdown-option').forEach(opt => {
-            opt.addEventListener('click', () => {
-                selected.textContent = opt.textContent;
-                hiddenInput.value = opt.getAttribute('data-value');
-                dropdown.querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('active'));
-                opt.classList.add('active');
-                options.classList.remove('show');
-            });
+    const prevBtn = document.getElementById('mode-prev');
+    const nextBtn = document.getElementById('mode-next');
+    
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
+            updateModeCarousel();
         });
-
-        document.addEventListener('click', (e) => {
-            if (!dropdown.contains(e.target)) options.classList.remove('show');
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            currentModeIndex = (currentModeIndex + 1) % MODES.length;
+            updateModeCarousel();
         });
     }
 });
