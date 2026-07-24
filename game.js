@@ -200,10 +200,10 @@ const obstaclePool = new ObjectPool(
         o.passed=false;
         o.x=window.innerWidth;
         if (CURRENT_MODE === 'LASER') {
-            o.width=window.innerWidth * 0.6; o.height=15; // Thick laser beam
+            o.width=window.innerWidth; o.height=12; // Long laser beam
             const top=Math.random()>0.5;
-            o.y=top?CEILING+(Math.random()*40):FLOOR-(Math.random()*40)-o.height;
-            o.sprite=null; // Pure red laser fill
+            o.y=top?CEILING+(Math.random()*60)+20:FLOOR-(Math.random()*60)-20-o.height;
+            o.sprite=null; 
         } else if (CURRENT_MODE === 'TOPDOWN') {
             o.width=40+Math.random()*40; o.height=40+Math.random()*40; // Square-ish obstacles
             o.y=CEILING + Math.random() * (FLOOR - CEILING - o.height);
@@ -388,10 +388,11 @@ function draw() {
     ctx.moveTo(0,FLOOR); ctx.lineTo(W,FLOOR); ctx.stroke();
 
     // Moving grid - Optimized: One beginPath/stroke instead of looping them
-    ctx.strokeStyle='rgba(255,0,60,0.08)'; ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(255,0,60,0.12)'; ctx.lineWidth=1;
     const off=(frameCount*baseSpeed)%50;
     ctx.beginPath();
     for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
+    for(let j=CEILING;j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
     ctx.stroke();
 
     // BG particles
@@ -400,9 +401,14 @@ function draw() {
     // Obstacles
     obstaclePool.active.forEach(o=>{
         if (CURRENT_MODE === 'LASER') {
+            // Draw outer red glow
             ctx.fillStyle = '#ff003c';
-            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 20;
             ctx.fillRect(o.x, o.y, o.width, o.height);
+            // Draw inner white core for neon effect
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(o.x, o.y + o.height * 0.25, o.width, o.height * 0.5);
             ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'TOPDOWN') {
             ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
