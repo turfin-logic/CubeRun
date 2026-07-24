@@ -7,6 +7,7 @@ const ctx = canvas.getContext('2d');
 // â”€â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
 let GAME_STATE = STATE.MENU;
+let CURRENT_MODE = 'CLASSIC';
 let score = 0, frameCount = 0, baseSpeed = 5, rafId = null, lastTime = 0;
 
 // â”€â”€â”€ SPRITES & POOLS (Defined early to prevent ReferenceError) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -196,11 +197,23 @@ function initSprites() {
 const obstaclePool = new ObjectPool(
     () => ({x:0,y:0,width:0,height:0,sprite:null,passed:false}),
     (o) => {
-        o.width=40+Math.random()*40; o.height=40+Math.random()*80;
-        o.x=window.innerWidth; o.passed=false;
-        const top=Math.random()>0.5;
-        o.y=top?CEILING:FLOOR-o.height;
-        o.sprite=Math.random()>0.5?SPRITES.obsRed:SPRITES.obsMag;
+        o.passed=false;
+        o.x=window.innerWidth;
+        if (CURRENT_MODE === 'LASER') {
+            o.width=window.innerWidth * 0.6; o.height=15; // Thick laser beam
+            const top=Math.random()>0.5;
+            o.y=top?CEILING+(Math.random()*40):FLOOR-(Math.random()*40)-o.height;
+            o.sprite=null; // Pure red laser fill
+        } else if (CURRENT_MODE === 'TOPDOWN') {
+            o.width=40+Math.random()*40; o.height=40+Math.random()*40; // Square-ish obstacles
+            o.y=CEILING + Math.random() * (FLOOR - CEILING - o.height);
+            o.sprite=null;
+        } else {
+            o.width=40+Math.random()*40; o.height=40+Math.random()*80;
+            const top=Math.random()>0.5;
+            o.y=top?CEILING:FLOOR-o.height;
+            o.sprite=Math.random()>0.5?SPRITES.obsRed:SPRITES.obsMag;
+        }
     }, 15
 );
 
@@ -305,12 +318,24 @@ function update(dt) {
     // Random stingers
     if(Math.random()<0.002) playSfx('score');
 
-    // Player gravity swap movement
-    if(player.isSwapping) {
-        const spd=15*dt;
-        player.y+=spd*player.gravityDir;
-        if(player.gravityDir===1&&player.y>=FLOOR-player.height){ player.y=FLOOR-player.height; player.isSwapping=false; }
-        if(player.gravityDir===-1&&player.y<=CEILING){ player.y=CEILING; player.isSwapping=false; }
+    // Player movement
+    if (CURRENT_MODE === 'TOPDOWN') {
+        // Smoothly move towards targetY if it exists
+        if (player.targetY !== undefined) {
+            const dy = player.targetY - (player.y + player.height/2);
+            player.y += dy * 0.15 * dt;
+        }
+        // Clamp to screen bounds
+        if (player.y < CEILING) player.y = CEILING;
+        if (player.y > FLOOR - player.height) player.y = FLOOR - player.height;
+    } else {
+        // Gravity swap movement
+        if(player.isSwapping) {
+            const spd=15*dt;
+            player.y+=spd*player.gravityDir;
+            if(player.gravityDir===1&&player.y>=FLOOR-player.height){ player.y=FLOOR-player.height; player.isSwapping=false; }
+            if(player.gravityDir===-1&&player.y<=CEILING){ player.y=CEILING; player.isSwapping=false; }
+        }
     }
 
     // Trail
@@ -374,8 +399,20 @@ function draw() {
 
     // Obstacles
     obstaclePool.active.forEach(o=>{
-        if(o.sprite) ctx.drawImage(o.sprite,Math.floor(o.x-15),Math.floor(o.y-15));
-        else { ctx.fillStyle='#ff00ff'; ctx.fillRect(o.x,o.y,o.width,o.height); }
+        if (CURRENT_MODE === 'LASER') {
+            ctx.fillStyle = '#ff003c';
+            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 15;
+            ctx.fillRect(o.x, o.y, o.width, o.height);
+            ctx.shadowBlur = 0;
+        } else if (CURRENT_MODE === 'TOPDOWN') {
+            ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
+            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 15;
+            ctx.strokeRect(o.x, o.y, o.width, o.height);
+            ctx.shadowBlur = 0;
+        } else {
+            if(o.sprite) ctx.drawImage(o.sprite,Math.floor(o.x-15),Math.floor(o.y-15));
+            else { ctx.fillStyle='#ff00ff'; ctx.fillRect(o.x,o.y,o.width,o.height); }
+        }
     });
 
     // Player trail - Optimized: fixed alpha to reduce state changes
@@ -395,9 +432,17 @@ function draw() {
 
     // Player
     if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED) {
-        const spr=SPRITES.player;
-        if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
-        else { ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; ctx.fillRect(player.x,player.y,player.width,player.height); }
+        if (CURRENT_MODE === 'TOPDOWN' || CURRENT_MODE === 'LASER') {
+             // Use pure rect without glow sprite to avoid the large blurry box effect
+             ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
+             ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 20;
+             ctx.fillRect(player.x,player.y,player.width,player.height);
+             ctx.shadowBlur = 0;
+        } else {
+            const spr=SPRITES.player;
+            if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
+            else { ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; ctx.fillRect(player.x,player.y,player.width,player.height); }
+        }
     }
 
     // Logo Pulse in Menu
@@ -504,6 +549,9 @@ function resetGame() {
 
 function startGame() {
     getAudio(); // unlock AudioContext on user gesture
+    const modeSelect = document.getElementById('mode-select');
+    if (modeSelect) CURRENT_MODE = modeSelect.value;
+    
     resetGame();
     hideAllScreens(); showHUD();
     GAME_STATE=STATE.PLAYING;
@@ -512,13 +560,37 @@ function startGame() {
 }
 
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
+function handleInput(yPos) {
+    if (CURRENT_MODE === 'TOPDOWN') {
+        player.targetY = yPos;
+    } else {
+        swapGravity();
+    }
+}
 window.addEventListener('keydown', e=>{
-    if(e.code==='Space'){ e.preventDefault(); swapGravity(); }
+    if(e.code==='Space'){ e.preventDefault(); handleInput(window.innerHeight/2); }
     if(e.key==='Escape') pauseGame();
 });
-window.addEventListener('touchstart', e=>{ if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) swapGravity(); }, {passive:true});
-window.addEventListener('mousedown', e=>{ if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) swapGravity(); });
-
+window.addEventListener('touchstart', e=>{ 
+    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.touches[0].clientY);
+    }
+}, {passive:true});
+window.addEventListener('mousedown', e=>{ 
+    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.clientY);
+    }
+});
+window.addEventListener('mousemove', e=>{ 
+    if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && e.buttons === 1 && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.clientY);
+    }
+});
+window.addEventListener('touchmove', e=>{ 
+    if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.touches[0].clientY);
+    }
+}, {passive:true});
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
 document.getElementById('start-btn').addEventListener('click', startGame);
 document.getElementById('restart-btn').addEventListener('click', startGame);
