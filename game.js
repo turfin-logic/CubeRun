@@ -302,29 +302,52 @@ const player = {
 // â”€â”€â”€ FLUTTER BRIDGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FlutterBridge = {
     isFlutter() { return typeof window.AdChannel !== 'undefined'; },
+    _adStartTime: 0,
+    _waitingForReward: false,
     showInterstitial() { 
         if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial');
         else if(typeof gdsdk !== 'undefined') gdsdk.showAd();
     },
     showRewarded() {
         return new Promise((resolve,reject) => {
+            const cleanup = () => {
+                clearTimeout(window._rewardTimeout);
+                FlutterBridge._waitingForReward = false;
+                window._onRewardGranted = null;
+                window._onRewardFailed = null;
+            };
+
+            const grantReward = () => {
+                if(!window._onRewardGranted) return;
+                console.log("Reward granted! Reviving player.");
+                const cb = window._onRewardGranted;
+                cleanup();
+                cb();
+            };
+
             const grantFree = () => {
+                if(!window._onRewardGranted) return;
                 if(!window._freeRevives) window._freeRevives = 0;
                 if(window._freeRevives < 1) {
                     window._freeRevives++;
-                    console.log("🛡️ Sentinel: Granting Free Revive Fallback.");
-                    resolve();
+                    console.log("Sentinel: Granting Free Revive Fallback.");
+                    const cb = window._onRewardGranted;
+                    cleanup();
+                    cb();
                 } else {
+                    cleanup();
                     reject('No ads available');
                 }
             };
 
             window._onRewardGranted = resolve;
-            window._onRewardFailed = grantFree; // Use fallback on failure
-            window._rewardTimeout = setTimeout(()=>grantFree(), 120000); // 120s Timeout fallback
+            window._onRewardFailed = grantFree;
+            window._rewardTimeout = setTimeout(()=>grantFree(), 15000);
+            FlutterBridge._waitingForReward = true;
+            FlutterBridge._adStartTime = Date.now();
 
             if (!navigator.onLine) {
-                console.warn("🛡️ Sentinel: Device is offline. Bypassing SDK.");
+                console.warn("Sentinel: Device is offline. Bypassing SDK.");
                 grantFree();
                 return;
             }
@@ -332,7 +355,6 @@ const FlutterBridge = {
             if(this.isFlutter()) {
                 window.AdChannel.postMessage('showRewarded');
             } else if(typeof gdsdk !== 'undefined' && typeof gdsdk.showAd !== 'undefined') {
-                // GD SDK does not return a Promise. It relies on the SDK_REWARDED_WATCH_COMPLETE event hook.
                 try {
                     gdsdk.showAd('rewarded');
                 } catch(e) {
@@ -343,10 +365,48 @@ const FlutterBridge = {
             }
         });
     },
-    onRewardGranted() { clearTimeout(window._rewardTimeout); window._onRewardGranted?.(); window._onRewardGranted=null; window._onRewardFailed=null; },
-    onRewardFailed()  { clearTimeout(window._rewardTimeout); window._onRewardFailed?.('Ad not available'); window._onRewardGranted=null; window._onRewardFailed=null; }
+    onRewardGranted() {
+        clearTimeout(window._rewardTimeout);
+        if(window._onRewardGranted) {
+            const cb = window._onRewardGranted;
+            window._onRewardGranted = null; window._onRewardFailed = null;
+            FlutterBridge._waitingForReward = false;
+            cb();
+        }
+    },
+    onRewardFailed() {
+        clearTimeout(window._rewardTimeout);
+        if(window._onRewardFailed) {
+            const cb = window._onRewardFailed;
+            window._onRewardGranted = null; window._onRewardFailed = null;
+            FlutterBridge._waitingForReward = false;
+            cb('Ad not available');
+        }
+    }
 };
 window.FlutterBridge = FlutterBridge;
+
+// AUTO-REVIVE on return from ad
+document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && FlutterBridge._waitingForReward) {
+        const elapsed = Date.now() - FlutterBridge._adStartTime;
+        if(elapsed > 3000 && window._onRewardGranted) {
+            console.log("Ad watched (user returned after " + Math.round(elapsed/1000) + "s). Auto-granting reward.");
+            FlutterBridge.onRewardGranted();
+        }
+    }
+});
+
+window.addEventListener('focus', () => {
+    if(FlutterBridge._waitingForReward) {
+        const elapsed = Date.now() - FlutterBridge._adStartTime;
+        if(elapsed > 3000 && window._onRewardGranted) {
+            console.log("Ad watched (focus regained after " + Math.round(elapsed/1000) + "s). Auto-granting reward.");
+            FlutterBridge.onRewardGranted();
+        }
+    }
+});
+
 window.onAdClose = () => { clearTimeout(window._rewardTimeout); if(window._onRewardFailed) window._onRewardFailed('Ad Closed'); };
 
 // Global aliases for Android WebView compatibility
@@ -356,6 +416,8 @@ window._adRewardCallback = (success) => {
     if(success && window.FlutterBridge) window.FlutterBridge.onRewardGranted(); 
     else if(window.FlutterBridge) window.FlutterBridge.onRewardFailed(); 
 };
+window.AdRewardSuccess = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardGranted(); };
+window.rewardUser = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardGranted(); };
 
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
 function startGameLoop() {
