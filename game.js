@@ -473,21 +473,13 @@ function draw() {
              ctx.fillRect(player.x,player.y,player.width,player.height);
              ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'LASER') {
-             // Clean sharp cube (no glow sprite), lifted by z
+             // Clean sharp cube, lifted by z
              const drawY = player.y - player.z;
              ctx.fillStyle = player.invincible ? '#ffffff' : '#ff003c';
              ctx.fillRect(player.x, drawY, player.width, player.height);
              // Inner highlight
              ctx.fillStyle = 'rgba(255,255,255,0.4)';
              ctx.fillRect(player.x + 7, drawY + 7, 16, 16);
-             // Shadow on ground
-             if(player.z > 2) {
-                 ctx.globalAlpha = Math.max(0.1, 0.4 - player.z * 0.004);
-                 ctx.fillStyle = '#ff003c';
-                 const sw = player.width * Math.max(0.4, 1 - player.z * 0.006);
-                 ctx.fillRect(player.x + (player.width - sw)/2, player.y + player.height - 3, sw, 3);
-                 ctx.globalAlpha = 1;
-             }
         } else {
             const spr=SPRITES.player;
             if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
