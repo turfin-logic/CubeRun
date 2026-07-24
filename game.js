@@ -332,7 +332,7 @@ function update(dt) {
     } else if (CURRENT_MODE === 'LASER') {
         // Z-axis jumping
         player.z += player.zVelocity * dt;
-        player.zVelocity -= 0.8 * dt; // Gravity
+        player.zVelocity -= 1.5 * dt; // Stronger Gravity for punchier jump
         if (player.z <= 0) {
             player.z = 0;
             player.zVelocity = 0;
@@ -490,13 +490,21 @@ function draw() {
              ctx.fillRect(player.x,player.y,player.width,player.height);
              ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'LASER') {
-             ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
-             ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 20;
-             const scale = 1 + (player.z * 0.02);
+             const scale = 1 + (player.z * 0.003); // Subtle scaling
              const pw = player.width * scale;
              const ph = player.height * scale;
-             ctx.fillRect(player.x + (player.width - pw)/2, player.y - player.z + (player.height - ph)/2, pw, ph);
-             ctx.shadowBlur = 0;
+             const drawX = player.x + (player.width - pw)/2;
+             const drawY = player.y - player.z + (player.height - ph)/2;
+
+             const spr=SPRITES.player;
+             if(spr) {
+                 ctx.drawImage(spr, drawX - 15*scale, drawY - 15*scale, spr.width*scale, spr.height*scale);
+             } else {
+                 ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
+                 ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+                 ctx.fillRect(drawX, drawY, pw, ph);
+                 ctx.shadowBlur = 0;
+             }
         } else {
             const spr=SPRITES.player;
             if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
@@ -624,7 +632,7 @@ function handleInput(yPos) {
         player.targetY = yPos;
     } else if (CURRENT_MODE === 'LASER') {
         if (player.z <= 0) { // Jump!
-            player.zVelocity = 15;
+            player.zVelocity = 20; // Snappier jump velocity
             playSfx('jump');
         }
     } else {
