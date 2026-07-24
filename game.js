@@ -8,7 +8,7 @@ const ctx = canvas.getContext('2d');
 const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
 let GAME_STATE = STATE.MENU;
 let CURRENT_MODE = 'CLASSIC';
-let score = 0, frameCount = 0, baseSpeed = 5, rafId = null, lastTime = 0;
+let score = 0, frameCount = 0, baseSpeed = 7, rafId = null, lastTime = 0;
 
 // â”€â”€â”€ SPRITES & POOLS (Defined early to prevent ReferenceError) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SPRITES = {};
@@ -226,16 +226,16 @@ const obstaclePool = new ObjectPool(
         o.passed=false;
         o.x=window.innerWidth;
         if (CURRENT_MODE === 'LASER') {
-            o.width = window.innerWidth; o.height = 10;
+            o.width = window.innerWidth; o.height = 15;
             o.x = 0;
             o.y = CEILING - 20; // Spawn above visible area
             o.sprite = null;
         } else if (CURRENT_MODE === 'TOPDOWN') {
-            o.width=40+Math.random()*40; o.height=40+Math.random()*40; // Square-ish obstacles
+            o.width=40+Math.random()*60; o.height=40+Math.random()*60; // Square-ish obstacles
             o.y=CEILING + Math.random() * (FLOOR - CEILING - o.height);
             o.sprite=null;
         } else {
-            o.width=40+Math.random()*40; o.height=40+Math.random()*80;
+            o.width=40+Math.random()*60; o.height=40+Math.random()*80;
             const top=Math.random()>0.5;
             o.y=top?CEILING:FLOOR-o.height;
             o.sprite=Math.random()>0.5?SPRITES.obsRed:SPRITES.obsMag;
@@ -297,13 +297,19 @@ const FlutterBridge = {
                 }
             };
 
+            window._onRewardGranted = resolve;
+            window._onRewardFailed = grantFree; // Use fallback on failure
+            window._rewardTimeout = setTimeout(()=>grantFree(), 120000); // 120s Timeout fallback
+
             if(this.isFlutter()) {
-                window._onRewardGranted = resolve;
-                window._onRewardFailed = grantFree; // Use fallback on failure
                 window.AdChannel.postMessage('showRewarded');
-                window._rewardTimeout = setTimeout(()=>grantFree(), 120000); // 120s Timeout fallback for long ads
-            } else if(typeof gdsdk !== 'undefined' && gdsdk.showAd) {
-                gdsdk.showAd('rewarded').then(resolve).catch(grantFree);
+            } else if(typeof gdsdk !== 'undefined' && typeof gdsdk.showAd !== 'undefined') {
+                // GD SDK does not return a Promise. It relies on the SDK_REWARDED_WATCH_COMPLETE event hook.
+                try {
+                    gdsdk.showAd('rewarded');
+                } catch(e) {
+                    grantFree();
+                }
             } else {
                 grantFree();
             }
@@ -330,7 +336,7 @@ function startGameLoop() {
 
 function update(dt) {
     frameCount++;
-    if(frameCount%600===0) baseSpeed=Math.min(baseSpeed+1,20);
+    if(frameCount%480===0) baseSpeed=Math.min(baseSpeed+1,22);
 
     // Drone speed sync
     if(droneOscs.length>0 && droneOscs[0].gain) {
@@ -385,7 +391,10 @@ function update(dt) {
     if(player.trail.length>12) player.trail.shift();
 
     // Spawn obstacles
-    const spawnInterval=Math.max(55,150-baseSpeed*5);
+    let spawnInterval = Math.max(50, 150 - baseSpeed * 5);
+    if (CURRENT_MODE === 'TOPDOWN') {
+        spawnInterval = Math.max(25, 90 - baseSpeed * 3);
+    }
     if(frameCount%spawnInterval===0) obstaclePool.acquire();
 
     // Update obstacles & collisions
@@ -393,7 +402,7 @@ function update(dt) {
         const o=obstaclePool.active[i];
         
         if (CURRENT_MODE === 'LASER') {
-            o.y += baseSpeed * 1.2 * dt; // Move down
+            o.y += baseSpeed * 1.3 * dt; // Move down
             // Collision: only hit if cube is NOT jumping (z < 15)
             if(!player.invincible && player.y < o.y + o.height && player.y + player.height > o.y && player.z < 15){
                 gameOver(); return;
@@ -604,7 +613,7 @@ function revivePlayer() {
 window.revivePlayer=revivePlayer;
 
 function resetGame() {
-    score=0; frameCount=0; baseSpeed=5;
+    score=0; frameCount=0; baseSpeed=7;
     player.x=100; player.y=FLOOR-player.height;
     player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
     player.z=0; player.zVelocity=0; player.targetY=undefined;
