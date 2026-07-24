@@ -489,7 +489,10 @@ function draw() {
     ctx.stroke();
 
     // BG particles
-    bgParticles.forEach(p=>ctx.drawImage(p.sprite,Math.floor(p.x-2),Math.floor(p.y-2)));
+    bgParticles.forEach(p=>{
+        if (!p.sprite) p.sprite = Math.random()>0.5 ? SPRITES.bgDot1 : SPRITES.bgDot2;
+        if (p.sprite) ctx.drawImage(p.sprite,Math.floor(p.x-2),Math.floor(p.y-2));
+    });
 
     // Obstacles
     obstaclePool.active.forEach(o=>{
