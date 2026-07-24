@@ -1,0 +1,17 @@
+{
+  "name": "Cube Run",
+  "short_name": "CubeRun",
+  "description": "Neon-style infinite runner with multiple modes.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#00f0ff",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

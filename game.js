@@ -33,22 +33,43 @@ class ObjectPool {
 
 // â”€â”€â”€ LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let CEILING, FLOOR;
+let resizeTimer;
 function resizeCanvas() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width  = window.innerWidth  * dpr;
-    canvas.height = window.innerHeight * dpr;
-    canvas.style.width  = window.innerWidth  + 'px';
-    canvas.style.height = window.innerHeight + 'px';
-    
-    // Fix: Use setTransform to reset and set scale in one go, preventing stacking
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    
-    CEILING = window.innerHeight * 0.18;
-    FLOOR   = window.innerHeight * 0.82;
-    initSprites();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width  = window.innerWidth  * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width  = window.innerWidth  + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        
+        CEILING = window.innerHeight * 0.18;
+        FLOOR   = window.innerHeight * 0.82;
+        if(typeof initSprites === 'function') initSprites();
+    }, 100);
 }
 window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+// Call immediately for initial setup
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+canvas.width  = window.innerWidth  * dpr;
+canvas.height = window.innerHeight * dpr;
+canvas.style.width  = window.innerWidth  + 'px';
+canvas.style.height = window.innerHeight + 'px';
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+CEILING = window.innerHeight * 0.18;
+FLOOR   = window.innerHeight * 0.82;
+
+document.addEventListener('visibilitychange', () => {
+    if (typeof audioCtx !== 'undefined' && audioCtx !== null) {
+        if (document.hidden && audioCtx.state === 'running') {
+            audioCtx.suspend();
+        } else if (!document.hidden && audioCtx.state === 'suspended' && GAME_STATE === STATE.PLAYING) {
+            audioCtx.resume();
+        }
+    }
+});
 
 // â”€â”€â”€ SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const Settings = {
@@ -301,6 +322,12 @@ const FlutterBridge = {
             window._onRewardFailed = grantFree; // Use fallback on failure
             window._rewardTimeout = setTimeout(()=>grantFree(), 120000); // 120s Timeout fallback
 
+            if (!navigator.onLine) {
+                console.warn("🛡️ Sentinel: Device is offline. Bypassing SDK.");
+                grantFree();
+                return;
+            }
+
             if(this.isFlutter()) {
                 window.AdChannel.postMessage('showRewarded');
             } else if(typeof gdsdk !== 'undefined' && typeof gdsdk.showAd !== 'undefined') {
@@ -468,17 +495,19 @@ function draw() {
         if (CURRENT_MODE === 'LASER') {
             // Full-width neon red laser beam
             ctx.fillStyle = '#ff003c';
-            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 18;
+            ctx.globalAlpha = 0.5;
+            ctx.fillRect(o.x, o.y - 4, o.width, o.height + 8);
+            ctx.globalAlpha = 1.0;
             ctx.fillRect(o.x, o.y, o.width, o.height);
             // White-hot core
             ctx.fillStyle = 'rgba(255,200,200,0.7)';
             ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
-            ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'TOPDOWN') {
             ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
-            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 15;
+            ctx.globalAlpha = 0.3;
+            ctx.strokeRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
+            ctx.globalAlpha = 1.0;
             ctx.strokeRect(o.x, o.y, o.width, o.height);
-            ctx.shadowBlur = 0;
         } else {
             if(o.sprite) ctx.drawImage(o.sprite,Math.floor(o.x-15),Math.floor(o.y-15));
             else { ctx.fillStyle='#ff00ff'; ctx.fillRect(o.x,o.y,o.width,o.height); }
@@ -504,9 +533,10 @@ function draw() {
     if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED) {
         if (CURRENT_MODE === 'TOPDOWN') {
              ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
-             ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 20;
+             ctx.globalAlpha = 0.4;
+             ctx.fillRect(player.x - 6, player.y - 6, player.width + 12, player.height + 12);
+             ctx.globalAlpha = 1.0;
              ctx.fillRect(player.x,player.y,player.width,player.height);
-             ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'LASER') {
              // Clean sharp cube, lifted by z
              const drawY = player.y - player.z;
