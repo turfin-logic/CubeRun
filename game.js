@@ -574,6 +574,7 @@ function resetGame() {
     score=0; frameCount=0; baseSpeed=5;
     player.x=100; player.y=FLOOR-player.height;
     player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
+    player.z=0; player.zVelocity=0; player.targetY=undefined;
     window._freeRevives = 0;
     obstaclePool.releaseAll(); particlePool.releaseAll();
     initBgParticles();
