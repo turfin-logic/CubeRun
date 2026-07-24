@@ -725,7 +725,8 @@ document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('pause-btn').addEventListener('click', pauseGame);
 document.getElementById('resume-btn').addEventListener('click', resumeGame);
 document.getElementById('quit-btn').addEventListener('click', quitToMenu);
-document.getElementById('menu-btn-icon').addEventListener('click', quitToMenu);
+document.getElementById('menu-btn-icon')?.addEventListener('click', quitToMenu);
+document.getElementById('menu-btn')?.addEventListener('click', quitToMenu);
 
 document.getElementById('settings-btn').addEventListener('click', ()=>{
     if(GAME_STATE===STATE.PLAYING) pauseGame();
