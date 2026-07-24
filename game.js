@@ -200,10 +200,12 @@ const obstaclePool = new ObjectPool(
         o.passed=false;
         o.x=window.innerWidth;
         if (CURRENT_MODE === 'LASER') {
-            o.width=window.innerWidth; o.height=12; // Long laser beam
-            o.x = 0;
-            o.y = CEILING; // Spawn at the top of the tunnel
-            o.sprite=null; 
+            // Laser beams come from right, at floor level (low obstacles to jump over)
+            o.width = 60 + Math.random()*80; // Varied widths
+            o.height = 8 + Math.random()*6; // Thin laser beams
+            o.x = window.innerWidth;
+            o.y = FLOOR - o.height; // Sit on the floor
+            o.sprite = null;
         } else if (CURRENT_MODE === 'TOPDOWN') {
             o.width=40+Math.random()*40; o.height=40+Math.random()*40; // Square-ish obstacles
             o.y=CEILING + Math.random() * (FLOOR - CEILING - o.height);
@@ -330,15 +332,14 @@ function update(dt) {
         if (player.y < CEILING) player.y = CEILING;
         if (player.y > FLOOR - player.height) player.y = FLOOR - player.height;
     } else if (CURRENT_MODE === 'LASER') {
-        // Z-axis jumping
-        player.z += player.zVelocity * dt;
-        player.zVelocity -= 1.5 * dt; // Stronger Gravity for punchier jump
-        if (player.z <= 0) {
-            player.z = 0;
+        // Simple platformer jump on Y axis
+        player.y += player.zVelocity * dt;
+        player.zVelocity += 1.2 * dt; // Gravity pulls down
+        if (player.y >= FLOOR - player.height) {
+            player.y = FLOOR - player.height;
             player.zVelocity = 0;
+            player.isSwapping = false; // On ground
         }
-        player.x = window.innerWidth / 2 - player.width / 2; // Center horizontally
-        player.y = FLOOR - 100; // Fixed near the bottom
     } else {
         // Gravity swap movement
         if(player.isSwapping) {
@@ -350,11 +351,7 @@ function update(dt) {
     }
 
     // Trail
-    if (CURRENT_MODE === 'LASER') {
-        player.trail.push({x:player.x,y:player.y - player.z});
-    } else {
-        player.trail.push({x:player.x,y:player.y});
-    }
+    player.trail.push({x:player.x,y:player.y});
     if(player.trail.length>12) player.trail.shift();
 
     // Spawn obstacles
@@ -366,16 +363,16 @@ function update(dt) {
         const o=obstaclePool.active[i];
         
         if (CURRENT_MODE === 'LASER') {
-            o.y += baseSpeed * dt; // Move down the screen
-            if(!player.invincible && player.y < o.y + o.height && player.y + player.height > o.y && player.z < 20){
+            o.x -= baseSpeed * dt; // Move left
+            // Collision: player must be above the laser to survive
+            if(!player.invincible && player.x < o.x+o.width && player.x+player.width > o.x && player.y+player.height > o.y){
                 gameOver(); return;
             }
-            if(!o.passed && o.y > player.y + player.height){
+            if(!o.passed && player.x > o.x + o.width){
                 o.passed=true;
                 score+=10; updateScoreDisplay();
-                if (player.z > 15) { score+=40; updateScoreDisplay(); playSfx('nearmiss'); canvas.classList.add('flash-white'); setTimeout(()=>canvas.classList.remove('flash-white'),200); }
             }
-            if(o.y > window.innerHeight){ obstaclePool.release(o); }
+            if(o.x + o.width < 0){ obstaclePool.release(o); }
         } else {
             o.x-=baseSpeed*dt;
             if(!player.invincible&&player.x<o.x+o.width&&player.x+player.width>o.x&&player.y<o.y+o.height&&player.y+player.height>o.y){
@@ -399,14 +396,9 @@ function update(dt) {
 
     // BG particles
     bgParticles.forEach(p=>{
-        if (CURRENT_MODE === 'LASER') {
-            p.y += (p.baseVx * -1) * dt; // move down
-            if(p.y > window.innerHeight) { p.y = 0; p.x = Math.random()*window.innerWidth; }
-        } else {
-            p.x+=p.vx*dt-(player.isSwapping?6*dt:0);
-            if(p.vx<p.baseVx) p.vx+=0.3*dt;
-            if(p.x<0){p.x=window.innerWidth; p.y=Math.random()*window.innerHeight; p.vx=p.baseVx;}
-        }
+        p.x+=p.vx*dt-(player.isSwapping?6*dt:0);
+        if(p.vx<p.baseVx) p.vx+=0.3*dt;
+        if(p.x<0){p.x=window.innerWidth; p.y=Math.random()*window.innerHeight; p.vx=p.baseVx;}
     });
 }
 
@@ -425,13 +417,8 @@ function draw() {
     ctx.strokeStyle='rgba(255,0,60,0.12)'; ctx.lineWidth=1;
     const off=(frameCount*baseSpeed)%50;
     ctx.beginPath();
-    if (CURRENT_MODE === 'LASER') {
-        for(let i=0;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
-        for(let j=CEILING+(off);j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
-    } else {
-        for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
-        for(let j=CEILING;j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
-    }
+    for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
+    for(let j=CEILING;j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
     ctx.stroke();
 
     // BG particles
@@ -440,14 +427,13 @@ function draw() {
     // Obstacles
     obstaclePool.active.forEach(o=>{
         if (CURRENT_MODE === 'LASER') {
-            // Draw outer red glow
+            // Glowing red laser beam on the floor
             ctx.fillStyle = '#ff003c';
-            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 15;
             ctx.fillRect(o.x, o.y, o.width, o.height);
-            // Draw inner white core for neon effect
-            ctx.fillStyle = '#ffffff';
-            ctx.shadowBlur = 10;
-            ctx.fillRect(o.x, o.y + o.height * 0.25, o.width, o.height * 0.5);
+            // White core
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fillRect(o.x, o.y + 2, o.width, Math.max(o.height - 4, 2));
             ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'TOPDOWN') {
             ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
@@ -460,18 +446,11 @@ function draw() {
         }
     });
 
-    // Player trail - Optimized: fixed alpha to reduce state changes
+    // Player trail
     ctx.globalAlpha=0.2; ctx.fillStyle='#ff003c';
     for(let i=0;i<player.trail.length;i++) {
         const pt=player.trail[i];
-        if (CURRENT_MODE === 'LASER') {
-            const scale = 1 + (Math.max(0, player.y - pt.y) * 0.02);
-            const pw = player.width * scale;
-            const ph = player.height * scale;
-            ctx.fillRect(Math.floor(pt.x + (player.width - pw)/2), Math.floor(pt.y + (player.height - ph)/2), pw, ph);
-        } else {
-            ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
-        }
+        ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
     }
     ctx.globalAlpha=1;
 
@@ -490,21 +469,10 @@ function draw() {
              ctx.fillRect(player.x,player.y,player.width,player.height);
              ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'LASER') {
-             const scale = 1 + (player.z * 0.003); // Subtle scaling
-             const pw = player.width * scale;
-             const ph = player.height * scale;
-             const drawX = player.x + (player.width - pw)/2;
-             const drawY = player.y - player.z + (player.height - ph)/2;
-
+             // Same proper cube as classic, just use the sprite
              const spr=SPRITES.player;
-             if(spr) {
-                 ctx.drawImage(spr, drawX - 15*scale, drawY - 15*scale, spr.width*scale, spr.height*scale);
-             } else {
-                 ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
-                 ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
-                 ctx.fillRect(drawX, drawY, pw, ph);
-                 ctx.shadowBlur = 0;
-             }
+             if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
+             else { ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; ctx.fillRect(player.x,player.y,player.width,player.height); }
         } else {
             const spr=SPRITES.player;
             if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
@@ -631,8 +599,10 @@ function handleInput(yPos) {
     if (CURRENT_MODE === 'TOPDOWN') {
         player.targetY = yPos;
     } else if (CURRENT_MODE === 'LASER') {
-        if (player.z <= 0) { // Jump!
-            player.zVelocity = 20; // Snappier jump velocity
+        // Jump only when on the ground
+        if (player.y >= FLOOR - player.height - 1) {
+            player.zVelocity = -18; // Upward velocity
+            player.isSwapping = true;
             playSfx('jump');
         }
     } else {
