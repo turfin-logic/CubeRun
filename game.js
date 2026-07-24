@@ -725,6 +725,7 @@ document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('pause-btn').addEventListener('click', pauseGame);
 document.getElementById('resume-btn').addEventListener('click', resumeGame);
 document.getElementById('quit-btn').addEventListener('click', quitToMenu);
+document.getElementById('menu-btn').addEventListener('click', quitToMenu);
 
 document.getElementById('settings-btn').addEventListener('click', ()=>{
     if(GAME_STATE===STATE.PLAYING) pauseGame();
@@ -772,5 +773,31 @@ function shareToTelegram() {
     window.location.href='https://t.me/share/url?url='+encodeURIComponent('https://turfin-logic.github.io/CubeRun/')+'&text='+encodeURIComponent('\uD83D\uDD25 I scored '+score+' on CUBE RUN!');
 }
 function downloadApk() {
-    window.location.href='https://play.google.com/store/apps/details?id=com.neondrift.bosslevel';
+    window.location.href='https://neon-drift-game-tau.vercel.app/neon-drift-boss.apk?v='+Date.now();
 }
+
+// Custom Dropdown UI Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdown = document.getElementById('custom-mode-dropdown');
+    if (dropdown) {
+        const selected = dropdown.querySelector('.dropdown-selected');
+        const options = dropdown.querySelector('.dropdown-options');
+        const hiddenInput = document.getElementById('mode-select');
+
+        selected.addEventListener('click', () => options.classList.toggle('show'));
+
+        dropdown.querySelectorAll('.dropdown-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                selected.textContent = opt.textContent;
+                hiddenInput.value = opt.getAttribute('data-value');
+                dropdown.querySelectorAll('.dropdown-option').forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                options.classList.remove('show');
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) options.classList.remove('show');
+        });
+    }
+});

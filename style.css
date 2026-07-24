@@ -360,3 +360,59 @@ p {
 .social-btn:hover { opacity: 0.8; }
 .social-btn.whatsapp { background: #25D366; }
 .social-btn.telegram { background: #0088cc; }
+/* Custom Dropdown UI */
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+    max-width: 250px;
+    margin: 8px auto 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    color: #fff;
+    cursor: pointer;
+    text-align: left;
+    user-select: none;
+}
+.dropdown-selected {
+    background: rgba(20,20,20,0.8);
+    border: 2px solid var(--neon-pink);
+    border-radius: 4px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.dropdown-selected::after {
+    content: '?';
+    font-size: 0.8rem;
+    color: var(--neon-pink);
+    margin-left: 10px;
+}
+.dropdown-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(10,10,10,0.95);
+    border: 2px solid var(--neon-pink);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+}
+.dropdown-options.show {
+    display: flex;
+}
+.dropdown-option {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,42,109,0.3);
+    transition: background 0.2s, color 0.2s;
+}
+.dropdown-option:last-child {
+    border-bottom: none;
+}
+.dropdown-option:hover, .dropdown-option.active {
+    background: var(--neon-pink);
+    color: #000;
+}
