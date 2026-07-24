@@ -201,8 +201,8 @@ const obstaclePool = new ObjectPool(
         o.x=window.innerWidth;
         if (CURRENT_MODE === 'LASER') {
             o.width=window.innerWidth; o.height=12; // Long laser beam
-            const top=Math.random()>0.5;
-            o.y=top?CEILING+(Math.random()*60)+20:FLOOR-(Math.random()*60)-20-o.height;
+            o.x = 0;
+            o.y = CEILING; // Spawn at the top of the tunnel
             o.sprite=null; 
         } else if (CURRENT_MODE === 'TOPDOWN') {
             o.width=40+Math.random()*40; o.height=40+Math.random()*40; // Square-ish obstacles
@@ -247,6 +247,7 @@ function initBgParticles() {
 const player = {
     x:100, y:0, width:30, height:30,
     gravityDir:1, isSwapping:false, invincible:false,
+    z: 0, zVelocity: 0,
     trail:[]
 };
 
@@ -328,6 +329,16 @@ function update(dt) {
         // Clamp to screen bounds
         if (player.y < CEILING) player.y = CEILING;
         if (player.y > FLOOR - player.height) player.y = FLOOR - player.height;
+    } else if (CURRENT_MODE === 'LASER') {
+        // Z-axis jumping
+        player.z += player.zVelocity * dt;
+        player.zVelocity -= 0.8 * dt; // Gravity
+        if (player.z <= 0) {
+            player.z = 0;
+            player.zVelocity = 0;
+        }
+        player.x = window.innerWidth / 2 - player.width / 2; // Center horizontally
+        player.y = FLOOR - 100; // Fixed near the bottom
     } else {
         // Gravity swap movement
         if(player.isSwapping) {
@@ -339,7 +350,11 @@ function update(dt) {
     }
 
     // Trail
-    player.trail.push({x:player.x,y:player.y});
+    if (CURRENT_MODE === 'LASER') {
+        player.trail.push({x:player.x,y:player.y - player.z});
+    } else {
+        player.trail.push({x:player.x,y:player.y});
+    }
     if(player.trail.length>12) player.trail.shift();
 
     // Spawn obstacles
@@ -349,16 +364,30 @@ function update(dt) {
     // Update obstacles & collisions
     for(let i=obstaclePool.active.length-1;i>=0;i--) {
         const o=obstaclePool.active[i];
-        o.x-=baseSpeed*dt;
-        if(!player.invincible&&player.x<o.x+o.width&&player.x+player.width>o.x&&player.y<o.y+o.height&&player.y+player.height>o.y){
-            gameOver(); return;
+        
+        if (CURRENT_MODE === 'LASER') {
+            o.y += baseSpeed * dt; // Move down the screen
+            if(!player.invincible && player.y < o.y + o.height && player.y + player.height > o.y && player.z < 20){
+                gameOver(); return;
+            }
+            if(!o.passed && o.y > player.y + player.height){
+                o.passed=true;
+                score+=10; updateScoreDisplay();
+                if (player.z > 15) { score+=40; updateScoreDisplay(); playSfx('nearmiss'); canvas.classList.add('flash-white'); setTimeout(()=>canvas.classList.remove('flash-white'),200); }
+            }
+            if(o.y > window.innerHeight){ obstaclePool.release(o); }
+        } else {
+            o.x-=baseSpeed*dt;
+            if(!player.invincible&&player.x<o.x+o.width&&player.x+player.width>o.x&&player.y<o.y+o.height&&player.y+player.height>o.y){
+                gameOver(); return;
+            }
+            if(!o.passed&&player.x>o.x+o.width){
+                o.passed=true;
+                const near=(player.y<o.y+o.height+30&&player.y+player.height>o.y-30);
+                if(near){ score+=50; updateScoreDisplay(); playSfx('nearmiss'); canvas.classList.add('flash-white'); setTimeout(()=>canvas.classList.remove('flash-white'),200); }
+            }
+            if(o.x+o.width<0){ obstaclePool.release(o); score+=10; updateScoreDisplay(); }
         }
-        if(!o.passed&&player.x>o.x+o.width){
-            o.passed=true;
-            const near=(player.y<o.y+o.height+30&&player.y+player.height>o.y-30);
-            if(near){ score+=50; updateScoreDisplay(); playSfx('nearmiss'); canvas.classList.add('flash-white'); setTimeout(()=>canvas.classList.remove('flash-white'),200); }
-        }
-        if(o.x+o.width<0){ obstaclePool.release(o); score+=10; updateScoreDisplay(); }
     }
 
     // Update particles
@@ -370,9 +399,14 @@ function update(dt) {
 
     // BG particles
     bgParticles.forEach(p=>{
-        p.x+=p.vx*dt-(player.isSwapping?6*dt:0);
-        if(p.vx<p.baseVx) p.vx+=0.3*dt;
-        if(p.x<0){p.x=window.innerWidth; p.y=Math.random()*window.innerHeight; p.vx=p.baseVx;}
+        if (CURRENT_MODE === 'LASER') {
+            p.y += (p.baseVx * -1) * dt; // move down
+            if(p.y > window.innerHeight) { p.y = 0; p.x = Math.random()*window.innerWidth; }
+        } else {
+            p.x+=p.vx*dt-(player.isSwapping?6*dt:0);
+            if(p.vx<p.baseVx) p.vx+=0.3*dt;
+            if(p.x<0){p.x=window.innerWidth; p.y=Math.random()*window.innerHeight; p.vx=p.baseVx;}
+        }
     });
 }
 
@@ -387,12 +421,17 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(0,CEILING); ctx.lineTo(W,CEILING);
     ctx.moveTo(0,FLOOR); ctx.lineTo(W,FLOOR); ctx.stroke();
 
-    // Moving grid - Optimized: One beginPath/stroke instead of looping them
+    // Moving grid
     ctx.strokeStyle='rgba(255,0,60,0.12)'; ctx.lineWidth=1;
     const off=(frameCount*baseSpeed)%50;
     ctx.beginPath();
-    for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
-    for(let j=CEILING;j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
+    if (CURRENT_MODE === 'LASER') {
+        for(let i=0;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
+        for(let j=CEILING+(off);j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
+    } else {
+        for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
+        for(let j=CEILING;j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
+    }
     ctx.stroke();
 
     // BG particles
@@ -425,7 +464,14 @@ function draw() {
     ctx.globalAlpha=0.2; ctx.fillStyle='#ff003c';
     for(let i=0;i<player.trail.length;i++) {
         const pt=player.trail[i];
-        ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
+        if (CURRENT_MODE === 'LASER') {
+            const scale = 1 + (Math.max(0, player.y - pt.y) * 0.02);
+            const pw = player.width * scale;
+            const ph = player.height * scale;
+            ctx.fillRect(Math.floor(pt.x + (player.width - pw)/2), Math.floor(pt.y + (player.height - ph)/2), pw, ph);
+        } else {
+            ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
+        }
     }
     ctx.globalAlpha=1;
 
@@ -438,11 +484,18 @@ function draw() {
 
     // Player
     if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED) {
-        if (CURRENT_MODE === 'TOPDOWN' || CURRENT_MODE === 'LASER') {
-             // Use pure rect without glow sprite to avoid the large blurry box effect
+        if (CURRENT_MODE === 'TOPDOWN') {
              ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
              ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 20;
              ctx.fillRect(player.x,player.y,player.width,player.height);
+             ctx.shadowBlur = 0;
+        } else if (CURRENT_MODE === 'LASER') {
+             ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
+             ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 20;
+             const scale = 1 + (player.z * 0.02);
+             const pw = player.width * scale;
+             const ph = player.height * scale;
+             ctx.fillRect(player.x + (player.width - pw)/2, player.y - player.z + (player.height - ph)/2, pw, ph);
              ctx.shadowBlur = 0;
         } else {
             const spr=SPRITES.player;
@@ -569,6 +622,11 @@ function startGame() {
 function handleInput(yPos) {
     if (CURRENT_MODE === 'TOPDOWN') {
         player.targetY = yPos;
+    } else if (CURRENT_MODE === 'LASER') {
+        if (player.z <= 0) { // Jump!
+            player.zVelocity = 15;
+            playSfx('jump');
+        }
     } else {
         swapGravity();
     }
