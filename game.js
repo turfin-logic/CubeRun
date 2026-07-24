@@ -200,11 +200,9 @@ const obstaclePool = new ObjectPool(
         o.passed=false;
         o.x=window.innerWidth;
         if (CURRENT_MODE === 'LASER') {
-            // Laser beams come from right, at floor level (low obstacles to jump over)
-            o.width = 60 + Math.random()*80; // Varied widths
-            o.height = 8 + Math.random()*6; // Thin laser beams
-            o.x = window.innerWidth;
-            o.y = FLOOR - o.height; // Sit on the floor
+            o.width = window.innerWidth; o.height = 10;
+            o.x = 0;
+            o.y = CEILING - 20; // Spawn above visible area
             o.sprite = null;
         } else if (CURRENT_MODE === 'TOPDOWN') {
             o.width=40+Math.random()*40; o.height=40+Math.random()*40; // Square-ish obstacles
@@ -332,14 +330,16 @@ function update(dt) {
         if (player.y < CEILING) player.y = CEILING;
         if (player.y > FLOOR - player.height) player.y = FLOOR - player.height;
     } else if (CURRENT_MODE === 'LASER') {
-        // Simple platformer jump on Y axis
-        player.y += player.zVelocity * dt;
-        player.zVelocity += 1.2 * dt; // Gravity pulls down
-        if (player.y >= FLOOR - player.height) {
-            player.y = FLOOR - player.height;
+        // Z-axis jump (cube jumps "up" to dodge beams passing through)
+        player.z += player.zVelocity * dt;
+        player.zVelocity -= 0.6 * dt; // Gravity
+        if (player.z <= 0) {
+            player.z = 0;
             player.zVelocity = 0;
-            player.isSwapping = false; // On ground
         }
+        // Keep cube centered
+        player.x = window.innerWidth / 2 - player.width / 2;
+        player.y = FLOOR - player.height - 60;
     } else {
         // Gravity swap movement
         if(player.isSwapping) {
@@ -363,16 +363,16 @@ function update(dt) {
         const o=obstaclePool.active[i];
         
         if (CURRENT_MODE === 'LASER') {
-            o.x -= baseSpeed * dt; // Move left
-            // Collision: player must be above the laser to survive
-            if(!player.invincible && player.x < o.x+o.width && player.x+player.width > o.x && player.y+player.height > o.y){
+            o.y += baseSpeed * 1.2 * dt; // Move down
+            // Collision: only hit if cube is NOT jumping (z < 15)
+            if(!player.invincible && player.y < o.y + o.height && player.y + player.height > o.y && player.z < 15){
                 gameOver(); return;
             }
-            if(!o.passed && player.x > o.x + o.width){
-                o.passed=true;
-                score+=10; updateScoreDisplay();
+            if(!o.passed && o.y > player.y + player.height){
+                o.passed = true;
+                score += 50; updateScoreDisplay(); playSfx('score');
             }
-            if(o.x + o.width < 0){ obstaclePool.release(o); }
+            if(o.y > window.innerHeight + 20){ obstaclePool.release(o); }
         } else {
             o.x-=baseSpeed*dt;
             if(!player.invincible&&player.x<o.x+o.width&&player.x+player.width>o.x&&player.y<o.y+o.height&&player.y+player.height>o.y){
@@ -427,13 +427,13 @@ function draw() {
     // Obstacles
     obstaclePool.active.forEach(o=>{
         if (CURRENT_MODE === 'LASER') {
-            // Glowing red laser beam on the floor
+            // Full-width neon red laser beam
             ctx.fillStyle = '#ff003c';
-            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff003c'; ctx.shadowBlur = 18;
             ctx.fillRect(o.x, o.y, o.width, o.height);
-            // White core
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.fillRect(o.x, o.y + 2, o.width, Math.max(o.height - 4, 2));
+            // White-hot core
+            ctx.fillStyle = 'rgba(255,200,200,0.7)';
+            ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
             ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'TOPDOWN') {
             ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
@@ -469,10 +469,19 @@ function draw() {
              ctx.fillRect(player.x,player.y,player.width,player.height);
              ctx.shadowBlur = 0;
         } else if (CURRENT_MODE === 'LASER') {
-             // Same proper cube as classic, just use the sprite
-             const spr=SPRITES.player;
-             if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
-             else { ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; ctx.fillRect(player.x,player.y,player.width,player.height); }
+             // Draw cube lifted by z (jump height), same 30x30 sprite
+             const drawY = player.y - player.z;
+             const spr = SPRITES.player;
+             if(spr) ctx.drawImage(spr, Math.floor(player.x-15), Math.floor(drawY-15));
+             else { ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; ctx.fillRect(player.x, drawY, player.width, player.height); }
+             // Shadow on ground to show height
+             if(player.z > 2) {
+                 ctx.globalAlpha = 0.3;
+                 ctx.fillStyle = '#ff003c';
+                 const sw = player.width * (1 - player.z * 0.005);
+                 ctx.fillRect(player.x + (player.width - sw)/2, player.y + player.height - 4, sw, 4);
+                 ctx.globalAlpha = 1;
+             }
         } else {
             const spr=SPRITES.player;
             if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
@@ -600,10 +609,9 @@ function handleInput(yPos) {
     if (CURRENT_MODE === 'TOPDOWN') {
         player.targetY = yPos;
     } else if (CURRENT_MODE === 'LASER') {
-        // Jump only when on the ground
-        if (player.y >= FLOOR - player.height - 1) {
-            player.zVelocity = -18; // Upward velocity
-            player.isSwapping = true;
+        // Jump only when on ground (z==0)
+        if (player.z <= 0) {
+            player.zVelocity = 12;
             playSfx('jump');
         }
     } else {
