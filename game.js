@@ -317,38 +317,23 @@ const FlutterBridge = {
                 window._onRewardFailed = null;
             };
 
-            const grantReward = () => {
-                if(!window._onRewardGranted) return;
-                console.log("Reward granted! Reviving player.");
-                const cb = window._onRewardGranted;
+            const failReward = () => {
+                if(!window._onRewardFailed) return;
+                const cb = window._onRewardFailed;
                 cleanup();
-                cb();
-            };
-
-            const grantFree = () => {
-                if(!window._onRewardGranted) return;
-                if(!window._freeRevives) window._freeRevives = 0;
-                if(window._freeRevives < 1) {
-                    window._freeRevives++;
-                    console.log("Sentinel: Granting Free Revive Fallback.");
-                    const cb = window._onRewardGranted;
-                    cleanup();
-                    cb();
-                } else {
-                    cleanup();
-                    reject('No ads available');
-                }
+                cb('Ad not available');
             };
 
             window._onRewardGranted = resolve;
-            window._onRewardFailed = grantFree;
-            window._rewardTimeout = setTimeout(()=>grantFree(), 15000);
+            window._onRewardFailed = reject;
+            // Timeout fails instead of free revive
+            window._rewardTimeout = setTimeout(()=>failReward(), 15000);
             FlutterBridge._waitingForReward = true;
             FlutterBridge._adStartTime = Date.now();
 
             if (!navigator.onLine) {
-                console.warn("Sentinel: Device is offline. Bypassing SDK.");
-                grantFree();
+                console.warn("Sentinel: Device is offline. Failing SDK.");
+                failReward();
                 return;
             }
 
@@ -358,10 +343,10 @@ const FlutterBridge = {
                 try {
                     gdsdk.showAd('rewarded');
                 } catch(e) {
-                    grantFree();
+                    failReward();
                 }
             } else {
-                grantFree();
+                failReward();
             }
         });
     },
@@ -690,11 +675,27 @@ function gameOver() {
     hideHUD();
     showScreen('game-over-screen');
 
-    // Show revive button with "GET REVIVE" text
+        // Show revive button logic (limited in offline mode)
+    if (typeof window.offlineGameCount === 'undefined') window.offlineGameCount = 0;
+    
     const reviveBtn = document.getElementById('revive-btn');
-    reviveBtn.style.display = 'block';
-    reviveBtn.textContent = '🚀 REVIVE (WATCH AD)';
-    reviveBtn.disabled = false;
+    
+    if (!navigator.onLine) {
+        window.offlineGameCount++;
+        if (window.offlineGameCount > 3) {
+            reviveBtn.style.display = 'none';
+        } else {
+            reviveBtn.style.display = 'block';
+        }
+    } else {
+        // Online: Always show
+        reviveBtn.style.display = 'block';
+    }
+
+    if (reviveBtn.style.display !== 'none') {
+        reviveBtn.textContent = '▶ REVIVE (WATCH AD)';
+        reviveBtn.disabled = false;
+    }
 
     // Show Interstitial Ad every 3 deaths to balance revenue and UX
     if (typeof window.deathCount === 'undefined') window.deathCount = 0;
