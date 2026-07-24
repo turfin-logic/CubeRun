@@ -60,6 +60,7 @@ canvas.style.height = window.innerHeight + 'px';
 ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 CEILING = window.innerHeight * 0.18;
 FLOOR   = window.innerHeight * 0.82;
+if(typeof initSprites === 'function') initSprites();
 
 document.addEventListener('visibilitychange', () => {
     if (typeof audioCtx !== 'undefined' && audioCtx !== null) {
