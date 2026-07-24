@@ -72,8 +72,31 @@ document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click'
 // â”€â”€â”€ SAVE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SaveData = {
     _k: 'ndSave',
-    load() { try { return {...{highScore:0}, ...JSON.parse(localStorage.getItem(this._k)||'{}')}; } catch(e){ return {highScore:0}; }},
-    updateHighScore(s) { const d=this.load(); if(s>d.highScore){d.highScore=s;localStorage.setItem(this._k,JSON.stringify(d));return true;} return false; }
+    load() { 
+        try { 
+            let raw = localStorage.getItem(this._k);
+            if (!raw) return {highScore:0};
+            try {
+                let parsed = JSON.parse(raw);
+                if (typeof parsed === 'object' && parsed !== null && parsed.highScore !== undefined) {
+                    // Backwards compatibility: re-save as base64
+                    localStorage.setItem(this._k, btoa(JSON.stringify(parsed)));
+                    return {...{highScore:0}, ...parsed};
+                }
+            } catch(e) {}
+            let decoded = atob(raw);
+            return {...{highScore:0}, ...JSON.parse(decoded)};
+        } catch(e){ return {highScore:0}; }
+    },
+    updateHighScore(s) { 
+        const d=this.load(); 
+        if(s>d.highScore){
+            d.highScore=s;
+            localStorage.setItem(this._k, btoa(JSON.stringify(d)));
+            return true;
+        } 
+        return false; 
+    }
 };
 
 // â”€â”€â”€ SCREEN HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -107,13 +130,16 @@ function playSfx(type) {
     osc.start(); osc.stop(ac.currentTime + c.d);
 }
 
+let crashBuffer = null;
 function playCrash() {
     if (!Settings.sfx) return;
     const ac = getAudio();
-    const buf = ac.createBuffer(1, ac.sampleRate*0.5, ac.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-    const src = ac.createBufferSource(); src.buffer = buf;
+    if (!crashBuffer) {
+        crashBuffer = ac.createBuffer(1, ac.sampleRate*0.5, ac.sampleRate);
+        const d = crashBuffer.getChannelData(0);
+        for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    }
+    const src = ac.createBufferSource(); src.buffer = crashBuffer;
     const flt = ac.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=1000;
     const gain = ac.createGain();
     gain.gain.setValueAtTime(1, ac.currentTime);
@@ -132,7 +158,7 @@ function playCreepyMelody() {
     });
 }
 
-function startDrone() { return;
+function startDrone() {
     if (!Settings.music || droneOscs.length > 0) return;
     const ac = getAudio();
     [40,43,60.5].forEach(f => {
@@ -598,12 +624,14 @@ function startGame() {
     resetGame();
     hideAllScreens(); showHUD();
     GAME_STATE=STATE.PLAYING;
+    cancelAnimationFrame(rafId);
     startDrone();
     startGameLoop();
 }
 
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
 function handleInput(yPos) {
+    if (GAME_STATE !== STATE.PLAYING) return;
     if (CURRENT_MODE === 'TOPDOWN') {
         player.targetY = yPos;
     } else if (CURRENT_MODE === 'LASER') {
