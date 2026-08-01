@@ -783,7 +783,27 @@ window.addEventListener('touchmove', e=>{
     }
 }, {passive:true});
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
-document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('start-btn').addEventListener('click', () => {
+    let completed = localStorage.getItem('cubeRunTutorialCompleted') === 'true';
+    let skips = parseInt(localStorage.getItem('cubeRunTutorialSkips') || '0');
+    if (!completed && skips < 2) {
+        hideAllScreens();
+        showScreen('tutorial-screen');
+    } else {
+        startGame();
+    }
+});
+document.getElementById('tutorial-got-it-btn').addEventListener('click', () => {
+    localStorage.setItem('cubeRunTutorialCompleted', 'true');
+    hideAllScreens();
+    startGame();
+});
+document.getElementById('tutorial-skip-btn').addEventListener('click', () => {
+    let skips = parseInt(localStorage.getItem('cubeRunTutorialSkips') || '0');
+    localStorage.setItem('cubeRunTutorialSkips', (skips + 1).toString());
+    hideAllScreens();
+    startGame();
+});
 document.getElementById('restart-btn').addEventListener('click', startGame);
 document.getElementById('pause-btn').addEventListener('click', pauseGame);
 document.getElementById('resume-btn').addEventListener('click', resumeGame);
