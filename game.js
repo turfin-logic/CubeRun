@@ -180,7 +180,7 @@ function playCreepyMelody() {
     });
 }
 
-function startDrone() {
+function startDrone() { return;
     if (!Settings.music || droneOscs.length > 0) return;
     const ac = getAudio();
     [40,43,60.5].forEach(f => {
@@ -341,7 +341,14 @@ const FlutterBridge = {
                 window.AdChannel.postMessage('showRewarded');
             } else if(typeof gdsdk !== 'undefined' && typeof gdsdk.showAd !== 'undefined') {
                 try {
-                    gdsdk.showAd('rewarded');
+                    const adPromise = gdsdk.showAd('rewarded');
+                    if (adPromise && typeof adPromise.then === 'function') {
+                        adPromise.then(() => {
+                            if (FlutterBridge._waitingForReward) FlutterBridge.onRewardGranted();
+                        }).catch(() => {
+                            failReward();
+                        });
+                    }
                 } catch(e) {
                     failReward();
                 }
