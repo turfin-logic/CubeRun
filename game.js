@@ -169,7 +169,7 @@ function playCrash() {
     src.connect(flt); flt.connect(gain); gain.connect(ac.destination); src.start();
 }
 
-function playCreepyMelody() {
+function playCreepyMelody() { return;
     if (!Settings.sfx) return;
     const ac = getAudio(), now = ac.currentTime;
     [{f:783.99,t:0},{f:783.99,t:0.3},{f:622.25,t:0.6}].forEach(n => {
@@ -327,7 +327,7 @@ const FlutterBridge = {
             window._onRewardGranted = resolve;
             window._onRewardFailed = reject;
             // Timeout fails instead of free revive
-            window._rewardTimeout = setTimeout(()=>failReward(), 15000);
+            window._rewardTimeout = setTimeout(()=>failReward(), 120000);
             FlutterBridge._waitingForReward = true;
             FlutterBridge._adStartTime = Date.now();
 
