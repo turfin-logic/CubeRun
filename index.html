@@ -35,11 +35,15 @@
     <script>
         window["GD_OPTIONS"] = {
             "gameId": "b13fb38f722340388cd26e643ed2d6f8",
-            "onEvent": function(event) {
-                switch (event.name) {
-                    case "SDK_GAME_START":
-                        if (window.resumeGameFromAd) window.resumeGameFromAd();
-                        break;
+              "onEvent": function(event) {
+                  switch (event.name) {
+                      case "SDK_GAME_START":
+                          if (window.FlutterBridge && window.FlutterBridge._waitingForReward) {
+                              console.log("Fallback granting reward on SDK_GAME_START");
+                              window.FlutterBridge.onRewardGranted();
+                          }
+                          if (window.resumeGameFromAd) window.resumeGameFromAd();
+                          break;
                     case "SDK_GAME_PAUSE":
                         if (window.pauseGameForAd) window.pauseGameForAd();
                         break;
