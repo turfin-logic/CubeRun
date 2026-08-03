@@ -894,3 +894,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Offline Logic
+let offlineTimer = null;
+function handleOffline() {
+    console.log('Network went offline.');
+    offlineTimer = setTimeout(() => {
+        document.getElementById('offline-screen').classList.add('active');
+        if(GAME_STATE === STATE.PLAYING) pauseGame();
+    }, 5000);
+}
+function handleOnline() {
+    console.log('Network came online.');
+    if (offlineTimer) clearTimeout(offlineTimer);
+    document.getElementById('offline-screen').classList.remove('active');
+}
+window.addEventListener('offline', handleOffline);
+window.addEventListener('online', handleOnline);
+// Initial check
+if (!navigator.onLine) handleOffline();
