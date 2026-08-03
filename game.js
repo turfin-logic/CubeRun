@@ -783,7 +783,7 @@ window.addEventListener('touchmove', e=>{
     }
 }, {passive:true});
 // ———————————————————————————————————————————————————————————————————————————————————————————————————
-document.getElementById('start-btn').addEventListener('click', () => {
+document.getElementById('start-btn')?.addEventListener('click', () => {
     let completed = localStorage.getItem('cubeRunTutorialCompleted') === 'true';
     let skips = parseInt(localStorage.getItem('cubeRunTutorialSkips') || '0');
     if (!completed && skips < 2) {
@@ -793,36 +793,36 @@ document.getElementById('start-btn').addEventListener('click', () => {
         startGame();
     }
 });
-document.getElementById('tutorial-got-it-btn').addEventListener('click', () => {
+document.getElementById('tutorial-got-it-btn')?.addEventListener('click', () => {
     localStorage.setItem('cubeRunTutorialCompleted', 'true');
     hideAllScreens();
     startGame();
 });
-document.getElementById('tutorial-skip-btn').addEventListener('click', () => {
+document.getElementById('tutorial-skip-btn')?.addEventListener('click', () => {
     let skips = parseInt(localStorage.getItem('cubeRunTutorialSkips') || '0');
     localStorage.setItem('cubeRunTutorialSkips', (skips + 1).toString());
     hideAllScreens();
     startGame();
 });
-document.getElementById('restart-btn').addEventListener('click', startGame);
-document.getElementById('pause-btn').addEventListener('click', pauseGame);
-document.getElementById('resume-btn').addEventListener('click', resumeGame);
-document.getElementById('quit-btn').addEventListener('click', quitToMenu);
+document.getElementById('restart-btn')?.addEventListener('click', startGame);
+document.getElementById('pause-btn')?.addEventListener('click', pauseGame);
+document.getElementById('resume-btn')?.addEventListener('click', resumeGame);
+document.getElementById('quit-btn')?.addEventListener('click', quitToMenu);
 document.getElementById('menu-btn-icon')?.addEventListener('click', quitToMenu);
 document.getElementById('menu-btn')?.addEventListener('click', quitToMenu);
 
-document.getElementById('settings-btn').addEventListener('click', ()=>{
+document.getElementById('settings-btn')?.addEventListener('click', ()=>{
     if(GAME_STATE===STATE.PLAYING) pauseGame();
     showScreen('settings-screen');
 });
-document.getElementById('settings-from-pause-btn').addEventListener('click', ()=>showScreen('settings-screen'));
-document.getElementById('settings-back-btn').addEventListener('click', ()=>{
+document.getElementById('settings-from-pause-btn')?.addEventListener('click', ()=>showScreen('settings-screen'));
+document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
     hideScreen('settings-screen');
     if(GAME_STATE===STATE.PAUSED) showScreen('pause-screen');
 });
 
 // Revive button
-document.getElementById('revive-btn').addEventListener('click', async ()=>{
+document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
     const btn=document.getElementById('revive-btn');
     btn.disabled=true; btn.textContent='⏳ LOADING...';
     try { 
