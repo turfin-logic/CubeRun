@@ -902,7 +902,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Offline Logic
+// Offline Logic (Disabled to prevent blocking game on false positives)
+/*
 let offlineTimer = null;
 function handleOffline() {
     console.log('Network went offline.');
@@ -920,3 +921,4 @@ window.addEventListener('offline', handleOffline);
 window.addEventListener('online', handleOnline);
 // Initial check
 if (!navigator.onLine) handleOffline();
+*/
