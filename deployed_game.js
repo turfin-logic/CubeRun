@@ -700,6 +700,7 @@ function downloadApk() {
 }
 
 // --- OFFLINE MODE LOGIC -------------------------------------------------------
+/*
 let _offlineTimer = null;
 function handleOffline() {
     if (!navigator.onLine) {
@@ -735,4 +736,5 @@ window.addEventListener('online', handleOnline);
 if (!navigator.onLine) {
     handleOffline();
 }
+*/
 
