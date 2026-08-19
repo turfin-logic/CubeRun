@@ -1,3 +1,19 @@
 .vercel
-
 game_source.js
+node_modules/
+
+# APK and AAB builds - NEVER push to public repo
+*.apk
+*.aab
+
+# Dev/test files
+test*.js
+test*.mjs
+*.mjs
+deployed_game.js
+
+# IDE and OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

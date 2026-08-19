@@ -1,9 +1,75 @@
-Copyright (c) 2026 Turfin Logic (yunoAI)
+MIT License with Additional Restrictions
 
-All Rights Reserved.
+Copyright (c) 2024-2026 yunoAI / Turfin Logic. All Rights Reserved.
 
-This software and its source code, assets, and design are the intellectual property of the author. 
-You may view the source code for educational purposes only.
-You are strictly prohibited from copying, modifying, distributing, or using this code or its assets for any commercial purpose, including publishing on app stores or web portals, without explicit written permission from the owner.
+================================================================================
+                        PROPRIETARY SOFTWARE LICENSE
+================================================================================
 
-Any unauthorized use or redistribution will result in immediate legal action and copyright strikes (DMCA) against the offending platform/user.
+1. DEFINITIONS
+   "Software" refers to all source code, compiled binaries, assets (including 
+   but not limited to images, audio, animations, UI designs), documentation, 
+   and any other files contained in this repository.
+   "Author" refers to the original creator(s): yunoAI / Turfin Logic.
+
+2. GRANT OF LIMITED LICENSE
+   The Author grants you a limited, non-exclusive, non-transferable, 
+   revocable license to:
+   (a) View and read the source code for personal educational purposes only.
+   (b) Play the game via the publicly hosted version.
+
+3. RESTRICTIONS
+   You are expressly PROHIBITED from:
+   (a) Copying, reproducing, or cloning this Software or any substantial 
+       portion thereof.
+   (b) Modifying, adapting, translating, or creating derivative works based 
+       on this Software.
+   (c) Distributing, sublicensing, selling, reselling, leasing, or 
+       otherwise transferring this Software to any third party.
+   (d) Publishing this Software or any derivative on any app store 
+       (including but not limited to Google Play Store, Apple App Store, 
+       Amazon Appstore, Samsung Galaxy Store, or any web game portal).
+   (e) Using this Software or any part thereof for any commercial purpose, 
+       including but not limited to monetization through advertisements, 
+       in-app purchases, subscriptions, or sponsorships.
+   (f) Reverse-engineering, decompiling, or disassembling any obfuscated 
+       or compiled portions of this Software.
+   (g) Removing, altering, or obscuring any copyright notices, watermarks, 
+       or proprietary legends contained in this Software.
+   (h) Using the name "Cube Run", "Neon Drift", "yunoAI", or "Turfin Logic" 
+       or any associated branding in any product without written permission.
+
+4. INTELLECTUAL PROPERTY
+   All intellectual property rights, including copyrights, trademarks, trade 
+   secrets, and patents (if any), in and to this Software are and shall 
+   remain the exclusive property of the Author. This license does not grant 
+   you any ownership rights in the Software.
+
+5. ENFORCEMENT & REMEDIES
+   Any unauthorized use, reproduction, or distribution of this Software 
+   shall result in:
+   (a) Immediate DMCA takedown notices filed with the hosting platform.
+   (b) Copyright infringement reports filed with Google Play Console, 
+       Apple App Store Connect, and/or any other relevant platform.
+   (c) Pursuit of all available legal remedies, including but not limited 
+       to injunctive relief and monetary damages.
+
+6. TERMINATION
+   This license is effective until terminated. The Author may terminate 
+   this license at any time without notice. Upon termination, you must 
+   immediately cease all use of the Software and destroy all copies in 
+   your possession.
+
+7. DISCLAIMER OF WARRANTIES
+   THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+   OR IMPLIED. THE AUTHOR SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING FROM 
+   THE USE OR INABILITY TO USE THIS SOFTWARE.
+
+8. GOVERNING LAW
+   This license shall be governed by and construed in accordance with the 
+   laws of India. Any disputes shall be subject to the exclusive 
+   jurisdiction of the courts in Gujarat, India.
+
+================================================================================
+For licensing inquiries or commercial use requests, contact the Author.
+================================================================================
