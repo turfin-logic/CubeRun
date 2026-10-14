@@ -1,1 +1,1174 @@
-const a0_0x4bb98=a0_0x254d;(function(_0x24db0f,_0x5e5e50){const _0x33c47b=a0_0x254d,_0x3dbcf5=_0x24db0f();while(!![]){try{const _0x148dcb=parseInt(_0x33c47b(0x222))/0x1*(-parseInt(_0x33c47b(0x24b))/0x2)+parseInt(_0x33c47b(0x220))/0x3+parseInt(_0x33c47b(0x280))/0x4*(-parseInt(_0x33c47b(0x281))/0x5)+parseInt(_0x33c47b(0x270))/0x6*(parseInt(_0x33c47b(0x205))/0x7)+-parseInt(_0x33c47b(0x1e1))/0x8*(parseInt(_0x33c47b(0x1b1))/0x9)+parseInt(_0x33c47b(0x216))/0xa+parseInt(_0x33c47b(0x23d))/0xb;if(_0x148dcb===_0x5e5e50)break;else _0x3dbcf5['push'](_0x3dbcf5['shift']());}catch(_0x4dcba9){_0x3dbcf5['push'](_0x3dbcf5['shift']());}}}(a0_0x2d24,0x977a5));const canvas=document['getElementById'](a0_0x4bb98(0x1cb)),ctx=canvas['getContext']('2d'),STATE={'MENU':a0_0x4bb98(0x1a2),'PLAYING':a0_0x4bb98(0x196),'PAUSED':a0_0x4bb98(0x1a7),'GAMEOVER':a0_0x4bb98(0x1a8)};let GAME_STATE=STATE[a0_0x4bb98(0x1a2)],CURRENT_MODE=a0_0x4bb98(0x254),score=0x0,frameCount=0x0,baseSpeed=0x7,rafId=null,lastTime=0x0;const SPRITES={};class ObjectPool{constructor(_0x15da1d,_0x283a47,_0x13105c=0x14){const _0x26f212=a0_0x4bb98;this[_0x26f212(0x23c)]=_0x15da1d,this['resetFn']=_0x283a47,this['pool']=[],this[_0x26f212(0x1c2)]=[];for(let _0x4122df=0x0;_0x4122df<_0x13105c;_0x4122df++)this[_0x26f212(0x1ba)][_0x26f212(0x1a0)](_0x15da1d());}[a0_0x4bb98(0x231)](..._0x7e5dec){const _0x61f68d=a0_0x4bb98,_0x10ff34=this[_0x61f68d(0x1ba)][_0x61f68d(0x1e3)]>0x0?this[_0x61f68d(0x1ba)][_0x61f68d(0x1d1)]():this['createFn']();return this[_0x61f68d(0x233)](_0x10ff34,..._0x7e5dec),this[_0x61f68d(0x1c2)][_0x61f68d(0x1a0)](_0x10ff34),_0x10ff34;}[a0_0x4bb98(0x1f0)](_0x5ca5ba){const _0x4bda66=a0_0x4bb98,_0x15a37d=this[_0x4bda66(0x1c2)][_0x4bda66(0x1c7)](_0x5ca5ba);if(_0x15a37d!==-0x1)this['active'][_0x4bda66(0x25a)](_0x15a37d,0x1);this[_0x4bda66(0x1ba)]['push'](_0x5ca5ba);}['releaseAll'](){const _0x2b5799=a0_0x4bb98;while(this[_0x2b5799(0x1c2)]['length'])this[_0x2b5799(0x1f0)](this[_0x2b5799(0x1c2)][0x0]);}}let CEILING,FLOOR,resizeTimer;function resizeCanvas(){clearTimeout(resizeTimer),resizeTimer=setTimeout(()=>{const _0xc23d38=a0_0x254d,_0x563f1c=Math['min'](window[_0xc23d38(0x195)]||0x1,0x2);canvas[_0xc23d38(0x221)]=window['innerWidth']*_0x563f1c,canvas[_0xc23d38(0x208)]=window['innerHeight']*_0x563f1c,canvas[_0xc23d38(0x1af)][_0xc23d38(0x221)]=window[_0xc23d38(0x22f)]+'px',canvas[_0xc23d38(0x1af)]['height']=window[_0xc23d38(0x26b)]+'px',ctx[_0xc23d38(0x1e7)](_0x563f1c,0x0,0x0,_0x563f1c,0x0,0x0),CEILING=window[_0xc23d38(0x26b)]*0.18,FLOOR=window[_0xc23d38(0x26b)]*0.82;if(typeof initSprites==='function')initSprites();},0x64);}window['addEventListener'](a0_0x4bb98(0x18b),resizeCanvas);const dpr=Math[a0_0x4bb98(0x245)](window[a0_0x4bb98(0x195)]||0x1,0x2);canvas[a0_0x4bb98(0x221)]=window[a0_0x4bb98(0x22f)]*dpr,canvas['height']=window[a0_0x4bb98(0x26b)]*dpr,canvas[a0_0x4bb98(0x1af)]['width']=window[a0_0x4bb98(0x22f)]+'px',canvas[a0_0x4bb98(0x1af)][a0_0x4bb98(0x208)]=window['innerHeight']+'px',ctx[a0_0x4bb98(0x1e7)](dpr,0x0,0x0,dpr,0x0,0x0),CEILING=window['innerHeight']*0.18,FLOOR=window[a0_0x4bb98(0x26b)]*0.82;if(typeof initSprites===a0_0x4bb98(0x215))initSprites();document[a0_0x4bb98(0x27f)](a0_0x4bb98(0x27e),()=>{const _0x5c30bd=a0_0x4bb98;if(typeof audioCtx!==_0x5c30bd(0x265)&&audioCtx!==null){if(document[_0x5c30bd(0x235)]&&audioCtx[_0x5c30bd(0x20a)]==='running')audioCtx[_0x5c30bd(0x286)]();else!document['hidden']&&audioCtx[_0x5c30bd(0x20a)]===_0x5c30bd(0x1e8)&&GAME_STATE===STATE['PLAYING']&&audioCtx[_0x5c30bd(0x219)]();}});const Settings={'sfx':!![],'music':!![],'vibration':!![],'load'(){const _0x32f742=a0_0x4bb98;try{Object[_0x32f742(0x1f9)](this,JSON['parse'](localStorage[_0x32f742(0x1f2)](_0x32f742(0x190))||'{}'));}catch(_0x13f80b){}this[_0x32f742(0x277)]();},'save'(){const _0x32f0bf=a0_0x4bb98;localStorage[_0x32f0bf(0x279)](_0x32f0bf(0x190),JSON[_0x32f0bf(0x1ab)]({'sfx':this[_0x32f0bf(0x22b)],'music':this[_0x32f0bf(0x1a5)],'vibration':this['vibration']}));},'toggle'(_0x1dfd88){const _0x4cd90a=a0_0x4bb98;this[_0x1dfd88]=!this[_0x1dfd88],this[_0x4cd90a(0x256)](),this[_0x4cd90a(0x277)]();},'syncUI'(){const _0x2ffb8e=a0_0x4bb98;[_0x2ffb8e(0x22b),_0x2ffb8e(0x1a5),_0x2ffb8e(0x25d)]['forEach'](_0x468805=>{const _0x222dcf=_0x2ffb8e,_0x5dcd93=document['querySelector']('[data-key=\x22'+_0x468805+'\x22]');_0x5dcd93&&(_0x5dcd93[_0x222dcf(0x1c3)]=this[_0x468805]?'ON':_0x222dcf(0x1c6),_0x5dcd93[_0x222dcf(0x1b4)][_0x222dcf(0x204)](_0x222dcf(0x1c2),this[_0x468805]));});}};Settings['load'](),document['querySelectorAll'](a0_0x4bb98(0x1c4))[a0_0x4bb98(0x27b)](_0x1dc51e=>_0x1dc51e['addEventListener']('click',()=>Settings[a0_0x4bb98(0x204)](_0x1dc51e['dataset'][a0_0x4bb98(0x1b6)])));const SaveData={'_k':'ndSave','load'(){const _0x830764=a0_0x4bb98;try{let _0x56cc1f=localStorage[_0x830764(0x1f2)](this['_k']);if(!_0x56cc1f)return{'highScore':0x0};try{let _0x3673b5=JSON['parse'](_0x56cc1f);if(typeof _0x3673b5===_0x830764(0x210)&&_0x3673b5!==null&&_0x3673b5[_0x830764(0x1ff)]!==undefined)return localStorage[_0x830764(0x279)](this['_k'],btoa(JSON[_0x830764(0x1ab)](_0x3673b5))),{...{'highScore':0x0},..._0x3673b5};}catch(_0x5be206){}let _0x7cf353=atob(_0x56cc1f);return{...{'highScore':0x0},...JSON[_0x830764(0x24a)](_0x7cf353)};}catch(_0xe45f0f){return{'highScore':0x0};}},'updateHighScore'(_0x399350){const _0x13f1df=a0_0x4bb98,_0x1f7b97=this[_0x13f1df(0x1bb)]();if(_0x399350>_0x1f7b97['highScore'])return _0x1f7b97[_0x13f1df(0x1ff)]=_0x399350,localStorage['setItem'](this['_k'],btoa(JSON[_0x13f1df(0x1ab)](_0x1f7b97))),!![];return![];}};function showScreen(_0x50094b){const _0x340d2d=a0_0x4bb98;document['getElementById'](_0x50094b)['classList'][_0x340d2d(0x252)](_0x340d2d(0x1c2));}function hideScreen(_0x223a2e){const _0x4275fc=a0_0x4bb98;document[_0x4275fc(0x26e)](_0x223a2e)[_0x4275fc(0x1b4)][_0x4275fc(0x1ac)]('active');}function hideAllScreens(){const _0x1dfc39=a0_0x4bb98;document[_0x1dfc39(0x1c9)](_0x1dfc39(0x228))[_0x1dfc39(0x27b)](_0x466119=>_0x466119[_0x1dfc39(0x1b4)][_0x1dfc39(0x1ac)]('active'));}function showHUD(){const _0x51f246=a0_0x4bb98;document['getElementById'](_0x51f246(0x278))[_0x51f246(0x1b4)]['add'](_0x51f246(0x1c2));}function hideHUD(){const _0x5a1de9=a0_0x4bb98;document[_0x5a1de9(0x26e)](_0x5a1de9(0x278))[_0x5a1de9(0x1b4)][_0x5a1de9(0x1ac)]('active');}let audioCtx=null,droneOscs=[];function getAudio(){const _0x4a05fd=a0_0x4bb98;if(!audioCtx)audioCtx=new(window[(_0x4a05fd(0x227))]||window[(_0x4a05fd(0x19b))])();if(audioCtx[_0x4a05fd(0x20a)]===_0x4a05fd(0x1e8))audioCtx[_0x4a05fd(0x219)]();return audioCtx;}function playSfx(_0x2bc601){const _0xba357a=a0_0x4bb98;if(!Settings[_0xba357a(0x22b)])return;const _0x4d398f=getAudio(),_0x5f14af=_0x4d398f['createOscillator'](),_0x4cd2b2=_0x4d398f[_0xba357a(0x1a4)]();_0x5f14af[_0xba357a(0x25c)](_0x4cd2b2),_0x4cd2b2['connect'](_0x4d398f[_0xba357a(0x26a)]);const _0x45cb09={'jump':{'f':0x96,'ef':0x28,'d':0.3,'w':_0xba357a(0x1db)},'death':{'f':0x12c,'ef':0x3c,'d':0.5,'w':'sawtooth'},'score':{'f':0x370,'ef':0x370,'d':0.05,'w':_0xba357a(0x1db)},'nearmiss':{'f':0x320,'ef':0x4b0,'d':0.3,'w':'triangle'}}[_0x2bc601]||{'f':0x1b8,'ef':0x1b8,'d':0.1,'w':'sine'};_0x5f14af['type']=_0x45cb09['w'],_0x5f14af['frequency'][_0xba357a(0x242)](_0x45cb09['f'],_0x4d398f[_0xba357a(0x187)]),_0x5f14af[_0xba357a(0x1e5)][_0xba357a(0x182)](_0x45cb09['ef'],_0x4d398f[_0xba357a(0x187)]+_0x45cb09['d']),_0x4cd2b2[_0xba357a(0x1d3)][_0xba357a(0x242)](0.3,_0x4d398f['currentTime']),_0x4cd2b2[_0xba357a(0x1d3)][_0xba357a(0x182)](0.001,_0x4d398f[_0xba357a(0x187)]+_0x45cb09['d']),_0x5f14af[_0xba357a(0x1b3)](),_0x5f14af[_0xba357a(0x1cc)](_0x4d398f[_0xba357a(0x187)]+_0x45cb09['d']);}let crashBuffer=null;function playCrash(){const _0xf4ea0=a0_0x4bb98;if(!Settings['sfx'])return;const _0x316007=getAudio();if(!crashBuffer){crashBuffer=_0x316007[_0xf4ea0(0x1eb)](0x1,_0x316007[_0xf4ea0(0x206)]*0.5,_0x316007[_0xf4ea0(0x206)]);const _0x4d5f89=crashBuffer[_0xf4ea0(0x1df)](0x0);for(let _0x22fe85=0x0;_0x22fe85<_0x4d5f89[_0xf4ea0(0x1e3)];_0x22fe85++)_0x4d5f89[_0x22fe85]=Math[_0xf4ea0(0x262)]()*0x2-0x1;}const _0x5e76b7=_0x316007[_0xf4ea0(0x191)]();_0x5e76b7[_0xf4ea0(0x1ca)]=crashBuffer;const _0x4cb0b8=_0x316007[_0xf4ea0(0x186)]();_0x4cb0b8['type']=_0xf4ea0(0x22c),_0x4cb0b8['frequency'][_0xf4ea0(0x1e9)]=0x3e8;const _0x139ba2=_0x316007[_0xf4ea0(0x1a4)]();_0x139ba2[_0xf4ea0(0x1d3)]['setValueAtTime'](0x1,_0x316007[_0xf4ea0(0x187)]),_0x139ba2[_0xf4ea0(0x1d3)][_0xf4ea0(0x182)](0.001,_0x316007[_0xf4ea0(0x187)]+0.5),_0x5e76b7[_0xf4ea0(0x25c)](_0x4cb0b8),_0x4cb0b8[_0xf4ea0(0x25c)](_0x139ba2),_0x139ba2['connect'](_0x316007[_0xf4ea0(0x26a)]),_0x5e76b7['start']();}function playCreepyMelody(){const _0x212e9c=a0_0x4bb98;return;if(!Settings[_0x212e9c(0x22b)])return;const _0x22f010=getAudio(),_0x3b0aa0=_0x22f010[_0x212e9c(0x187)];[{'f':783.99,'t':0x0},{'f':783.99,'t':0.3},{'f':622.25,'t':0.6}][_0x212e9c(0x27b)](_0x54ad2e=>{const _0x302707=_0x212e9c,_0x41b317=_0x22f010[_0x302707(0x248)](),_0x4d8315=_0x22f010[_0x302707(0x1a4)]();_0x41b317[_0x302707(0x22e)]=_0x302707(0x27d),_0x41b317[_0x302707(0x1e5)][_0x302707(0x242)](_0x54ad2e['f'],_0x3b0aa0+_0x54ad2e['t']),_0x4d8315[_0x302707(0x1d3)][_0x302707(0x242)](0x0,_0x3b0aa0+_0x54ad2e['t']),_0x4d8315[_0x302707(0x1d3)]['linearRampToValueAtTime'](0.25,_0x3b0aa0+_0x54ad2e['t']+0.05),_0x4d8315[_0x302707(0x1d3)][_0x302707(0x182)](0.001,_0x3b0aa0+_0x54ad2e['t']+0.5),_0x41b317[_0x302707(0x25c)](_0x4d8315),_0x4d8315['connect'](_0x22f010[_0x302707(0x26a)]),_0x41b317[_0x302707(0x1b3)](_0x3b0aa0+_0x54ad2e['t']),_0x41b317['stop'](_0x3b0aa0+_0x54ad2e['t']+0.5);});}function startDrone(){const _0x1cad0f=a0_0x4bb98;return;if(!Settings[_0x1cad0f(0x1a5)]||droneOscs[_0x1cad0f(0x1e3)]>0x0)return;const _0x8d75a=getAudio();[0x28,0x2b,60.5]['forEach'](_0x112e52=>{const _0x4fd659=_0x1cad0f,_0x39cb2d=_0x8d75a['createOscillator'](),_0x3ebf79=_0x8d75a[_0x4fd659(0x1a4)]();_0x39cb2d['type']='sine',_0x39cb2d[_0x4fd659(0x1e5)]['value']=_0x112e52,_0x3ebf79['gain'][_0x4fd659(0x1e9)]=0.04,_0x39cb2d['connect'](_0x3ebf79),_0x3ebf79[_0x4fd659(0x25c)](_0x8d75a[_0x4fd659(0x26a)]),_0x39cb2d[_0x4fd659(0x1b3)](),droneOscs[_0x4fd659(0x1a0)]({'osc':_0x39cb2d,'gain':_0x3ebf79});});const _0x5b3dea=_0x8d75a[_0x1cad0f(0x206)]*0x2,_0x324028=_0x8d75a[_0x1cad0f(0x1eb)](0x1,_0x5b3dea,_0x8d75a[_0x1cad0f(0x206)]),_0x23f975=_0x324028[_0x1cad0f(0x1df)](0x0);for(let _0x93b8b7=0x0;_0x93b8b7<_0x5b3dea;_0x93b8b7++)_0x23f975[_0x93b8b7]=Math['random']()*0x2-0x1;const _0x3a8202=_0x8d75a['createBufferSource']();_0x3a8202[_0x1cad0f(0x1ca)]=_0x324028,_0x3a8202[_0x1cad0f(0x1ae)]=!![];const _0x1caa32=_0x8d75a[_0x1cad0f(0x186)]();_0x1caa32[_0x1cad0f(0x22e)]='bandpass',_0x1caa32[_0x1cad0f(0x1e5)][_0x1cad0f(0x1e9)]=0x1f4,_0x1caa32['Q']['value']=0xa;const _0x31c235=_0x8d75a['createGain']();_0x31c235['gain']['value']=0.015;const _0x2061d3=_0x8d75a['createOscillator'](),_0x1cd24b=_0x8d75a[_0x1cad0f(0x1a4)]();_0x2061d3['type']=_0x1cad0f(0x1db),_0x2061d3[_0x1cad0f(0x1e5)][_0x1cad0f(0x1e9)]=0.2,_0x1cd24b[_0x1cad0f(0x1d3)][_0x1cad0f(0x1e9)]=0xfa,_0x2061d3[_0x1cad0f(0x25c)](_0x1cd24b),_0x1cd24b[_0x1cad0f(0x25c)](_0x1caa32[_0x1cad0f(0x1e5)]),_0x3a8202['connect'](_0x1caa32),_0x1caa32[_0x1cad0f(0x25c)](_0x31c235),_0x31c235[_0x1cad0f(0x25c)](_0x8d75a[_0x1cad0f(0x26a)]),_0x3a8202['start'](),_0x2061d3['start'](),droneOscs[_0x1cad0f(0x1a0)]({'osc':_0x3a8202,'gain':_0x31c235},{'osc':_0x2061d3,'gain':_0x1cd24b});}function stopDrone(){const _0x11cf80=a0_0x4bb98;droneOscs[_0x11cf80(0x27b)](_0x253065=>{const _0x4a4a02=_0x11cf80;try{_0x253065[_0x4a4a02(0x23a)]['stop']();}catch(_0x1bea15){}}),droneOscs=[];}function vibrate(_0x56268b=[0x32]){const _0x182470=a0_0x4bb98;if(Settings[_0x182470(0x25d)]&&navigator[_0x182470(0x1c5)])navigator[_0x182470(0x1c5)](_0x56268b);}function a0_0x2d24(){const _0x52ac90=['postMessage','3309591aKIyCW','width','7383jSVaDz','\x20on\x20CUBE\x20RUN!','_rewardTimeout','disabled','absolute','AudioContext','.screen','game-container','player','sfx','lowpass','clientY','type','innerWidth','globalAlpha','acquire','setTargetAtTime','resetFn','none','hidden','_pendingRevive','❌\x20TRY\x20AGAIN\x20LATER','bgDot2','onAdClose','osc','position','createFn','22009867YAeQIL','rewardUser','arc','#ff00ff','.hud-btn','setValueAtTime','innerText','TOP-DOWN\x20(FREE\x20MOVE)','min','pause-screen','aberration','createOscillator','passed','parse','228sTNNHQ','floor','gravityDir','game-over-screen','Ad\x20not\x20available','_onRewardGranted','catch','add','&text=','CLASSIC','max','save','sin','settings-back-btn','⚡\x20REVIVE\x20(WATCH\x20AD)','splice','shadowColor','connect','vibration','shift','round','clearRect','top','random','isSwapping','onLine','undefined','baseVx','80px','onRewardGranted','strokeStyle','destination','innerHeight','fillStyle','🔥\x20I\x20scored\x20','getElementById','onRewardFailed','6tGjJhy','focus','updateHighScore','revivePlayer','createElement','sprite','bgDot1','syncUI','hud','setItem','50%','forEach','then','triangle','visibilitychange','addEventListener','8hdSEVu','3064935Zmopsb','https://api.whatsapp.com/send?text=','rgba(255,200,200,0.7)','true','transform','suspend','_freeRevives','stroke','exponentialRampToValueAtTime','shadowBlur','life','rgba(255,255,255,0.4)','createBiquadFilter','currentTime','cubeRunTutorialCompleted','scale(','mode-prev','resize','menu-btn-icon','beginPath','settings-screen','fillRect','ndSettings','createBufferSource','Ad\x20watched\x20(focus\x20regained\x20after\x20','warn','buttons','devicePixelRatio','PLAYING','resume-btn','settings-from-pause-btn','https://turfin-logic.github.io/CubeRun/','lineWidth','webkitAudioContext','showRewarded','monospace','deathCount','getContext','push','fontWeight','MENU','FlutterBridge','createGain','music','LASER','PAUSED','GAMEOVER','button','trail','stringify','remove','lineTo','loop','style','closest','1125cPnDnT','slice','start','classList','tutorial-screen','key','rgba(255,0,60,0.12)','_adStartTime','LASER\x20(JUMP\x20OVER\x20BEAMS)','pool','load','now','revive-btn','AdChannel','target','nearmiss','TOPDOWN','active','textContent','.toggle-btn','vibrate','OFF','indexOf','tutorial-got-it-btn','querySelectorAll','buffer','gameCanvas','stop','https://t.me/share/url?url=','_adRewardCallback','mode-display','color','pop','href','gain','CLASSIC\x20(GRAVITY\x20FLIP)','glitch-shake','location','display','strokeRect','Ad\x20Closed','offlineGameCount','sine','s).\x20Auto-granting\x20reward.','scoreValue','flash-white','getChannelData','targetY','78248eDoWDB','Sentinel:\x20Device\x20is\x20offline.\x20Failing\x20SDK.','length','isFlutter','frequency','#ffffff','setTransform','suspended','value','moveTo','createBuffer','toString','touchstart','#7000ff','drawImage','release','invincible','getItem','obsMag','partRed','touches','click','zVelocity','score','assign','jump','tutorial-skip-btn','DOMContentLoaded','cubeRunTutorialSkips','quit-btn','highScore','#ff003c','log','.unified-logo','.apk-only','toggle','1992613PHeOjZ','sampleRate','https://neon-drift-game-tau.vercel.app/neon-drift-boss.apk?v=','height','Escape','state','_waitingForReward','_onRewardFailed','obsRed','⏳\x20LOADING...','bold','object','\x20on\x20CUBE\x20RUN!\x20😈\x20Beat\x20me:\x20https://turfin-logic.github.io/CubeRun/','div','releaseAll','partPurp','function','5219610diOvBp','block','fontFamily','resume','showAd','pause-btn','start-screen','restart-btn','code'];a0_0x2d24=function(){return _0x52ac90;};return a0_0x2d24();}function createGlowSprite(_0x11255b,_0x33b718,_0x5ca10e,_0x2daa18=0xf){const _0x4dd7f7=a0_0x4bb98,_0x1ca0ac=_0x2daa18*0x2,_0x463fae=document[_0x4dd7f7(0x274)]('canvas');_0x463fae['width']=_0x33b718+_0x1ca0ac,_0x463fae[_0x4dd7f7(0x208)]=_0x5ca10e+_0x1ca0ac;const _0x2b650e=_0x463fae[_0x4dd7f7(0x19f)]('2d');return _0x2b650e[_0x4dd7f7(0x25b)]=_0x11255b,_0x2b650e[_0x4dd7f7(0x183)]=_0x2daa18,_0x2b650e[_0x4dd7f7(0x26c)]=_0x11255b,_0x2b650e[_0x4dd7f7(0x18f)](_0x2daa18,_0x2daa18,_0x33b718,_0x5ca10e),_0x2b650e[_0x4dd7f7(0x183)]=0x0,_0x2b650e[_0x4dd7f7(0x26c)]='rgba(255,255,255,0.55)',_0x2b650e[_0x4dd7f7(0x18f)](_0x2daa18+_0x33b718*0.25,_0x2daa18+_0x5ca10e*0.25,_0x33b718*0.5,_0x5ca10e*0.5),_0x463fae;}function createGlowCircle(_0x1b1212,_0x544b1e,_0x513c7c=0x6){const _0x5f5a43=a0_0x4bb98,_0x3c6a76=(_0x544b1e+_0x513c7c)*0x2,_0x3645cf=document[_0x5f5a43(0x274)]('canvas');_0x3645cf[_0x5f5a43(0x221)]=_0x3c6a76,_0x3645cf[_0x5f5a43(0x208)]=_0x3c6a76;const _0x331bfa=_0x3645cf['getContext']('2d');return _0x331bfa[_0x5f5a43(0x25b)]=_0x1b1212,_0x331bfa[_0x5f5a43(0x183)]=_0x513c7c,_0x331bfa['fillStyle']=_0x1b1212,_0x331bfa[_0x5f5a43(0x18d)](),_0x331bfa[_0x5f5a43(0x23f)](_0x3c6a76/0x2,_0x3c6a76/0x2,_0x544b1e,0x0,Math['PI']*0x2),_0x331bfa['fill'](),_0x3645cf;}function initSprites(){const _0x5c85f7=a0_0x4bb98;SPRITES[_0x5c85f7(0x22a)]=createGlowSprite('#ff003c',0x1e,0x1e,0x14),SPRITES[_0x5c85f7(0x20d)]=createGlowSprite('#ff003c',0x3c,0x50,0xf),SPRITES[_0x5c85f7(0x1f3)]=createGlowSprite(_0x5c85f7(0x240),0x3c,0x50,0xf),SPRITES[_0x5c85f7(0x1f4)]=createGlowCircle(_0x5c85f7(0x200),0x2,0x6),SPRITES[_0x5c85f7(0x214)]=createGlowCircle(_0x5c85f7(0x1ee),0x2,0x6),SPRITES['bgDot1']=createGlowCircle('#ff003c',0x1,0x3),SPRITES[_0x5c85f7(0x238)]=createGlowCircle(_0x5c85f7(0x1ee),0x1,0x3);}const obstaclePool=new ObjectPool(()=>({'x':0x0,'y':0x0,'width':0x0,'height':0x0,'sprite':null,'passed':![]}),_0x3580bf=>{const _0x396110=a0_0x4bb98;_0x3580bf['passed']=![],_0x3580bf['x']=window[_0x396110(0x22f)];if(CURRENT_MODE===_0x396110(0x1a6))_0x3580bf[_0x396110(0x221)]=window['innerWidth'],_0x3580bf[_0x396110(0x208)]=0xf,_0x3580bf['x']=0x0,_0x3580bf['y']=CEILING-0x14,_0x3580bf[_0x396110(0x275)]=null;else{if(CURRENT_MODE===_0x396110(0x1c1))_0x3580bf[_0x396110(0x221)]=0x28+Math[_0x396110(0x262)]()*0x3c,_0x3580bf[_0x396110(0x208)]=0x28+Math[_0x396110(0x262)]()*0x3c,_0x3580bf['y']=CEILING+Math[_0x396110(0x262)]()*(FLOOR-CEILING-_0x3580bf[_0x396110(0x208)]),_0x3580bf['sprite']=null;else{_0x3580bf[_0x396110(0x221)]=0x28+Math[_0x396110(0x262)]()*0x3c,_0x3580bf[_0x396110(0x208)]=0x28+Math['random']()*0x50;const _0x46bac6=Math[_0x396110(0x262)]()>0.5;_0x3580bf['y']=_0x46bac6?CEILING:FLOOR-_0x3580bf[_0x396110(0x208)],_0x3580bf[_0x396110(0x275)]=Math[_0x396110(0x262)]()>0.5?SPRITES[_0x396110(0x20d)]:SPRITES[_0x396110(0x1f3)];}}},0xf),particlePool=new ObjectPool(()=>({'x':0x0,'y':0x0,'vx':0x0,'vy':0x0,'life':0x0,'maxLife':0x0,'sprite':null}),(_0x9da0c8,_0x270065,_0x4bc1dd)=>{const _0x546c66=a0_0x4bb98;_0x9da0c8['x']=_0x270065,_0x9da0c8['y']=_0x4bc1dd,_0x9da0c8['vx']=(Math[_0x546c66(0x262)]()-0.5)*0x8,_0x9da0c8['vy']=(Math['random']()-0.5)*0x8,_0x9da0c8[_0x546c66(0x184)]=0x1e+Math[_0x546c66(0x262)]()*0x14,_0x9da0c8['maxLife']=_0x9da0c8['life'],_0x9da0c8[_0x546c66(0x275)]=Math[_0x546c66(0x262)]()>0.5?SPRITES[_0x546c66(0x1f4)]:SPRITES['partPurp'];},0x3c),bgParticles=[];function initBgParticles(){const _0x371595=a0_0x4bb98;bgParticles[_0x371595(0x1e3)]=0x0;for(let _0x463071=0x0;_0x463071<0x28;_0x463071++)bgParticles[_0x371595(0x1a0)]({'x':Math[_0x371595(0x262)]()*window['innerWidth'],'y':Math['random']()*window[_0x371595(0x26b)],'baseVx':-(Math['random']()*1.5+0.5),'vx':0x0,'sprite':Math['random']()>0.5?SPRITES['bgDot1']:SPRITES['bgDot2']});bgParticles['forEach'](_0x3540d4=>_0x3540d4['vx']=_0x3540d4['baseVx']);}const player={'x':0x64,'y':0x0,'width':0x1e,'height':0x1e,'gravityDir':0x1,'isSwapping':![],'invincible':![],'z':0x0,'zVelocity':0x0,'trail':[]},FlutterBridge={'isFlutter'(){return typeof window['AdChannel']!=='undefined';},'_adStartTime':0x0,'_waitingForReward':![],'showInterstitial'(){const _0x2beb71=a0_0x4bb98;if(this[_0x2beb71(0x1e4)]())window[_0x2beb71(0x1be)][_0x2beb71(0x21f)]('showInterstitial');else{if(typeof gdsdk!=='undefined')gdsdk['showAd']();}},'showRewarded'(){return new Promise((_0x325607,_0x3c024d)=>{const _0x13fa01=a0_0x254d,_0x3fbaab=()=>{const _0x1de201=a0_0x254d;clearTimeout(window[_0x1de201(0x224)]),FlutterBridge['_waitingForReward']=![],window[_0x1de201(0x250)]=null,window['_onRewardFailed']=null;},_0xc0c371=()=>{const _0x3cfe50=a0_0x254d;if(!window[_0x3cfe50(0x20c)])return;const _0x4e7a11=window[_0x3cfe50(0x20c)];_0x3fbaab(),_0x4e7a11(_0x3cfe50(0x24f));};window[_0x13fa01(0x250)]=_0x325607,window[_0x13fa01(0x20c)]=_0x3c024d,window['_rewardTimeout']=setTimeout(()=>_0xc0c371(),0x1d4c0),FlutterBridge[_0x13fa01(0x20b)]=!![],FlutterBridge[_0x13fa01(0x1b8)]=Date[_0x13fa01(0x1bc)]();if(!navigator[_0x13fa01(0x264)]){console[_0x13fa01(0x193)](_0x13fa01(0x1e2)),_0xc0c371();return;}if(this[_0x13fa01(0x1e4)]())window['AdChannel'][_0x13fa01(0x21f)](_0x13fa01(0x19c));else{if(typeof gdsdk!==_0x13fa01(0x265)&&typeof gdsdk[_0x13fa01(0x21a)]!=='undefined')try{const _0x23ef25=gdsdk['showAd']('rewarded');_0x23ef25&&typeof _0x23ef25[_0x13fa01(0x27c)]===_0x13fa01(0x215)&&_0x23ef25[_0x13fa01(0x27c)](()=>{const _0x3e24cd=_0x13fa01;if(FlutterBridge['_waitingForReward'])FlutterBridge[_0x3e24cd(0x268)]();})[_0x13fa01(0x251)](()=>{_0xc0c371();});}catch(_0x45809e){_0xc0c371();}else _0xc0c371();}});},'onRewardGranted'(){const _0x3c4912=a0_0x4bb98;clearTimeout(window[_0x3c4912(0x224)]);if(window[_0x3c4912(0x250)]){const _0x1e2c41=window[_0x3c4912(0x250)];window[_0x3c4912(0x250)]=null,window[_0x3c4912(0x20c)]=null,FlutterBridge[_0x3c4912(0x20b)]=![],_0x1e2c41();}},'onRewardFailed'(){const _0x1c168b=a0_0x4bb98;clearTimeout(window[_0x1c168b(0x224)]);if(window['_onRewardFailed']){const _0x1798fa=window['_onRewardFailed'];window['_onRewardGranted']=null,window[_0x1c168b(0x20c)]=null,FlutterBridge[_0x1c168b(0x20b)]=![],_0x1798fa(_0x1c168b(0x24f));}}};window[a0_0x4bb98(0x1a3)]=FlutterBridge,document[a0_0x4bb98(0x27f)]('visibilitychange',()=>{const _0x4cb31e=a0_0x4bb98;if(!document[_0x4cb31e(0x235)]&&FlutterBridge[_0x4cb31e(0x20b)]){const _0x9f4bea=Date[_0x4cb31e(0x1bc)]()-FlutterBridge[_0x4cb31e(0x1b8)];_0x9f4bea>0xbb8&&window[_0x4cb31e(0x250)]&&(console[_0x4cb31e(0x201)]('Ad\x20watched\x20(user\x20returned\x20after\x20'+Math[_0x4cb31e(0x25f)](_0x9f4bea/0x3e8)+_0x4cb31e(0x1dc)),FlutterBridge[_0x4cb31e(0x268)]());}}),window[a0_0x4bb98(0x27f)](a0_0x4bb98(0x271),()=>{const _0x1ca9d2=a0_0x4bb98;if(FlutterBridge[_0x1ca9d2(0x20b)]){const _0x162183=Date['now']()-FlutterBridge[_0x1ca9d2(0x1b8)];_0x162183>0xbb8&&window['_onRewardGranted']&&(console[_0x1ca9d2(0x201)](_0x1ca9d2(0x192)+Math[_0x1ca9d2(0x25f)](_0x162183/0x3e8)+_0x1ca9d2(0x1dc)),FlutterBridge[_0x1ca9d2(0x268)]());}}),window[a0_0x4bb98(0x239)]=()=>{const _0x5ca364=a0_0x4bb98;clearTimeout(window[_0x5ca364(0x224)]);if(window[_0x5ca364(0x236)])window['_pendingRevive']=![],revivePlayer();else window[_0x5ca364(0x20c)]&&window['_onRewardFailed'](_0x5ca364(0x1d9));},window['onRewardGranted']=()=>{const _0x4eb5d6=a0_0x4bb98;if(window[_0x4eb5d6(0x1a3)])window[_0x4eb5d6(0x1a3)][_0x4eb5d6(0x268)]();},window[a0_0x4bb98(0x26f)]=()=>{const _0x278ccd=a0_0x4bb98;if(window[_0x278ccd(0x1a3)])window[_0x278ccd(0x1a3)][_0x278ccd(0x26f)]();},window[a0_0x4bb98(0x1ce)]=_0x5d0272=>{const _0x5b3a61=a0_0x4bb98;if(_0x5d0272&&window['FlutterBridge'])window[_0x5b3a61(0x1a3)][_0x5b3a61(0x268)]();else{if(window['FlutterBridge'])window[_0x5b3a61(0x1a3)][_0x5b3a61(0x26f)]();}},window['AdRewardSuccess']=()=>{const _0x38aa07=a0_0x4bb98;if(window[_0x38aa07(0x1a3)])window[_0x38aa07(0x1a3)][_0x38aa07(0x268)]();},window[a0_0x4bb98(0x23e)]=()=>{const _0x1c24ad=a0_0x4bb98;if(window[_0x1c24ad(0x1a3)])window['FlutterBridge'][_0x1c24ad(0x268)]();};function startGameLoop(){const _0x279d19=a0_0x4bb98;function _0xcd5ddb(_0xecc42f){const _0x449c81=a0_0x254d;if(GAME_STATE!==STATE[_0x449c81(0x196)])return;const _0x456627=Math[_0x449c81(0x245)]((_0xecc42f-lastTime)/16.67,0x3);lastTime=_0xecc42f,update(_0x456627),draw(),rafId=requestAnimationFrame(_0xcd5ddb);}lastTime=performance[_0x279d19(0x1bc)](),rafId=requestAnimationFrame(_0xcd5ddb);}function update(_0x44dfe5){const _0x37f897=a0_0x4bb98;frameCount++;if(frameCount%0x1e0===0x0)baseSpeed=Math['min'](baseSpeed+0x1,0x16);if(droneOscs[_0x37f897(0x1e3)]>0x0&&droneOscs[0x0]['gain']){const _0x3c64fb=0.04+baseSpeed*0.004;droneOscs[_0x37f897(0x1b2)](0x0,0x3)[_0x37f897(0x27b)](_0x34df84=>{const _0x745fc=_0x37f897;try{_0x34df84[_0x745fc(0x1d3)][_0x745fc(0x1d3)][_0x745fc(0x232)](_0x3c64fb,audioCtx[_0x745fc(0x187)],0.1);}catch(_0x19880e){}});}if(score>0x64)canvas[_0x37f897(0x1b4)][_0x37f897(0x252)](_0x37f897(0x247));else canvas[_0x37f897(0x1b4)][_0x37f897(0x1ac)](_0x37f897(0x247));if(Math[_0x37f897(0x262)]()<0.002)playSfx(_0x37f897(0x1f8));if(CURRENT_MODE===_0x37f897(0x1c1)){if(player[_0x37f897(0x1e0)]!==undefined){const _0x1ce7aa=player[_0x37f897(0x1e0)]-(player['y']+player[_0x37f897(0x208)]/0x2);player['y']+=_0x1ce7aa*0.15*_0x44dfe5;}if(player['y']<CEILING)player['y']=CEILING;if(player['y']>FLOOR-player[_0x37f897(0x208)])player['y']=FLOOR-player[_0x37f897(0x208)];}else{if(CURRENT_MODE==='LASER')player['z']+=player['zVelocity']*_0x44dfe5,player[_0x37f897(0x1f7)]-=0.6*_0x44dfe5,player['z']<=0x0&&(player['z']=0x0,player[_0x37f897(0x1f7)]=0x0),player['x']=window[_0x37f897(0x22f)]/0x2-player[_0x37f897(0x221)]/0x2,player['y']=FLOOR-player['height']-0x3c;else{if(player[_0x37f897(0x263)]){const _0x3dfc57=0xf*_0x44dfe5;player['y']+=_0x3dfc57*player[_0x37f897(0x24d)],player['gravityDir']===0x1&&player['y']>=FLOOR-player[_0x37f897(0x208)]&&(player['y']=FLOOR-player[_0x37f897(0x208)],player[_0x37f897(0x263)]=![]),player[_0x37f897(0x24d)]===-0x1&&player['y']<=CEILING&&(player['y']=CEILING,player[_0x37f897(0x263)]=![]);}}}CURRENT_MODE===_0x37f897(0x1a6)?player[_0x37f897(0x1aa)]['push']({'x':player['x'],'y':player['y']-player['z']}):player['trail'][_0x37f897(0x1a0)]({'x':player['x'],'y':player['y']});if(player[_0x37f897(0x1aa)]['length']>0xc)player[_0x37f897(0x1aa)][_0x37f897(0x25e)]();let _0x3dcb9e=Math[_0x37f897(0x255)](0x32,0x96-baseSpeed*0x5);CURRENT_MODE===_0x37f897(0x1c1)&&(_0x3dcb9e=Math['max'](0x19,0x5a-baseSpeed*0x3));if(frameCount%_0x3dcb9e===0x0)obstaclePool[_0x37f897(0x231)]();for(let _0x2fa8c1=obstaclePool[_0x37f897(0x1c2)][_0x37f897(0x1e3)]-0x1;_0x2fa8c1>=0x0;_0x2fa8c1--){const _0x5bbf6c=obstaclePool[_0x37f897(0x1c2)][_0x2fa8c1];if(CURRENT_MODE===_0x37f897(0x1a6)){_0x5bbf6c['y']+=baseSpeed*1.3*_0x44dfe5;if(!player['invincible']&&player['y']<_0x5bbf6c['y']+_0x5bbf6c['height']&&player['y']+player[_0x37f897(0x208)]>_0x5bbf6c['y']&&player['z']<0xf){gameOver();return;}!_0x5bbf6c[_0x37f897(0x249)]&&_0x5bbf6c['y']>player['y']+player['height']&&(_0x5bbf6c[_0x37f897(0x249)]=!![],score+=0x32,updateScoreDisplay(),playSfx(_0x37f897(0x1f8))),_0x5bbf6c['y']>window[_0x37f897(0x26b)]+0x14&&obstaclePool[_0x37f897(0x1f0)](_0x5bbf6c);}else{_0x5bbf6c['x']-=baseSpeed*_0x44dfe5;if(!player[_0x37f897(0x1f1)]&&player['x']<_0x5bbf6c['x']+_0x5bbf6c[_0x37f897(0x221)]&&player['x']+player[_0x37f897(0x221)]>_0x5bbf6c['x']&&player['y']<_0x5bbf6c['y']+_0x5bbf6c[_0x37f897(0x208)]&&player['y']+player['height']>_0x5bbf6c['y']){gameOver();return;}if(!_0x5bbf6c[_0x37f897(0x249)]&&player['x']>_0x5bbf6c['x']+_0x5bbf6c['width']){_0x5bbf6c[_0x37f897(0x249)]=!![];const _0x167436=player['y']<_0x5bbf6c['y']+_0x5bbf6c['height']+0x1e&&player['y']+player['height']>_0x5bbf6c['y']-0x1e;_0x167436&&(score+=0x32,updateScoreDisplay(),playSfx(_0x37f897(0x1c0)),canvas[_0x37f897(0x1b4)][_0x37f897(0x252)](_0x37f897(0x1de)),setTimeout(()=>canvas['classList'][_0x37f897(0x1ac)](_0x37f897(0x1de)),0xc8));}_0x5bbf6c['x']+_0x5bbf6c[_0x37f897(0x221)]<0x0&&(obstaclePool[_0x37f897(0x1f0)](_0x5bbf6c),score+=0xa,updateScoreDisplay());}}for(let _0x27cb79=particlePool[_0x37f897(0x1c2)]['length']-0x1;_0x27cb79>=0x0;_0x27cb79--){const _0x1e6853=particlePool[_0x37f897(0x1c2)][_0x27cb79];_0x1e6853['x']+=_0x1e6853['vx']*_0x44dfe5,_0x1e6853['y']+=_0x1e6853['vy']*_0x44dfe5,_0x1e6853[_0x37f897(0x184)]-=_0x44dfe5;if(_0x1e6853[_0x37f897(0x184)]<=0x0)particlePool[_0x37f897(0x1f0)](_0x1e6853);}bgParticles[_0x37f897(0x27b)](_0x574fdc=>{const _0x2da50c=_0x37f897;_0x574fdc['x']+=_0x574fdc['vx']*_0x44dfe5-(player[_0x2da50c(0x263)]?0x6*_0x44dfe5:0x0);if(_0x574fdc['vx']<_0x574fdc[_0x2da50c(0x266)])_0x574fdc['vx']+=0.3*_0x44dfe5;_0x574fdc['x']<0x0&&(_0x574fdc['x']=window['innerWidth'],_0x574fdc['y']=Math[_0x2da50c(0x262)]()*window[_0x2da50c(0x26b)],_0x574fdc['vx']=_0x574fdc[_0x2da50c(0x266)]);});}function updateScoreDisplay(){const _0x265e47=a0_0x4bb98;document[_0x265e47(0x26e)](_0x265e47(0x1dd))[_0x265e47(0x1c3)]=score;}function draw(){const _0x311e80=a0_0x4bb98,_0x510ad9=window[_0x311e80(0x22f)],_0xa3b827=window[_0x311e80(0x26b)];ctx[_0x311e80(0x260)](0x0,0x0,_0x510ad9,_0xa3b827),ctx[_0x311e80(0x269)]='#333',ctx[_0x311e80(0x19a)]=0x2,ctx['beginPath'](),ctx[_0x311e80(0x1ea)](0x0,CEILING),ctx[_0x311e80(0x1ad)](_0x510ad9,CEILING),ctx[_0x311e80(0x1ea)](0x0,FLOOR),ctx[_0x311e80(0x1ad)](_0x510ad9,FLOOR),ctx[_0x311e80(0x288)](),ctx['strokeStyle']=_0x311e80(0x1b7),ctx['lineWidth']=0x1;const _0x26ba79=frameCount*baseSpeed%0x32;ctx['beginPath']();for(let _0x23fc41=-_0x26ba79;_0x23fc41<_0x510ad9;_0x23fc41+=0x32){ctx[_0x311e80(0x1ea)](_0x23fc41,CEILING),ctx[_0x311e80(0x1ad)](_0x23fc41,FLOOR);}for(let _0x5aea29=CEILING;_0x5aea29<FLOOR;_0x5aea29+=0x32){ctx[_0x311e80(0x1ea)](0x0,_0x5aea29),ctx['lineTo'](_0x510ad9,_0x5aea29);}ctx[_0x311e80(0x288)](),bgParticles[_0x311e80(0x27b)](_0x182e68=>{const _0x5acafe=_0x311e80;if(!_0x182e68[_0x5acafe(0x275)])_0x182e68['sprite']=Math['random']()>0.5?SPRITES[_0x5acafe(0x276)]:SPRITES['bgDot2'];if(_0x182e68['sprite'])ctx[_0x5acafe(0x1ef)](_0x182e68[_0x5acafe(0x275)],Math[_0x5acafe(0x24c)](_0x182e68['x']-0x2),Math['floor'](_0x182e68['y']-0x2));}),obstaclePool[_0x311e80(0x1c2)][_0x311e80(0x27b)](_0xb3885e=>{const _0x24b9f1=_0x311e80;if(CURRENT_MODE===_0x24b9f1(0x1a6))ctx['fillStyle']='#ff003c',ctx[_0x24b9f1(0x230)]=0.5,ctx[_0x24b9f1(0x18f)](_0xb3885e['x'],_0xb3885e['y']-0x4,_0xb3885e[_0x24b9f1(0x221)],_0xb3885e[_0x24b9f1(0x208)]+0x8),ctx['globalAlpha']=0x1,ctx[_0x24b9f1(0x18f)](_0xb3885e['x'],_0xb3885e['y'],_0xb3885e['width'],_0xb3885e[_0x24b9f1(0x208)]),ctx[_0x24b9f1(0x26c)]=_0x24b9f1(0x283),ctx[_0x24b9f1(0x18f)](_0xb3885e['x'],_0xb3885e['y']+0x3,_0xb3885e[_0x24b9f1(0x221)],Math['max'](_0xb3885e[_0x24b9f1(0x208)]-0x6,0x2));else{if(CURRENT_MODE===_0x24b9f1(0x1c1))ctx[_0x24b9f1(0x269)]=_0x24b9f1(0x200),ctx[_0x24b9f1(0x19a)]=0x3,ctx[_0x24b9f1(0x230)]=0.3,ctx[_0x24b9f1(0x1d8)](_0xb3885e['x']-0x4,_0xb3885e['y']-0x4,_0xb3885e[_0x24b9f1(0x221)]+0x8,_0xb3885e['height']+0x8),ctx['globalAlpha']=0x1,ctx['strokeRect'](_0xb3885e['x'],_0xb3885e['y'],_0xb3885e[_0x24b9f1(0x221)],_0xb3885e['height']);else{if(_0xb3885e['sprite'])ctx[_0x24b9f1(0x1ef)](_0xb3885e[_0x24b9f1(0x275)],Math['floor'](_0xb3885e['x']-0xf),Math['floor'](_0xb3885e['y']-0xf));else ctx[_0x24b9f1(0x26c)]=_0x24b9f1(0x240),ctx['fillRect'](_0xb3885e['x'],_0xb3885e['y'],_0xb3885e[_0x24b9f1(0x221)],_0xb3885e[_0x24b9f1(0x208)]);}}}),ctx[_0x311e80(0x230)]=0.2,ctx[_0x311e80(0x26c)]=_0x311e80(0x200);for(let _0x30ecb7=0x0;_0x30ecb7<player[_0x311e80(0x1aa)][_0x311e80(0x1e3)];_0x30ecb7++){const _0x53ffb0=player[_0x311e80(0x1aa)][_0x30ecb7];ctx[_0x311e80(0x18f)](Math[_0x311e80(0x24c)](_0x53ffb0['x']),Math[_0x311e80(0x24c)](_0x53ffb0['y']),player[_0x311e80(0x221)],player[_0x311e80(0x208)]);}ctx[_0x311e80(0x230)]=0x1,ctx[_0x311e80(0x230)]=0.6,particlePool[_0x311e80(0x1c2)]['forEach'](_0x39d0d0=>{const _0xfa7bfd=_0x311e80;ctx[_0xfa7bfd(0x1ef)](_0x39d0d0[_0xfa7bfd(0x275)],Math['floor'](_0x39d0d0['x']-0x4),Math['floor'](_0x39d0d0['y']-0x4));}),ctx[_0x311e80(0x230)]=0x1;if(GAME_STATE===STATE[_0x311e80(0x196)]||GAME_STATE===STATE[_0x311e80(0x1a7)]){if(CURRENT_MODE===_0x311e80(0x1c1))ctx[_0x311e80(0x26c)]=player[_0x311e80(0x1f1)]?_0x311e80(0x1e6):_0x311e80(0x200),ctx[_0x311e80(0x230)]=0.4,ctx[_0x311e80(0x18f)](player['x']-0x6,player['y']-0x6,player[_0x311e80(0x221)]+0xc,player[_0x311e80(0x208)]+0xc),ctx[_0x311e80(0x230)]=0x1,ctx[_0x311e80(0x18f)](player['x'],player['y'],player[_0x311e80(0x221)],player[_0x311e80(0x208)]);else{if(CURRENT_MODE==='LASER'){const _0x16a77f=player['y']-player['z'];ctx[_0x311e80(0x26c)]=player[_0x311e80(0x1f1)]?_0x311e80(0x1e6):'#ff003c',ctx[_0x311e80(0x18f)](player['x'],_0x16a77f,player[_0x311e80(0x221)],player[_0x311e80(0x208)]),ctx[_0x311e80(0x26c)]=_0x311e80(0x185),ctx['fillRect'](player['x']+0x7,_0x16a77f+0x7,0x10,0x10);}else{const _0x93975=SPRITES[_0x311e80(0x22a)];if(_0x93975)ctx[_0x311e80(0x1ef)](_0x93975,Math[_0x311e80(0x24c)](player['x']-0xf),Math['floor'](player['y']-0xf));else ctx[_0x311e80(0x26c)]=player['invincible']?_0x311e80(0x1e6):_0x311e80(0x200),ctx[_0x311e80(0x18f)](player['x'],player['y'],player[_0x311e80(0x221)],player[_0x311e80(0x208)]);}}}if(GAME_STATE===STATE[_0x311e80(0x1a2)]){const _0x224cc9=0x1+Math[_0x311e80(0x257)](frameCount*0.05)*0.05,_0x4d29f0=document['querySelector'](_0x311e80(0x202));if(_0x4d29f0)_0x4d29f0[_0x311e80(0x1af)][_0x311e80(0x285)]=_0x311e80(0x189)+_0x224cc9+')';}}function swapGravity(){const _0x40235f=a0_0x4bb98;if(GAME_STATE!==STATE[_0x40235f(0x196)])return;if(!player['isSwapping']){player['gravityDir']*=-0x1,player['isSwapping']=!![],bgParticles[_0x40235f(0x27b)](_0x1c0da1=>_0x1c0da1['vx']-=0xa);const _0x270c2c=player['x']+player[_0x40235f(0x221)]/0x2,_0x6262c5=player['y']+(player[_0x40235f(0x24d)]===0x1?0x0:player[_0x40235f(0x208)]);for(let _0x393c28=0x0;_0x393c28<0x14;_0x393c28++)particlePool['acquire'](_0x270c2c,_0x6262c5);playSfx(_0x40235f(0x1fa)),vibrate([0x1e]);}}function pauseGame(){const _0x2e3fff=a0_0x4bb98;if(GAME_STATE!==STATE['PLAYING'])return;GAME_STATE=STATE[_0x2e3fff(0x1a7)],cancelAnimationFrame(rafId),showScreen(_0x2e3fff(0x246));}function resumeGame(){const _0x447cb1=a0_0x4bb98;if(GAME_STATE!==STATE[_0x447cb1(0x1a7)])return;hideScreen('pause-screen'),GAME_STATE=STATE[_0x447cb1(0x196)],startGameLoop();}function quitToMenu(){const _0x28d7b2=a0_0x4bb98;cancelAnimationFrame(rafId),stopDrone(),GAME_STATE=STATE['MENU'],hideAllScreens(),hideHUD(),canvas[_0x28d7b2(0x1b4)][_0x28d7b2(0x1ac)](_0x28d7b2(0x247)),document[_0x28d7b2(0x26e)](_0x28d7b2(0x229))[_0x28d7b2(0x1b4)][_0x28d7b2(0x1ac)](_0x28d7b2(0x1d5)),showScreen(_0x28d7b2(0x21c));}function createExplosion(_0xcce4a,_0x2d29eb){const _0x39fa9f=a0_0x4bb98;for(let _0x213df5=0x0;_0x213df5<0x19;_0x213df5++)particlePool[_0x39fa9f(0x231)](_0xcce4a,_0x2d29eb);}function gameOver(){const _0x315850=a0_0x4bb98;GAME_STATE=STATE['GAMEOVER'],cancelAnimationFrame(rafId),createExplosion(player['x']+0xf,player['y']+0xf),playCrash(),playCreepyMelody(),vibrate([0x64,0x32,0x64]),draw(),document[_0x315850(0x26e)](_0x315850(0x229))[_0x315850(0x1b4)][_0x315850(0x252)](_0x315850(0x1d5)),canvas[_0x315850(0x1b4)]['remove'](_0x315850(0x247));const _0x5b8641=SaveData[_0x315850(0x272)](score),_0x3d8f39=SaveData[_0x315850(0x1bb)]();document[_0x315850(0x26e)]('finalScore')[_0x315850(0x1c3)]=score,document[_0x315850(0x26e)]('highScore')[_0x315850(0x1c3)]=_0x3d8f39[_0x315850(0x1ff)],document[_0x315850(0x26e)]('new-record-badge')[_0x315850(0x1af)][_0x315850(0x1d7)]=_0x5b8641?'block':'none',hideHUD(),showScreen(_0x315850(0x24e));if(typeof window[_0x315850(0x1da)]===_0x315850(0x265))window[_0x315850(0x1da)]=0x0;const _0x512068=document[_0x315850(0x26e)](_0x315850(0x1bd));!navigator[_0x315850(0x264)]?(window[_0x315850(0x1da)]++,window[_0x315850(0x1da)]>0x3?_0x512068[_0x315850(0x1af)][_0x315850(0x1d7)]=_0x315850(0x234):_0x512068[_0x315850(0x1af)]['display']=_0x315850(0x217)):_0x512068[_0x315850(0x1af)][_0x315850(0x1d7)]='block';_0x512068[_0x315850(0x1af)][_0x315850(0x1d7)]!==_0x315850(0x234)&&(_0x512068[_0x315850(0x1c3)]=_0x315850(0x259),_0x512068[_0x315850(0x225)]=![]);if(typeof window[_0x315850(0x19e)]===_0x315850(0x265))window[_0x315850(0x19e)]=0x0;window[_0x315850(0x19e)]++;if(window[_0x315850(0x19e)]%0x3===0x0){}}function revivePlayer(){const _0x44bbc4=a0_0x4bb98;hideScreen(_0x44bbc4(0x24e));let _0x161882=0x3;const _0x11ecca=document[_0x44bbc4(0x274)](_0x44bbc4(0x212));_0x11ecca[_0x44bbc4(0x1af)][_0x44bbc4(0x23b)]=_0x44bbc4(0x226),_0x11ecca[_0x44bbc4(0x1af)][_0x44bbc4(0x261)]=_0x44bbc4(0x27a),_0x11ecca[_0x44bbc4(0x1af)]['left']=_0x44bbc4(0x27a),_0x11ecca[_0x44bbc4(0x1af)][_0x44bbc4(0x285)]='translate(-50%,\x20-50%)',_0x11ecca[_0x44bbc4(0x1af)]['fontSize']=_0x44bbc4(0x267),_0x11ecca[_0x44bbc4(0x1af)][_0x44bbc4(0x1a1)]=_0x44bbc4(0x20f),_0x11ecca['style'][_0x44bbc4(0x1d0)]='#ff003c',_0x11ecca[_0x44bbc4(0x1af)]['zIndex']='9999',_0x11ecca[_0x44bbc4(0x1af)]['textShadow']='0\x200\x2020px\x20#ff003c',_0x11ecca['style'][_0x44bbc4(0x218)]=_0x44bbc4(0x19d),_0x11ecca[_0x44bbc4(0x243)]=_0x161882,document['body']['appendChild'](_0x11ecca);const _0x12a216=setInterval(()=>{const _0x3c617=_0x44bbc4;_0x161882--,_0x161882>0x0?_0x11ecca['innerText']=_0x161882:(clearInterval(_0x12a216),_0x11ecca[_0x3c617(0x1ac)](),GAME_STATE=STATE['PLAYING'],player['y']=FLOOR-player[_0x3c617(0x208)],player[_0x3c617(0x24d)]=0x1,player[_0x3c617(0x263)]=![],player[_0x3c617(0x1f1)]=!![],setTimeout(()=>player[_0x3c617(0x1f1)]=![],0x7d0),obstaclePool[_0x3c617(0x213)](),document[_0x3c617(0x26e)](_0x3c617(0x1bd))[_0x3c617(0x1af)][_0x3c617(0x1d7)]=_0x3c617(0x234),document[_0x3c617(0x26e)]('game-container')[_0x3c617(0x1b4)][_0x3c617(0x1ac)]('glitch-shake'),showHUD(),startGameLoop());},0x3e8);}function a0_0x254d(_0x293cb6,_0x257d0a){_0x293cb6=_0x293cb6-0x182;const _0x2d24d6=a0_0x2d24();let _0x254d48=_0x2d24d6[_0x293cb6];return _0x254d48;}window[a0_0x4bb98(0x273)]=revivePlayer;function resetGame(){const _0x1a20b4=a0_0x4bb98;score=0x0,frameCount=0x0,baseSpeed=0x7,player['x']=0x64,player['y']=FLOOR-player[_0x1a20b4(0x208)],player['gravityDir']=0x1,player[_0x1a20b4(0x263)]=![],player[_0x1a20b4(0x1f1)]=![],player[_0x1a20b4(0x1aa)]=[],player['z']=0x0,player[_0x1a20b4(0x1f7)]=0x0,player[_0x1a20b4(0x1e0)]=undefined,window[_0x1a20b4(0x287)]=0x0,obstaclePool[_0x1a20b4(0x213)](),particlePool['releaseAll'](),initBgParticles(),updateScoreDisplay(),document[_0x1a20b4(0x26e)]('game-container')[_0x1a20b4(0x1b4)][_0x1a20b4(0x1ac)](_0x1a20b4(0x1d5)),canvas[_0x1a20b4(0x1b4)]['remove'](_0x1a20b4(0x247));}function startGame(){const _0x27a744=a0_0x4bb98;getAudio();const _0x202b8e=document['getElementById']('mode-select');if(_0x202b8e)CURRENT_MODE=_0x202b8e[_0x27a744(0x1e9)];resetGame(),hideAllScreens(),showHUD(),GAME_STATE=STATE[_0x27a744(0x196)],cancelAnimationFrame(rafId),startDrone(),startGameLoop();}function handleInput(_0x8f8105){const _0x11848e=a0_0x4bb98;if(GAME_STATE!==STATE['PLAYING'])return;if(CURRENT_MODE===_0x11848e(0x1c1))player[_0x11848e(0x1e0)]=_0x8f8105;else CURRENT_MODE==='LASER'?player['z']<=0x0&&(player[_0x11848e(0x1f7)]=0xc,playSfx(_0x11848e(0x1fa))):swapGravity();}window[a0_0x4bb98(0x27f)]('keydown',_0x3ff73f=>{const _0x428c92=a0_0x4bb98;_0x3ff73f[_0x428c92(0x21e)]==='Space'&&(_0x3ff73f['preventDefault'](),handleInput(window[_0x428c92(0x26b)]/0x2));if(_0x3ff73f['key']===_0x428c92(0x209))pauseGame();}),window[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1ed),_0x290e38=>{const _0x5cf9b7=a0_0x4bb98;GAME_STATE===STATE[_0x5cf9b7(0x196)]&&!_0x290e38[_0x5cf9b7(0x1bf)][_0x5cf9b7(0x1b0)](_0x5cf9b7(0x1a9))&&!_0x290e38['target'][_0x5cf9b7(0x1b0)](_0x5cf9b7(0x241))&&handleInput(_0x290e38['touches'][0x0][_0x5cf9b7(0x22d)]);},{'passive':!![]}),window[a0_0x4bb98(0x27f)]('mousedown',_0x23dcb3=>{const _0xeb6b8=a0_0x4bb98;GAME_STATE===STATE[_0xeb6b8(0x196)]&&!_0x23dcb3['target']['closest'](_0xeb6b8(0x1a9))&&!_0x23dcb3[_0xeb6b8(0x1bf)][_0xeb6b8(0x1b0)](_0xeb6b8(0x241))&&handleInput(_0x23dcb3[_0xeb6b8(0x22d)]);}),window[a0_0x4bb98(0x27f)]('mousemove',_0x4b638d=>{const _0x538b64=a0_0x4bb98;GAME_STATE===STATE['PLAYING']&&CURRENT_MODE===_0x538b64(0x1c1)&&_0x4b638d[_0x538b64(0x194)]===0x1&&!_0x4b638d['target']['closest']('button')&&!_0x4b638d[_0x538b64(0x1bf)]['closest']('.hud-btn')&&handleInput(_0x4b638d['clientY']);}),window[a0_0x4bb98(0x27f)]('touchmove',_0x20ed2f=>{const _0x6b34c0=a0_0x4bb98;GAME_STATE===STATE['PLAYING']&&CURRENT_MODE===_0x6b34c0(0x1c1)&&!_0x20ed2f['target'][_0x6b34c0(0x1b0)](_0x6b34c0(0x1a9))&&!_0x20ed2f['target'][_0x6b34c0(0x1b0)](_0x6b34c0(0x241))&&handleInput(_0x20ed2f[_0x6b34c0(0x1f5)][0x0][_0x6b34c0(0x22d)]);},{'passive':!![]}),document['getElementById']('start-btn')?.['addEventListener'](a0_0x4bb98(0x1f6),()=>{const _0xaed21b=a0_0x4bb98;let _0x243083=localStorage[_0xaed21b(0x1f2)]('cubeRunTutorialCompleted')===_0xaed21b(0x284),_0x36f7a8=parseInt(localStorage['getItem']('cubeRunTutorialSkips')||'0');!_0x243083&&_0x36f7a8<0x2?(hideAllScreens(),showScreen(_0xaed21b(0x1b5))):startGame();}),document[a0_0x4bb98(0x26e)](a0_0x4bb98(0x1c8))?.[a0_0x4bb98(0x27f)]('click',()=>{const _0x34208c=a0_0x4bb98;localStorage[_0x34208c(0x279)](_0x34208c(0x188),_0x34208c(0x284)),hideAllScreens(),startGame();}),document['getElementById'](a0_0x4bb98(0x1fb))?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),()=>{const _0x5936d1=a0_0x4bb98;let _0x508201=parseInt(localStorage['getItem'](_0x5936d1(0x1fd))||'0');localStorage[_0x5936d1(0x279)](_0x5936d1(0x1fd),(_0x508201+0x1)[_0x5936d1(0x1ec)]()),hideAllScreens(),startGame();}),document['getElementById'](a0_0x4bb98(0x21d))?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),startGame),document[a0_0x4bb98(0x26e)](a0_0x4bb98(0x21b))?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),pauseGame),document[a0_0x4bb98(0x26e)](a0_0x4bb98(0x197))?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),resumeGame),document['getElementById'](a0_0x4bb98(0x1fe))?.[a0_0x4bb98(0x27f)]('click',quitToMenu),document[a0_0x4bb98(0x26e)](a0_0x4bb98(0x18c))?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),quitToMenu),document[a0_0x4bb98(0x26e)]('menu-btn')?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),quitToMenu),document[a0_0x4bb98(0x26e)]('settings-btn')?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),()=>{const _0x11f18f=a0_0x4bb98;if(GAME_STATE===STATE[_0x11f18f(0x196)])pauseGame();showScreen('settings-screen');}),document[a0_0x4bb98(0x26e)](a0_0x4bb98(0x198))?.['addEventListener'](a0_0x4bb98(0x1f6),()=>showScreen(a0_0x4bb98(0x18e))),document[a0_0x4bb98(0x26e)](a0_0x4bb98(0x258))?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),()=>{const _0x2f39b3=a0_0x4bb98;hideScreen(_0x2f39b3(0x18e));if(GAME_STATE===STATE[_0x2f39b3(0x1a7)])showScreen(_0x2f39b3(0x246));}),document[a0_0x4bb98(0x26e)]('revive-btn')?.[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1f6),async()=>{const _0x39a110=a0_0x4bb98,_0x2f5fdd=document['getElementById']('revive-btn');_0x2f5fdd['disabled']=!![],_0x2f5fdd[_0x39a110(0x1c3)]=_0x39a110(0x20e);try{await FlutterBridge['showRewarded'](),window[_0x39a110(0x236)]=!![];}catch(_0x48a4d7){_0x2f5fdd[_0x39a110(0x1c3)]=_0x39a110(0x237),setTimeout(()=>{const _0x5beb1d=_0x39a110;_0x2f5fdd[_0x5beb1d(0x1c3)]=_0x5beb1d(0x259),_0x2f5fdd[_0x5beb1d(0x225)]=![];},0x7d0);}}),window['pauseGameForAd']=()=>{GAME_STATE===STATE['PLAYING']&&cancelAnimationFrame(rafId);},window['resumeGameFromAd']=()=>{if(GAME_STATE===STATE['PLAYING'])startGameLoop();};function applyApkMode(){const _0x554919=a0_0x4bb98;window['IS_APK']===!![]&&document['querySelectorAll'](_0x554919(0x203))['forEach'](_0x2f2535=>_0x2f2535[_0x554919(0x1ac)]());}window[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1bb),()=>{applyApkMode(),setTimeout(applyApkMode,0x320);});function shareToWhatsApp(){const _0x5564ff=a0_0x4bb98,_0x5b7aac='\uD83D\uDD25\x20I\x20scored\x20'+score+_0x5564ff(0x211);window['location'][_0x5564ff(0x1d2)]=_0x5564ff(0x282)+encodeURIComponent(_0x5b7aac);}function shareToTelegram(){const _0x2cd6ec=a0_0x4bb98;window[_0x2cd6ec(0x1d6)]['href']=_0x2cd6ec(0x1cd)+encodeURIComponent(_0x2cd6ec(0x199))+_0x2cd6ec(0x253)+encodeURIComponent(_0x2cd6ec(0x26d)+score+_0x2cd6ec(0x223));}function downloadApk(){const _0x9149e2=a0_0x4bb98;window[_0x9149e2(0x1d6)][_0x9149e2(0x1d2)]=_0x9149e2(0x207)+Date[_0x9149e2(0x1bc)]();}const MODES=[{'value':a0_0x4bb98(0x254),'label':a0_0x4bb98(0x1d4)},{'value':a0_0x4bb98(0x1a6),'label':a0_0x4bb98(0x1b9)},{'value':'TOPDOWN','label':a0_0x4bb98(0x244)}];let currentModeIndex=0x0;function updateModeCarousel(){const _0xa72c7f=a0_0x4bb98,_0x197c0d=document['getElementById'](_0xa72c7f(0x1cf)),_0x30436d=document[_0xa72c7f(0x26e)]('mode-select');_0x197c0d&&_0x30436d&&(_0x197c0d[_0xa72c7f(0x1c3)]=MODES[currentModeIndex]['label'],_0x30436d[_0xa72c7f(0x1e9)]=MODES[currentModeIndex][_0xa72c7f(0x1e9)]);}document[a0_0x4bb98(0x27f)](a0_0x4bb98(0x1fc),()=>{const _0x1a8452=a0_0x4bb98,_0x2af259=document[_0x1a8452(0x26e)](_0x1a8452(0x18a)),_0x24c97b=document[_0x1a8452(0x26e)]('mode-next');_0x2af259&&_0x2af259[_0x1a8452(0x27f)](_0x1a8452(0x1f6),()=>{const _0x3abef0=_0x1a8452;currentModeIndex=(currentModeIndex-0x1+MODES[_0x3abef0(0x1e3)])%MODES[_0x3abef0(0x1e3)],updateModeCarousel();}),_0x24c97b&&_0x24c97b[_0x1a8452(0x27f)](_0x1a8452(0x1f6),()=>{currentModeIndex=(currentModeIndex+0x1)%MODES['length'],updateModeCarousel();});});
+﻿// game.js Ã¢â‚¬â€ CUBE RUN (Production Build)
+// Skill: html5-canvas-mobile-game
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ STATE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
+let GAME_STATE = STATE.MENU;
+let CURRENT_MODE = 'CLASSIC';
+let score = 0, frameCount = 0, baseSpeed = 7, rafId = null, lastTime = 0;
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SPRITES & POOLS (Defined early to prevent ReferenceError) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const SPRITES = {};
+
+class ObjectPool {
+    constructor(createFn, resetFn, size=20) {
+        this.createFn=createFn; this.resetFn=resetFn;
+        this.pool=[]; this.active=[];
+        for(let i=0;i<size;i++) this.pool.push(createFn());
+    }
+    acquire(...args) {
+        const obj=this.pool.length>0?this.pool.pop():this.createFn();
+        this.resetFn(obj,...args); this.active.push(obj); return obj;
+    }
+    release(obj) {
+        const i=this.active.indexOf(obj);
+        if(i!==-1) this.active.splice(i,1);
+        this.pool.push(obj);
+    }
+    releaseAll() { while(this.active.length) this.release(this.active[0]); }
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ LAYOUT Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+let CEILING, FLOOR;
+let resizeTimer;
+function resizeCanvas() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width  = window.innerWidth  * dpr;
+        canvas.height = window.innerHeight * dpr;
+        canvas.style.width  = window.innerWidth  + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        
+        CEILING = window.innerHeight * 0.18;
+        FLOOR   = window.innerHeight * 0.82;
+        if(typeof initSprites === 'function') initSprites();
+    }, 100);
+}
+window.addEventListener('resize', resizeCanvas);
+// Call immediately for initial setup
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+canvas.width  = window.innerWidth  * dpr;
+canvas.height = window.innerHeight * dpr;
+canvas.style.width  = window.innerWidth  + 'px';
+canvas.style.height = window.innerHeight + 'px';
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+CEILING = window.innerHeight * 0.18;
+FLOOR   = window.innerHeight * 0.82;
+if(typeof initSprites === 'function') initSprites();
+
+document.addEventListener('visibilitychange', () => {
+    if (typeof audioCtx !== 'undefined' && audioCtx !== null) {
+        if (document.hidden && audioCtx.state === 'running') {
+            audioCtx.suspend();
+        } else if (!document.hidden && audioCtx.state === 'suspended' && GAME_STATE === STATE.PLAYING) {
+            audioCtx.resume();
+        }
+    }
+});
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SETTINGS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const Settings = {
+    sfx: true, music: true, vibration: true,
+    load() {
+        try { Object.assign(this, JSON.parse(localStorage.getItem('ndSettings') || '{}')); } catch(e){}
+        this.syncUI();
+    },
+    save() { localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration})); },
+    toggle(key) { this[key] = !this[key]; this.save(); this.syncUI(); },
+    syncUI() {
+        ['sfx','music','vibration'].forEach(k => {
+            const b = document.querySelector(`[data-key="${k}"]`);
+            if (b) { b.textContent = this[k] ? 'ON' : 'OFF'; b.classList.toggle('active', this[k]); }
+        });
+    }
+};
+Settings.load();
+document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click', () => Settings.toggle(b.dataset.key)));
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SAVE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const SaveData = {
+    _k: 'ndSave',
+    load() { 
+        try { 
+            let raw = localStorage.getItem(this._k);
+            if (!raw) return {highScore:0};
+            try {
+                let parsed = JSON.parse(raw);
+                if (typeof parsed === 'object' && parsed !== null && parsed.highScore !== undefined) {
+                    // Backwards compatibility: re-save as base64
+                    localStorage.setItem(this._k, btoa(JSON.stringify(parsed)));
+                    return {...{highScore:0}, ...parsed};
+                }
+            } catch(e) {}
+            let decoded = atob(raw);
+            return {...{highScore:0}, ...JSON.parse(decoded)};
+        } catch(e){ return {highScore:0}; }
+    },
+    updateHighScore(s) { 
+        const d=this.load(); 
+        if(s>d.highScore){
+            d.highScore=s;
+            localStorage.setItem(this._k, btoa(JSON.stringify(d)));
+            return true;
+        } 
+        return false; 
+    }
+};
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SCREEN HELPERS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+function showScreen(id) { document.getElementById(id).classList.add('active'); }
+function hideScreen(id) { document.getElementById(id).classList.remove('active'); }
+function hideAllScreens() { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); }
+function showHUD() { document.getElementById('hud').classList.add('active'); }
+function hideHUD() { document.getElementById('hud').classList.remove('active'); }
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ AUDIO Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+let audioCtx = null;
+let droneOscs = [];
+
+function getAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+
+function playSfx(type) {
+    if (!Settings.sfx) return;
+    const ac = getAudio();
+    const osc = ac.createOscillator(), gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    const c = { jump:{f:150,ef:40,d:0.3,w:'sine'}, death:{f:300,ef:60,d:0.5,w:'sawtooth'}, score:{f:880,ef:880,d:0.05,w:'sine'}, nearmiss:{f:800,ef:1200,d:0.3,w:'triangle'} }[type] || {f:440,ef:440,d:0.1,w:'sine'};
+    osc.type = c.w;
+    osc.frequency.setValueAtTime(c.f, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(c.ef, ac.currentTime + c.d);
+    gain.gain.setValueAtTime(0.3, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + c.d);
+    osc.start(); osc.stop(ac.currentTime + c.d);
+}
+
+let crashBuffer = null;
+function playCrash() {
+    if (!Settings.sfx) return;
+    const ac = getAudio();
+    if (!crashBuffer) {
+        crashBuffer = ac.createBuffer(1, ac.sampleRate*0.5, ac.sampleRate);
+        const d = crashBuffer.getChannelData(0);
+        for (let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    }
+    const src = ac.createBufferSource(); src.buffer = crashBuffer;
+    const flt = ac.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=1000;
+    const gain = ac.createGain();
+    gain.gain.setValueAtTime(1, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.5);
+    src.connect(flt); flt.connect(gain); gain.connect(ac.destination); src.start();
+}
+
+function playCreepyMelody() { return;
+    if (!Settings.sfx) return;
+    const ac = getAudio(), now = ac.currentTime;
+    [{f:783.99,t:0},{f:783.99,t:0.3},{f:622.25,t:0.6}].forEach(n => {
+        const osc=ac.createOscillator(), gain=ac.createGain();
+        osc.type='triangle'; osc.frequency.setValueAtTime(n.f,now+n.t);
+        gain.gain.setValueAtTime(0,now+n.t); gain.gain.linearRampToValueAtTime(0.25,now+n.t+0.05); gain.gain.exponentialRampToValueAtTime(0.001,now+n.t+0.5);
+        osc.connect(gain); gain.connect(ac.destination); osc.start(now+n.t); osc.stop(now+n.t+0.5);
+    });
+}
+
+function startDrone() { return;
+    if (!Settings.music || droneOscs.length > 0) return;
+    const ac = getAudio();
+    [40,43,60.5].forEach(f => {
+        const osc=ac.createOscillator(), gain=ac.createGain();
+        osc.type='sine'; osc.frequency.value=f; gain.gain.value=0.04;
+        osc.connect(gain); gain.connect(ac.destination); osc.start();
+        droneOscs.push({osc,gain});
+    });
+    // Ghostly wind
+    const bufSize = ac.sampleRate*2, buf=ac.createBuffer(1,bufSize,ac.sampleRate), data=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++) data[i]=Math.random()*2-1;
+    const noise=ac.createBufferSource(); noise.buffer=buf; noise.loop=true;
+    const flt=ac.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=500; flt.Q.value=10;
+    const wGain=ac.createGain(); wGain.gain.value=0.015;
+    const lfo=ac.createOscillator(), lfoGain=ac.createGain();
+    lfo.type='sine'; lfo.frequency.value=0.2; lfoGain.gain.value=250;
+    lfo.connect(lfoGain); lfoGain.connect(flt.frequency);
+    noise.connect(flt); flt.connect(wGain); wGain.connect(ac.destination);
+    noise.start(); lfo.start();
+    droneOscs.push({osc:noise,gain:wGain},{osc:lfo,gain:lfoGain});
+}
+
+function stopDrone() {
+    droneOscs.forEach(d => { try { d.osc.stop(); } catch(e){} });
+    droneOscs = [];
+}
+
+function vibrate(p=[50]) { if(Settings.vibration && navigator.vibrate) navigator.vibrate(p); }
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ OFF-SCREEN SPRITES (Glow, pre-rendered once) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+function createGlowSprite(color, w, h, glow=15) {
+    const pad = glow*2, oc=document.createElement('canvas');
+    oc.width=w+pad; oc.height=h+pad;
+    const octx=oc.getContext('2d');
+    octx.shadowColor=color; octx.shadowBlur=glow; octx.fillStyle=color;
+    octx.fillRect(glow,glow,w,h);
+    octx.shadowBlur=0; octx.fillStyle='rgba(255,255,255,0.55)';
+    octx.fillRect(glow+w*0.25, glow+h*0.25, w*0.5, h*0.5);
+    return oc;
+}
+function createGlowCircle(color, r, glow=6) {
+    const size=(r+glow)*2, oc=document.createElement('canvas');
+    oc.width=size; oc.height=size;
+    const octx=oc.getContext('2d');
+    octx.shadowColor=color; octx.shadowBlur=glow; octx.fillStyle=color;
+    octx.beginPath(); octx.arc(size/2,size/2,r,0,Math.PI*2); octx.fill();
+    return oc;
+}
+function initSprites() {
+    SPRITES.player   = createGlowSprite('#ff003c',30,30,20);
+    SPRITES.obsRed   = createGlowSprite('#ff003c',60,80,15);
+    SPRITES.obsMag   = createGlowSprite('#ff00ff',60,80,15);
+    SPRITES.partRed  = createGlowCircle('#ff003c',2,6);
+    SPRITES.partPurp = createGlowCircle('#7000ff',2,6);
+    SPRITES.bgDot1   = createGlowCircle('#ff003c',1,3);
+    SPRITES.bgDot2   = createGlowCircle('#7000ff',1,3);
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ OBJECT POOLS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+
+// Obstacle pool
+const obstaclePool = new ObjectPool(
+    () => ({x:0,y:0,width:0,height:0,sprite:null,passed:false}),
+    (o) => {
+        o.passed=false;
+        o.x=window.innerWidth;
+        if (CURRENT_MODE === 'LASER') {
+            o.width = window.innerWidth; o.height = 15;
+            o.x = 0;
+            o.y = CEILING - 20; // Spawn above visible area
+            o.sprite = null;
+        } else if (CURRENT_MODE === 'TOPDOWN') {
+            o.width=40+Math.random()*60; o.height=40+Math.random()*60; // Square-ish obstacles
+            o.y=CEILING + Math.random() * (FLOOR - CEILING - o.height);
+            o.sprite=null;
+        } else {
+            o.width=40+Math.random()*60; o.height=40+Math.random()*80;
+            const top=Math.random()>0.5;
+            o.y=top?CEILING:FLOOR-o.height;
+            o.sprite=Math.random()>0.5?SPRITES.obsRed:SPRITES.obsMag;
+        }
+    }, 15
+);
+
+// Particle pool
+const particlePool = new ObjectPool(
+    () => ({x:0,y:0,vx:0,vy:0,life:0,maxLife:0,sprite:null}),
+    (p,x,y) => {
+        p.x=x; p.y=y;
+        p.vx=(Math.random()-0.5)*8; p.vy=(Math.random()-0.5)*8;
+        p.life=30+Math.random()*20; p.maxLife=p.life;
+        p.sprite=Math.random()>0.5?SPRITES.partRed:SPRITES.partPurp;
+    }, 60
+);
+
+// BG particle pool
+const bgParticles = [];
+function initBgParticles() {
+    bgParticles.length=0;
+    // Reduced from 100 to 40 for much better mobile performance
+    for(let i=0;i<40;i++) bgParticles.push({
+        x:Math.random()*window.innerWidth,
+        y:Math.random()*window.innerHeight,
+        baseVx:-(Math.random()*1.5+0.5),
+        vx:0,
+        sprite:Math.random()>0.5?SPRITES.bgDot1:SPRITES.bgDot2
+    });
+    bgParticles.forEach(p=>p.vx=p.baseVx);
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ PLAYER Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const player = {
+    x:100, y:0, width:30, height:30,
+    gravityDir:1, isSwapping:false, invincible:false,
+    z: 0, zVelocity: 0,
+    trail:[]
+};
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ FLUTTER BRIDGE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+const FlutterBridge = {
+    isFlutter() { return typeof window.AdChannel !== 'undefined'; },
+    _adStartTime: 0,
+    _waitingForReward: false,
+    showInterstitial() { 
+        if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial');
+        else if(typeof gdsdk !== 'undefined') gdsdk.showAd();
+    },
+    showRewarded() {
+        return new Promise((resolve,reject) => {
+            const cleanup = () => {
+                clearTimeout(window._rewardTimeout);
+                FlutterBridge._waitingForReward = false;
+                window._onRewardGranted = null;
+                window._onRewardFailed = null;
+            };
+
+            const failReward = () => {
+                if(!window._onRewardFailed) return;
+                const cb = window._onRewardFailed;
+                cleanup();
+                cb('Ad not available');
+            };
+
+            window._onRewardGranted = resolve;
+            window._onRewardFailed = reject;
+            // Timeout: fail cleanly after 30s if ad never reports back
+            window._rewardTimeout = setTimeout(()=>failReward(), 30000);
+            FlutterBridge._waitingForReward = true;
+            FlutterBridge._adStartTime = Date.now();
+
+            if (!navigator.onLine) {
+                console.warn("Sentinel: Device is offline. Failing SDK.");
+                failReward();
+                return;
+            }
+
+            if(this.isFlutter()) {
+                window.AdChannel.postMessage('showRewarded');
+            } else if(typeof gdsdk !== 'undefined' && typeof gdsdk.showAd !== 'undefined') {
+                try {
+                    const adPromise = gdsdk.showAd('rewarded');
+                    if (adPromise && typeof adPromise.then === 'function') {
+                        adPromise.then(() => {
+                            if (FlutterBridge._waitingForReward) FlutterBridge.onRewardGranted();
+                        }).catch(() => {
+                            failReward();
+                        });
+                    }
+                } catch(e) {
+                    failReward();
+                }
+            } else {
+                failReward();
+            }
+        });
+    },
+    onRewardGranted() {
+        clearTimeout(window._rewardTimeout);
+        if(window._onRewardGranted) {
+            const cb = window._onRewardGranted;
+            window._onRewardGranted = null; window._onRewardFailed = null;
+            FlutterBridge._waitingForReward = false;
+            cb();
+        }
+    },
+    onRewardFailed() {
+        clearTimeout(window._rewardTimeout);
+        if(window._onRewardFailed) {
+            const cb = window._onRewardFailed;
+            window._onRewardGranted = null; window._onRewardFailed = null;
+            FlutterBridge._waitingForReward = false;
+            cb('Ad not available');
+        }
+    }
+};
+window.FlutterBridge = FlutterBridge;
+
+// Visibility listener - audio management only.
+// Reward is ONLY granted by native AdMob onUserEarnedReward via FlutterBridge.
+// The old auto-grant here was a free-revive exploit (fixed 2026-10-14).
+document.addEventListener('visibilitychange', () => {
+    if (typeof audioCtx !== 'undefined' && audioCtx !== null) {
+        if (document.hidden && audioCtx.state === 'running') {
+            audioCtx.suspend();
+        } else if (!document.hidden && audioCtx.state === 'suspended' && GAME_STATE === STATE.PLAYING) {
+            audioCtx.resume();
+        }
+    }
+});
+
+window.onAdClose = () => { clearTimeout(window._rewardTimeout); if (window._pendingRevive) { window._pendingRevive = false; revivePlayer(); } else if (window._onRewardFailed) { window._onRewardFailed('Ad Closed'); } };
+
+// Global aliases for Android WebView compatibility
+window.onRewardGranted = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardGranted(); };
+window.onRewardFailed = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardFailed(); };
+window._adRewardCallback = (success) => { 
+    if(success && window.FlutterBridge) window.FlutterBridge.onRewardGranted(); 
+    else if(window.FlutterBridge) window.FlutterBridge.onRewardFailed(); 
+};
+window.AdRewardSuccess = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardGranted(); };
+window.rewardUser = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardGranted(); };
+
+// â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
+function startGameLoop() {
+    function loop(ts) {
+        if(GAME_STATE!==STATE.PLAYING) return;
+        const dt=Math.min((ts-lastTime)/16.67,3);
+        lastTime=ts;
+        update(dt); draw();
+        rafId=requestAnimationFrame(loop);
+    }
+    lastTime=performance.now();
+    rafId=requestAnimationFrame(loop);
+}
+
+function update(dt) {
+    frameCount++;
+    if(frameCount%480===0) baseSpeed=Math.min(baseSpeed+1,22);
+
+    // Drone speed sync
+    if(droneOscs.length>0 && droneOscs[0].gain) {
+        const vol=0.04+(baseSpeed*0.004);
+        droneOscs.slice(0,3).forEach(d=>{ try{d.gain.gain.setTargetAtTime(vol,audioCtx.currentTime,0.1);}catch(e){}});
+    }
+
+    // Chromatic aberration at score > 100
+    if(score>100) canvas.classList.add('aberration');
+    else canvas.classList.remove('aberration');
+
+    // Random stingers
+    if(Math.random()<0.002) playSfx('score');
+
+    // Player movement
+    if (CURRENT_MODE === 'TOPDOWN') {
+        // Smoothly move towards targetY if it exists
+        if (player.targetY !== undefined) {
+            const dy = player.targetY - (player.y + player.height/2);
+            player.y += dy * 0.15 * dt;
+        }
+        // Clamp to screen bounds
+        if (player.y < CEILING) player.y = CEILING;
+        if (player.y > FLOOR - player.height) player.y = FLOOR - player.height;
+    } else if (CURRENT_MODE === 'LASER') {
+        // Z-axis jump (cube jumps "up" to dodge beams passing through)
+        player.z += player.zVelocity * dt;
+        player.zVelocity -= 0.6 * dt; // Gravity
+        if (player.z <= 0) {
+            player.z = 0;
+            player.zVelocity = 0;
+        }
+        // Keep cube centered
+        player.x = window.innerWidth / 2 - player.width / 2;
+        player.y = FLOOR - player.height - 60;
+    } else {
+        // Gravity swap movement
+        if(player.isSwapping) {
+            const spd=15*dt;
+            player.y+=spd*player.gravityDir;
+            if(player.gravityDir===1&&player.y>=FLOOR-player.height){ player.y=FLOOR-player.height; player.isSwapping=false; }
+            if(player.gravityDir===-1&&player.y<=CEILING){ player.y=CEILING; player.isSwapping=false; }
+        }
+    }
+
+    // Trail
+    if (CURRENT_MODE === 'LASER') {
+        player.trail.push({x:player.x, y:player.y - player.z});
+    } else {
+        player.trail.push({x:player.x, y:player.y});
+    }
+    if(player.trail.length>12) player.trail.shift();
+
+    // Spawn obstacles
+    let spawnInterval = Math.max(50, 150 - baseSpeed * 5);
+    if (CURRENT_MODE === 'TOPDOWN') {
+        spawnInterval = Math.max(25, 90 - baseSpeed * 3);
+    }
+    if(frameCount%spawnInterval===0) obstaclePool.acquire();
+
+    // Update obstacles & collisions
+    for(let i=obstaclePool.active.length-1;i>=0;i--) {
+        const o=obstaclePool.active[i];
+        
+        if (CURRENT_MODE === 'LASER') {
+            o.y += baseSpeed * 1.3 * dt; // Move down
+            // Collision: only hit if cube is NOT jumping (z < 15)
+            if(!player.invincible && player.y < o.y + o.height && player.y + player.height > o.y && player.z < 15){
+                gameOver(); return;
+            }
+            if(!o.passed && o.y > player.y + player.height){
+                o.passed = true;
+                addScore(50); playSfx('score');
+            }
+            if(o.y > window.innerHeight + 20){ obstaclePool.release(o); }
+        } else {
+            o.x-=baseSpeed*dt;
+            if(!player.invincible&&player.x<o.x+o.width&&player.x+player.width>o.x&&player.y<o.y+o.height&&player.y+player.height>o.y){
+                gameOver(); return;
+            }
+            if(!o.passed&&player.x>o.x+o.width){
+                o.passed=true;
+                const near=(player.y<o.y+o.height+30&&player.y+player.height>o.y-30);
+                if(near){ addScore(50); playSfx('nearmiss'); canvas.classList.add('flash-white'); setTimeout(()=>canvas.classList.remove('flash-white'),200); }
+            }
+            if(o.x+o.width<0){ obstaclePool.release(o); addScore(10); }
+        }
+    }
+
+    // Update particles
+    for(let i=particlePool.active.length-1;i>=0;i--) {
+        const p=particlePool.active[i];
+        p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt;
+        if(p.life<=0) particlePool.release(p);
+    }
+
+    // BG particles
+    bgParticles.forEach(p=>{
+        p.x+=p.vx*dt-(player.isSwapping?6*dt:0);
+        if(p.vx<p.baseVx) p.vx+=0.3*dt;
+        if(p.x<0){p.x=window.innerWidth; p.y=Math.random()*window.innerHeight; p.vx=p.baseVx;}
+    });
+}
+
+function updateScoreDisplay() { document.getElementById('scoreValue').textContent = score; }
+
+function draw() {
+    const W=window.innerWidth, H=window.innerHeight;
+    ctx.clearRect(0,0,W,H);
+
+    // Tunnel lines
+    ctx.strokeStyle='#333'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0,CEILING); ctx.lineTo(W,CEILING);
+    ctx.moveTo(0,FLOOR); ctx.lineTo(W,FLOOR); ctx.stroke();
+
+    // Moving grid
+    ctx.strokeStyle='rgba(255,0,60,0.12)'; ctx.lineWidth=1;
+    const off=(frameCount*baseSpeed)%50;
+    ctx.beginPath();
+    for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
+    for(let j=CEILING;j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
+    ctx.stroke();
+
+    // BG particles
+    bgParticles.forEach(p=>{
+        if (!p.sprite) p.sprite = Math.random()>0.5 ? SPRITES.bgDot1 : SPRITES.bgDot2;
+        if (p.sprite) ctx.drawImage(p.sprite,Math.floor(p.x-2),Math.floor(p.y-2));
+    });
+
+    // Obstacles
+    obstaclePool.active.forEach(o=>{
+        if (CURRENT_MODE === 'LASER') {
+            // Full-width neon red laser beam
+            ctx.fillStyle = '#ff003c';
+            ctx.globalAlpha = 0.5;
+            ctx.fillRect(o.x, o.y - 4, o.width, o.height + 8);
+            ctx.globalAlpha = 1.0;
+            ctx.fillRect(o.x, o.y, o.width, o.height);
+            // White-hot core
+            ctx.fillStyle = 'rgba(255,200,200,0.7)';
+            ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
+        } else if (CURRENT_MODE === 'TOPDOWN') {
+            ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
+            ctx.globalAlpha = 0.3;
+            ctx.strokeRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
+            ctx.globalAlpha = 1.0;
+            ctx.strokeRect(o.x, o.y, o.width, o.height);
+        } else {
+            if(o.sprite) ctx.drawImage(o.sprite,Math.floor(o.x-15),Math.floor(o.y-15));
+            else { ctx.fillStyle='#ff00ff'; ctx.fillRect(o.x,o.y,o.width,o.height); }
+        }
+    });
+
+    // Player trail
+    ctx.globalAlpha=0.2; ctx.fillStyle='#ff003c';
+    for(let i=0;i<player.trail.length;i++) {
+        const pt=player.trail[i];
+        ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
+    }
+    ctx.globalAlpha=1;
+
+    // Particles - Optimized: group by alpha to reduce state changes
+    ctx.globalAlpha=0.6;
+    particlePool.active.forEach(p=>{
+        ctx.drawImage(p.sprite,Math.floor(p.x-4),Math.floor(p.y-4));
+    });
+    ctx.globalAlpha=1;
+
+    // Player
+    if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED) {
+        if (CURRENT_MODE === 'TOPDOWN') {
+             ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
+             ctx.globalAlpha = 0.4;
+             ctx.fillRect(player.x - 6, player.y - 6, player.width + 12, player.height + 12);
+             ctx.globalAlpha = 1.0;
+             ctx.fillRect(player.x,player.y,player.width,player.height);
+        } else if (CURRENT_MODE === 'LASER') {
+             // Clean sharp cube, lifted by z
+             const drawY = player.y - player.z;
+             ctx.fillStyle = player.invincible ? '#ffffff' : '#ff003c';
+             ctx.fillRect(player.x, drawY, player.width, player.height);
+             // Inner highlight
+             ctx.fillStyle = 'rgba(255,255,255,0.4)';
+             ctx.fillRect(player.x + 7, drawY + 7, 16, 16);
+        } else {
+            const spr=SPRITES.player;
+            if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
+            else { ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; ctx.fillRect(player.x,player.y,player.width,player.height); }
+        }
+    }
+
+    // Logo Pulse in Menu
+    if(GAME_STATE===STATE.MENU) {
+        const pulse = 1 + Math.sin(frameCount * 0.05) * 0.05;
+        const logo = document.querySelector('.unified-logo');
+        if(logo) logo.style.transform = `scale(${pulse})`;
+    }
+}
+
+// â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
+function swapGravity() {
+    if(GAME_STATE!==STATE.PLAYING) return;
+    if(!player.isSwapping){
+        player.gravityDir*=-1; player.isSwapping=true;
+        bgParticles.forEach(p=>p.vx-=10);
+        const ex=player.x+player.width/2, ey=player.y+(player.gravityDir===1?0:player.height);
+        for(let i=0;i<20;i++) particlePool.acquire(ex,ey);
+        playSfx('jump'); vibrate([30]);
+    }
+}
+
+function pauseGame() {
+    if(GAME_STATE!==STATE.PLAYING) return;
+    GAME_STATE=STATE.PAUSED;
+    cancelAnimationFrame(rafId);
+    showScreen('pause-screen');
+}
+
+function resumeGame() {
+    if(GAME_STATE!==STATE.PAUSED) return;
+    hideScreen('pause-screen');
+    GAME_STATE=STATE.PLAYING;
+    startGameLoop();
+}
+
+function quitToMenu() {
+    cancelAnimationFrame(rafId);
+    stopDrone();
+    GAME_STATE=STATE.MENU;
+    hideAllScreens(); hideHUD();
+    canvas.classList.remove('aberration');
+    document.getElementById('game-container').classList.remove('glitch-shake');
+    showScreen('start-screen');
+}
+
+function createExplosion(x,y) { for(let i=0;i<25;i++) particlePool.acquire(x,y); }
+
+function gameOver() {
+    GAME_STATE=STATE.GAMEOVER;
+    cancelAnimationFrame(rafId);
+    createExplosion(player.x+15,player.y+15);
+    playCrash(); playCreepyMelody(); vibrate([100,50,100]);
+    draw();
+    document.getElementById('game-container').classList.add('glitch-shake');
+    canvas.classList.remove('aberration');
+
+    const isNew=SaveData.updateHighScore(score);
+    const data=SaveData.load();
+    document.getElementById('finalScore').textContent=score;
+    document.getElementById('highScore').textContent=data.highScore;
+    document.getElementById('new-record-badge').style.display=isNew?'block':'none';
+
+    hideHUD();
+    showScreen('game-over-screen');
+
+        // Show revive button logic (limited in offline mode)
+    if (typeof window.offlineGameCount === 'undefined') window.offlineGameCount = 0;
+    
+    const reviveBtn = document.getElementById('revive-btn');
+    
+    if (!navigator.onLine) {
+        window.offlineGameCount++;
+        if (window.offlineGameCount > 3) {
+            reviveBtn.style.display = 'none';
+        } else {
+            reviveBtn.style.display = 'block';
+        }
+    } else {
+        // Online: Always show
+        reviveBtn.style.display = 'block';
+    }
+
+    if (reviveBtn.style.display !== 'none') {
+        reviveBtn.textContent = '\u26A1 REVIVE (WATCH AD)';
+        reviveBtn.disabled = false;
+    }
+
+    // Show Interstitial Ad every 3 deaths to balance revenue and UX
+    if (typeof window.deathCount === 'undefined') window.deathCount = 0;
+    window.deathCount++;
+    if (window.deathCount % 3 === 0) {
+        FlutterBridge.showInterstitial();
+    }
+}
+
+function revivePlayer() {
+    hideScreen('game-over-screen');
+    let count = 3;
+    const countdownEl = document.createElement('div');
+    countdownEl.style.position = 'absolute';
+    countdownEl.style.top = '50%';
+    countdownEl.style.left = '50%';
+    countdownEl.style.transform = 'translate(-50%, -50%)';
+    countdownEl.style.fontSize = '80px';
+    countdownEl.style.fontWeight = 'bold';
+    countdownEl.style.color = '#ff003c';
+    countdownEl.style.zIndex = '9999';
+    countdownEl.style.textShadow = '0 0 20px #ff003c';
+    countdownEl.style.fontFamily = 'monospace';
+    countdownEl.innerText = count;
+    document.body.appendChild(countdownEl);
+
+    const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            countdownEl.innerText = count;
+        } else {
+            clearInterval(interval);
+            countdownEl.remove();
+            GAME_STATE=STATE.PLAYING;
+            player.y=FLOOR-player.height; player.gravityDir=1; player.isSwapping=false;
+            player.invincible=true; setTimeout(()=>player.invincible=false,2000);
+            obstaclePool.releaseAll();
+            document.getElementById('revive-btn').style.display='none';
+            document.getElementById('game-container').classList.remove('glitch-shake');
+            showHUD(); startGameLoop();
+        }
+    }, 1000);
+}
+window.revivePlayer=revivePlayer;
+
+function resetGame() {
+    score=0; frameCount=0; baseSpeed=7;
+    player.x=100; player.y=FLOOR-player.height;
+    player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
+    player.z=0; player.zVelocity=0; player.targetY=undefined;
+    window._freeRevives = 0;
+    obstaclePool.releaseAll(); particlePool.releaseAll();
+    initBgParticles();
+    updateScoreDisplay();
+    document.getElementById('game-container').classList.remove('glitch-shake');
+    canvas.classList.remove('aberration');
+}
+
+function startGame() {
+    getAudio(); // unlock AudioContext on user gesture
+    const modeSelect = document.getElementById('mode-select');
+    if (modeSelect) CURRENT_MODE = modeSelect.value;
+    
+    resetGame();
+    hideAllScreens(); showHUD();
+    GAME_STATE=STATE.PLAYING;
+    cancelAnimationFrame(rafId);
+    startDrone();
+    startGameLoop();
+}
+
+// â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
+function handleInput(yPos) {
+    if (GAME_STATE !== STATE.PLAYING) return;
+    if (CURRENT_MODE === 'TOPDOWN') {
+        player.targetY = yPos;
+    } else if (CURRENT_MODE === 'LASER') {
+        // Jump only when on ground (z==0)
+        if (player.z <= 0) {
+            player.zVelocity = 12;
+            playSfx('jump');
+        }
+    } else {
+        swapGravity();
+    }
+}
+window.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); handleInput(window.innerHeight/2); }
+    if(e.key==='Escape') pauseGame();
+});
+window.addEventListener('touchstart', e=>{ 
+    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.touches[0].clientY);
+    }
+}, {passive:true});
+window.addEventListener('mousedown', e=>{ 
+    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.clientY);
+    }
+});
+window.addEventListener('mousemove', e=>{ 
+    if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && e.buttons === 1 && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.clientY);
+    }
+});
+window.addEventListener('touchmove', e=>{ 
+    if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        handleInput(e.touches[0].clientY);
+    }
+}, {passive:true});
+// â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
+document.getElementById('start-btn')?.addEventListener('click', () => {
+    let completed = localStorage.getItem('cubeRunTutorialCompleted') === 'true';
+    let skips = parseInt(localStorage.getItem('cubeRunTutorialSkips') || '0');
+    if (!completed && skips < 2) {
+        hideAllScreens();
+        showScreen('tutorial-screen');
+    } else {
+        startGame();
+    }
+});
+document.getElementById('tutorial-got-it-btn')?.addEventListener('click', () => {
+    localStorage.setItem('cubeRunTutorialCompleted', 'true');
+    hideAllScreens();
+    startGame();
+});
+document.getElementById('tutorial-skip-btn')?.addEventListener('click', () => {
+    let skips = parseInt(localStorage.getItem('cubeRunTutorialSkips') || '0');
+    localStorage.setItem('cubeRunTutorialSkips', (skips + 1).toString());
+    hideAllScreens();
+    startGame();
+});
+document.getElementById('restart-btn')?.addEventListener('click', startGame);
+document.getElementById('pause-btn')?.addEventListener('click', pauseGame);
+document.getElementById('resume-btn')?.addEventListener('click', resumeGame);
+document.getElementById('quit-btn')?.addEventListener('click', quitToMenu);
+document.getElementById('menu-btn-icon')?.addEventListener('click', quitToMenu);
+document.getElementById('menu-btn')?.addEventListener('click', quitToMenu);
+
+document.getElementById('settings-btn')?.addEventListener('click', ()=>{
+    if(GAME_STATE===STATE.PLAYING) pauseGame();
+    showScreen('settings-screen');
+});
+document.getElementById('settings-from-pause-btn')?.addEventListener('click', ()=>showScreen('settings-screen'));
+document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
+    hideScreen('settings-screen');
+    if(GAME_STATE===STATE.PAUSED) showScreen('pause-screen');
+});
+
+// Revive button
+document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
+    const btn=document.getElementById('revive-btn');
+    btn.disabled=true; btn.textContent='⏳ LOADING...';
+    try { 
+        await FlutterBridge.showRewarded(); window._pendingRevive = true; 
+    }
+    catch(e) { 
+        btn.textContent = '❌ TRY AGAIN LATER';
+        setTimeout(() => {
+            btn.textContent = '\u26A1 REVIVE (WATCH AD)';
+            btn.disabled = false;
+        }, 2000);
+    }
+});
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ UTILS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+window.pauseGameForAd  = ()=>{ if(GAME_STATE===STATE.PLAYING){ cancelAnimationFrame(rafId); }};
+window.resumeGameFromAd= ()=>{ if(GAME_STATE===STATE.PLAYING) startGameLoop(); };
+
+function applyApkMode() {
+    if(window.IS_APK===true) {
+        document.querySelectorAll('.apk-only').forEach(el=>el.remove());
+    }
+}
+window.addEventListener('load',()=>{ applyApkMode(); setTimeout(applyApkMode,800); });
+
+function shareToWhatsApp() {
+    const t='\uD83D\uDD25 I scored '+score+' on CUBE RUN! \uD83D\uDE08 Beat me: https://turfin-logic.github.io/CubeRun/';
+    window.location.href='https://api.whatsapp.com/send?text='+encodeURIComponent(t);
+}
+function shareToTelegram() {
+    window.location.href='https://t.me/share/url?url='+encodeURIComponent('https://turfin-logic.github.io/CubeRun/')+'&text='+encodeURIComponent('\uD83D\uDD25 I scored '+score+' on CUBE RUN!');
+}
+function downloadApk() {
+    window.location.href='https://neon-drift-game-tau.vercel.app/neon-drift-boss.apk?v='+Date.now();
+}
+
+// Custom Carousel Mode UI Logic
+const MODES = [
+    { value: 'CLASSIC', label: 'CLASSIC (GRAVITY FLIP)' },
+    { value: 'LASER', label: 'LASER (JUMP OVER BEAMS)' },
+    { value: 'TOPDOWN', label: 'TOP-DOWN (FREE MOVE)' }
+];
+let currentModeIndex = 0;
+
+function updateModeCarousel() {
+    const modeDisplay = document.getElementById('mode-display');
+    const modeInput = document.getElementById('mode-select');
+    if (modeDisplay && modeInput) {
+        modeDisplay.textContent = MODES[currentModeIndex].label;
+        modeInput.value = MODES[currentModeIndex].value;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const prevBtn = document.getElementById('mode-prev');
+    const nextBtn = document.getElementById('mode-next');
+    
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
+            updateModeCarousel();
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            currentModeIndex = (currentModeIndex + 1) % MODES.length;
+            updateModeCarousel();
+        });
+    }
+});
+
+// Offline Logic (Disabled to prevent blocking game on false positives)
+/*
+let offlineTimer = null;
+function handleOffline() {
+    console.log('Network went offline.');
+    offlineTimer = setTimeout(() => {
+        document.getElementById('offline-screen').classList.add('active');
+        if(GAME_STATE === STATE.PLAYING) pauseGame();
+    }, 5000);
+}
+function handleOnline() {
+    console.log('Network came online.');
+    if (offlineTimer) clearTimeout(offlineTimer);
+    document.getElementById('offline-screen').classList.remove('active');
+}
+window.addEventListener('offline', handleOffline);
+window.addEventListener('online', handleOnline);
+// Initial check
+if (!navigator.onLine) handleOffline();
+*/
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EVENT MANAGER — Cube Run Live-Ops Event System
+// Fetches events_config.json from GitHub Pages, caches to localStorage,
+// evaluates active events by UTC date, applies themes and score multipliers.
+// ═══════════════════════════════════════════════════════════════════════════════
+const EventManager = (function() {
+    const CONFIG_URL = 'https://turfin-logic.github.io/CubeRun/events_config.json';
+    const CACHE_KEY = 'cr_events_config';
+    const CACHE_TS_KEY = 'cr_events_ts';
+    const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+    let _config = null;
+    let _activeEvent = null;
+    let _testDate = null; // Set via EventManager.setTestDate('2026-12-25') for QA
+
+    // ── Utilities ──────────────────────────────────────────────────────────────
+
+    function _now() {
+        return _testDate ? new Date(_testDate) : new Date();
+    }
+
+    function _isWeekend(date) {
+        const d = date || _now();
+        const day = d.getUTCDay();
+        return day === 0 || day === 6; // 0=Sunday, 6=Saturday
+    }
+
+    function _parseUTC(str) {
+        // Handles both "2026-12-25" and "2026-12-25T00:00:00Z"
+        if (!str) return null;
+        return new Date(str.includes('T') ? str : str + 'T00:00:00Z');
+    }
+
+    // ── Config Fetching ────────────────────────────────────────────────────────
+
+    async function _fetchConfig() {
+        // 1. Try to serve from cache if still fresh
+        try {
+            const cachedTs = parseInt(localStorage.getItem(CACHE_TS_KEY) || '0', 10);
+            const ttl = _config && _config.global_settings && _config.global_settings.cache_ttl_minutes
+                ? _config.global_settings.cache_ttl_minutes * 60 * 1000
+                : CACHE_TTL_MS;
+            if (Date.now() - cachedTs < ttl) {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    _config = JSON.parse(cached);
+                    return _config;
+                }
+            }
+        } catch(e) { /* cache unreadable, fall through */ }
+
+        // 2. Try network
+        try {
+            const res = await fetch(CONFIG_URL + '?t=' + Date.now(), { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            _config = data;
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+            return _config;
+        } catch(fetchErr) {
+            console.warn('EventManager: network fetch failed, using cached config.', fetchErr);
+        }
+
+        // 3. Fall back to stale cache
+        try {
+            const stale = localStorage.getItem(CACHE_KEY);
+            if (stale) { _config = JSON.parse(stale); return _config; }
+        } catch(e) {}
+
+        // 4. No config available — events simply won't run
+        _config = null;
+        return null;
+    }
+
+    // ── Event Evaluation ───────────────────────────────────────────────────────
+
+    function _evaluateActiveEvent(config) {
+        if (!config || !Array.isArray(config.events)) return null;
+        const now = _now();
+
+        // Check dated events (highest priority, first match wins)
+        for (const ev of config.events) {
+            if (!ev.active) continue;
+            const start = _parseUTC(ev.start_utc);
+            const end   = _parseUTC(ev.end_utc);
+            if (!start || !end) continue;
+            if (now >= start && now <= end) {
+                // Handle weekend-only score multipliers
+                if (ev.score_multiplier_on_weekends_only && !_isWeekend(now)) {
+                    return { ...ev, score_multiplier: 1.0 }; // theme applies, no multiplier
+                }
+                return ev;
+            }
+        }
+
+        // Weekend boost (if no themed event active)
+        if (config.weekend_boost && config.weekend_boost.active && _isWeekend(now)) {
+            return config.weekend_boost;
+        }
+
+        return null; // Default — no active event
+    }
+
+    // ── Theme Application ─────────────────────────────────────────────────────
+
+    function _applyTheme(event, config) {
+        const themeId = (event && event.theme) || 'default';
+        const themes = (config && config.themes) || {};
+        const theme = themes[themeId] || themes['default'] || {};
+
+        // Store on window so game loop can read particle/trail colors
+        window.CR_EVENT_THEME = {
+            id: themeId,
+            playerColor:    theme.player_color   || '#00f3ff',
+            obstacleColor:  theme.obstacle_color || '#ff003c',
+            bgColor:        theme.bg_color       || '#030005',
+            particleColors: theme.particle_colors || ['#ff003c', '#7000ff'],
+            trailColor:     theme.trail_color    || '#00f3ff',
+            uiAccent:       theme.ui_accent      || '#ff003c',
+            invertColors:   theme.invert_colors  || false,
+            scoreMultiplier: (event && event.score_multiplier) || 1.0
+        };
+
+        // Apply body class for CSS overrides
+        document.body.classList.remove(
+            'theme-default','theme-diwali','theme-christmas','theme-newyear',
+            'theme-lunar','theme-valentine','theme-holi','theme-eid',
+            'theme-glitch','theme-summer','theme-tricolor','theme-anniversary','theme-halloween'
+        );
+        document.body.classList.add('theme-' + themeId);
+
+        // Update CSS custom properties for UI colors
+        document.documentElement.style.setProperty('--event-accent', theme.ui_accent || '#ff003c');
+    }
+
+    // ── Banner UI ─────────────────────────────────────────────────────────────
+
+    function _updateBanner(event) {
+        const banner = document.getElementById('event-banner');
+        if (!banner) return;
+        if (!event || !event.banner_text) {
+            banner.style.display = 'none';
+            return;
+        }
+        banner.textContent = event.banner_text;
+        banner.style.display = 'block';
+        banner.style.background = 'rgba(0,0,0,0.7)';
+        banner.style.color = event.banner_color || '#ff003c';
+        banner.style.border = '1px solid ' + (event.banner_color || '#ff003c');
+        banner.style.borderRadius = '4px';
+        banner.style.padding = '6px 14px';
+        banner.style.fontSize = '0.85rem';
+        banner.style.fontFamily = "Orbitron, monospace";
+        banner.style.letterSpacing = '1px';
+        banner.style.textAlign = 'center';
+        banner.style.margin = '8px auto 0';
+        banner.style.maxWidth = '300px';
+        banner.style.textShadow = '0 0 8px ' + (event.banner_color || '#ff003c');
+        banner.style.animation = 'eventBannerPulse 2s ease-in-out infinite';
+    }
+
+    // ── Public API ─────────────────────────────────────────────────────────────
+
+    async function init() {
+        try {
+            const config = await _fetchConfig();
+            if (!config) {
+                console.log('EventManager: no config available, using defaults.');
+                window.CR_EVENT_THEME = null;
+                return;
+            }
+            _activeEvent = _evaluateActiveEvent(config);
+            _applyTheme(_activeEvent, config);
+            _updateBanner(_activeEvent);
+
+            if (_activeEvent) {
+                console.log('EventManager: active event =>', _activeEvent.id,
+                    '| theme:', _activeEvent.theme,
+                    '| score x' + window.CR_EVENT_THEME.scoreMultiplier);
+            } else {
+                console.log('EventManager: no active event (default theme).');
+            }
+        } catch(e) {
+            console.warn('EventManager: init error', e);
+            window.CR_EVENT_THEME = null;
+        }
+    }
+
+    function getScoreMultiplier() {
+        return (window.CR_EVENT_THEME && window.CR_EVENT_THEME.scoreMultiplier) || 1.0;
+    }
+
+    function getActiveEventId() {
+        return _activeEvent ? _activeEvent.id : null;
+    }
+
+    function getTheme() {
+        return window.CR_EVENT_THEME || null;
+    }
+
+    // Test mode: EventManager.setTestDate('2026-12-25') to simulate future events
+    function setTestDate(dateStr) {
+        _testDate = dateStr ? new Date(dateStr) : null;
+        console.log('EventManager: test date set to', _testDate || 'REAL TIME');
+        // Re-evaluate with new date
+        if (_config) {
+            _activeEvent = _evaluateActiveEvent(_config);
+            _applyTheme(_activeEvent, _config);
+            _updateBanner(_activeEvent);
+        }
+    }
+
+    return { init, getScoreMultiplier, getActiveEventId, getTheme, setTestDate };
+})();
+
+window.EventManager = EventManager;
+
+// Wire score multiplier into the existing score update
+// The existing updateScoreDisplay/score increment logic stays intact.
+// CR_EVENT_THEME.scoreMultiplier is read at the point of score addition.
+// See: function addScore(points) in game loop integration below.
+function addScore(points) {
+    const multiplier = EventManager.getScoreMultiplier();
+    score += Math.round(points * multiplier);
+    updateScoreDisplay();
+}
+
+// Initialize EventManager when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => EventManager.init());
+} else {
+    EventManager.init();
+}

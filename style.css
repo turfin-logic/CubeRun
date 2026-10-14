@@ -430,3 +430,94 @@ p {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   EVENT SYSTEM — Theme overrides and banner animation
+   Applied via EventManager: body.theme-{id}
+   ═══════════════════════════════════════════════════════════ */
+
+/* Banner pulse animation */
+@keyframes eventBannerPulse {
+    0%   { opacity: 0.85; }
+    50%  { opacity: 1; }
+    100% { opacity: 0.85; }
+}
+
+#event-banner {
+    animation: eventBannerPulse 2s ease-in-out infinite;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* ── Diwali ── */
+body.theme-diwali { --neon-pink: #FFD700; --neon-blue: #FF8C00; --bg-color: #1a0500; }
+body.theme-diwali .glitch::before { text-shadow: -3px 0 #FF8C00; }
+body.theme-diwali .glitch::after  { text-shadow:  3px 0 #FF4500; }
+body.theme-diwali .cyber-btn { border-color: #FFD700; box-shadow: 0 0 15px #FFD700; }
+
+/* ── Christmas ── */
+body.theme-christmas { --neon-pink: #00FF44; --neon-blue: #FF0000; --bg-color: #001a00; }
+body.theme-christmas .glitch::before { text-shadow: -3px 0 #FF0000; }
+body.theme-christmas .glitch::after  { text-shadow:  3px 0 #00FF44; }
+body.theme-christmas .cyber-btn { border-color: #00FF44; box-shadow: 0 0 15px #00FF44; }
+
+/* ── New Year ── */
+body.theme-newyear { --neon-pink: #FFD700; --neon-blue: #FF003C; }
+body.theme-newyear .glitch::before { text-shadow: -3px 0 #FF003C; }
+body.theme-newyear .glitch::after  { text-shadow:  3px 0 #00F3FF; }
+
+/* ── Lunar New Year ── */
+body.theme-lunar { --neon-pink: #FF2200; --neon-blue: #FFD700; --bg-color: #1a0000; }
+body.theme-lunar .glitch::before { text-shadow: -3px 0 #FF2200; }
+body.theme-lunar .glitch::after  { text-shadow:  3px 0 #FFD700; }
+body.theme-lunar .cyber-btn { border-color: #FF2200; box-shadow: 0 0 15px #FF2200; }
+
+/* ── Valentine ── */
+body.theme-valentine { --neon-pink: #FF69B4; --neon-blue: #FF003C; --bg-color: #0d0005; }
+body.theme-valentine .glitch::before { text-shadow: -3px 0 #FF003C; }
+body.theme-valentine .glitch::after  { text-shadow:  3px 0 #FF00FF; }
+
+/* ── Holi ── */
+body.theme-holi { --neon-pink: #FF00FF; --neon-blue: #00F3FF; }
+body.theme-holi .glitch::before { text-shadow: -3px 0 #FF2200; }
+body.theme-holi .glitch::after  { text-shadow:  3px 0 #00FF44; }
+
+/* ── Eid ── */
+body.theme-eid { --neon-pink: #00FF44; --neon-blue: #FFD700; --bg-color: #001a00; }
+body.theme-eid .glitch::before { text-shadow: -3px 0 #FFD700; }
+body.theme-eid .glitch::after  { text-shadow:  3px 0 #00FF44; }
+
+/* ── Glitch Mode (April Fools) ── */
+body.theme-glitch { --neon-pink: #00F3FF; --neon-blue: #FF003C; --bg-color: #000000; }
+body.theme-glitch .glitch::before { text-shadow: -3px 0 #FF003C; animation-duration: 0.3s; }
+body.theme-glitch .glitch::after  { text-shadow:  3px 0 #7000FF; animation-duration: 0.2s; }
+body.theme-glitch #game-container { animation: glitch-screen 5s infinite; }
+@keyframes glitch-screen {
+    0%, 95% { filter: none; }
+    96% { filter: hue-rotate(180deg); }
+    97% { filter: invert(1); }
+    98% { filter: hue-rotate(90deg); }
+    99% { filter: none; }
+}
+
+/* ── Summer ── */
+body.theme-summer { --neon-pink: #FF8C00; --neon-blue: #FFD700; --bg-color: #0a0500; }
+body.theme-summer .glitch::before { text-shadow: -3px 0 #FF4500; }
+body.theme-summer .glitch::after  { text-shadow:  3px 0 #FFD700; }
+
+/* ── Tricolor (Independence Day India) ── */
+body.theme-tricolor { --neon-pink: #FF8C00; --neon-blue: #00AA44; }
+body.theme-tricolor .glitch::before { text-shadow: -3px 0 #FF8C00; }
+body.theme-tricolor .glitch::after  { text-shadow:  3px 0 #00AA44; }
+
+/* ── Anniversary ── */
+body.theme-anniversary { --neon-pink: #FFD700; --neon-blue: #FF003C; }
+body.theme-anniversary .glitch::before { text-shadow: -3px 0 #FFD700; }
+body.theme-anniversary .glitch::after  { text-shadow:  3px 0 #00F3FF; }
+body.theme-anniversary .cyber-btn { border-color: #FFD700; box-shadow: 0 0 20px #FFD700; }
+
+/* ── Halloween ── */
+body.theme-halloween { --neon-pink: #7000FF; --neon-blue: #FF8C00; --bg-color: #0d0015; }
+body.theme-halloween .glitch::before { text-shadow: -3px 0 #7000FF; }
+body.theme-halloween .glitch::after  { text-shadow:  3px 0 #FF8C00; }
+body.theme-halloween .cyber-btn { border-color: #7000FF; box-shadow: 0 0 15px #7000FF; }

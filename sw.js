@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuberun-v5';
+const CACHE_NAME = 'cuberun-v6'; // Bumped 2026-10-14: event system added
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -38,8 +38,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
     
-    // External APIs or trackers (like gamedistribution) should bypass cache
-    if (event.request.url.includes('gamedistribution') || event.request.url.includes('google')) {
+    // External APIs, trackers, and live config should bypass cache
+    if (event.request.url.includes('gamedistribution') || event.request.url.includes('google') || event.request.url.includes('events_config.json')) {
         event.respondWith(fetch(event.request).catch(() => new Response('{}', { status: 200 }))); // Fail gracefully
         return;
     }
