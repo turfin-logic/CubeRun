@@ -1,4 +1,4 @@
-// game.js Ã¢â‚¬â€ CUBE RUN (Production Build)
+﻿// game.js Ã¢â‚¬â€ CUBE RUN (Production Build)
 // Skill: html5-canvas-mobile-game
 
 const canvas = document.getElementById('gameCanvas');
@@ -297,7 +297,7 @@ const FlutterBridge = {
     _waitingForReward: false,
     showInterstitial() { 
         if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial');
-        else if(typeof gdsdk !== 'undefined') gdsdk.showAd();
+        else if(typeof gdsdk !== 'undefined') { try { gdsdk.showAd(); } catch(e) { console.warn('[CubeRun] interstitial gdsdk threw:', e); } }
     },
     showRewarded() {
         return new Promise((resolve,reject) => {

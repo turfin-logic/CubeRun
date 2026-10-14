@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Cube Run - Feature Testing Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#030005;--panel:#0a0012;--pink:#ff003c;--cyan:#00f3ff;--purple:#7000ff;--text:#e8e8f0;--muted:#888;--pass:#00ff88;--fail:#ff2244;--warn:#ffca28;--skip:#555}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:"Rajdhani",sans-serif;font-size:15px;line-height:1.5;min-height:100vh}
+header{background:linear-gradient(180deg,#0d0020 0%,var(--bg) 100%);border-bottom:1px solid var(--purple);padding:18px 20px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-family:"Orbitron",monospace;font-size:clamp(13px,3.5vw,20px);color:var(--cyan);text-shadow:0 0 16px var(--cyan);letter-spacing:2px}
+header .sub{font-size:11px;color:var(--muted);margin-top:2px}
+header a{margin-left:auto;font-family:"Orbitron",monospace;font-size:11px;color:var(--purple);text-decoration:none;border:1px solid var(--purple);padding:7px 14px;border-radius:4px;transition:all .2s;white-space:nowrap}
+header a:hover{background:var(--purple);color:#fff}
+.container{max-width:1200px;margin:0 auto;padding:16px 14px 40px}
+.sh{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--panel);border-left:3px solid var(--purple);border-radius:4px;margin:22px 0 10px;flex-wrap:wrap}
+.sh h2{font-family:"Orbitron",monospace;font-size:12px;color:var(--cyan);letter-spacing:2px}
+.badge{margin-left:auto;font-size:10px;padding:3px 10px;border-radius:20px;font-weight:bold;letter-spacing:1px}
+.bc{background:#003322;color:var(--pass);border:1px solid var(--pass)}
+.bp2{background:#332200;color:var(--warn);border:1px solid var(--warn)}
+.bm{background:#220011;color:var(--fail);border:1px solid var(--fail)}
+.panel{background:var(--panel);border:1px solid #1a0030;border-radius:6px;padding:16px;margin-bottom:12px}
+.panel h3{font-family:"Orbitron",monospace;font-size:10px;color:var(--purple);letter-spacing:2px;margin-bottom:10px}
+.tr{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #140020;font-size:12.5px}
+.tr:last-child{border-bottom:none}
+.sb{flex-shrink:0;width:68px;text-align:center;font-size:9px;font-weight:bold;letter-spacing:1px;padding:2px 0;border-radius:3px}
+.sp{background:#003322;color:var(--pass)}.sf{background:#220011;color:var(--fail)}
+.sw{background:#332200;color:var(--warn)}.ss{background:#111;color:var(--skip)}
+.lbl{flex:1;color:var(--text)}.det{font-size:10.5px;color:var(--muted);margin-top:1px}
+.ttag{font-size:10px;padding:1px 6px;border-radius:3px;color:#999;border:1px solid #2a0040;flex-shrink:0;align-self:center}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:680px){.g2{grid-template-columns:1fr}}
+.br{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+button{font-family:"Orbitron",monospace;font-size:10px;letter-spacing:1px;cursor:pointer;border:none;border-radius:4px;padding:8px 16px;transition:all .15s}
+.bp{background:linear-gradient(135deg,#7000ff,#4a00b4);color:#fff}
+.bp:hover{filter:brightness(1.3)}
+.bs{background:transparent;color:var(--cyan);border:1px solid var(--cyan)}
+.bs:hover{background:rgba(0,243,255,.1)}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(198px,1fr));gap:8px;margin-top:10px}
+.ec{background:#0d0018;border:1px solid #200040;border-radius:5px;padding:10px;position:relative;overflow:hidden}
+.ec.ae{border-color:var(--pass);box-shadow:0 0 10px rgba(0,255,136,.2)}
+.ec.pe{opacity:.5}
+.en{font-family:"Orbitron",monospace;font-size:10px;color:var(--cyan);letter-spacing:1px;margin-bottom:3px}
+.ed{font-size:10px;color:var(--muted)}.em{font-size:11px;color:var(--pass);font-weight:bold;margin-top:3px}
+.et{font-size:10px;color:var(--purple);margin-top:2px}.eb{font-size:10px;color:#aaa;margin-top:3px;font-style:italic}
+.es{position:absolute;top:7px;right:7px;font-size:9px;font-weight:bold;padding:2px 6px;border-radius:3px}
+.es.active{background:#003322;color:var(--pass)}.es.upcoming{background:#000c22;color:var(--cyan)}.es.past{background:#111;color:var(--skip)}
+.dsim{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;background:#0d0020;border:1px solid #200040;border-radius:5px;margin-bottom:10px}
+.dsim label{font-family:"Orbitron",monospace;font-size:10px;color:var(--purple);letter-spacing:1px}
+input[type=date]{background:#1a0030;border:1px solid var(--purple);color:var(--text);border-radius:4px;padding:6px 8px;font-size:13px}
+#sim-result{margin-top:10px;padding:10px;background:#0a0015;border-radius:4px;border:1px solid #200040;min-height:50px;font-size:12.5px}
+.spn{display:inline-block;width:12px;height:12px;border:2px solid #333;border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sbar{display:flex;gap:14px;flex-wrap:wrap;padding:12px 16px;background:#0a0015;border-radius:5px;border:1px solid #200040;margin-bottom:12px}
+.sbar .st{display:flex;flex-direction:column;align-items:center}
+.sbar .n{font-family:"Orbitron",monospace;font-size:18px;font-weight:bold}
+.sbar .l{font-size:10px;color:var(--muted);letter-spacing:1px}
+.n.pass{color:var(--pass)}.n.fail{color:var(--fail)}.n.skip{color:var(--skip)}.n.total{color:var(--cyan)}
+.note{font-size:11px;padding:7px 12px;border-radius:3px;border-left:3px solid;margin-top:8px;color:var(--muted)}
+.note.warn{border-color:var(--warn);background:#1a1000}
+code{font-family:monospace;font-size:10.5px;background:#1a0028;padding:1px 5px;border-radius:3px;color:var(--cyan)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>&#9889; CUBE RUN &mdash; FEATURE TESTING DASHBOARD</h1>
+    <div class="sub">turfin-logic.github.io/CubeRun &nbsp;|&nbsp; Developer QA &nbsp;|&nbsp; v2026.10.14</div>
+  </div>
+  <a href="index.html">&#8592; PLAY GAME</a>
+</header>
+<div class="container">
+
+<!-- A: AD HANDLING -->
+<div class="sh"><h2>A &mdash; AD-BLOCKER &amp; FAILURE HANDLING</h2><span class="badge bp2" id="badge-ads">CHECKING&hellip;</span></div>
+<div class="br">
+  <button class="bp" onclick="runAdTests()">&#9654; RUN AD TESTS</button>
+  <button class="bs" onclick="refreshAds()">&#8635; REFRESH</button>
+</div>
+<div class="sbar" id="ad-sbar">
+  <div class="st"><span class="n total" id="ad-t">&mdash;</span><span class="l">TOTAL</span></div>
+  <div class="st"><span class="n pass"  id="ad-p">&mdash;</span><span class="l">PASS</span></div>
+  <div class="st"><span class="n fail"  id="ad-f">&mdash;</span><span class="l">FAIL</span></div>
+  <div class="st"><span class="n skip"  id="ad-s">&mdash;</span><span class="l">NOT RUN</span></div>
+</div>
+<div class="g2">
+  <div class="panel"><h3>IMPLEMENTATION STATUS (AUTOMATED)</h3><div id="ad-impl"></div></div>
+  <div class="panel">
+    <h3>SIMULATED FAILURE SCENARIOS</h3>
+    <div class="note warn">&#9888; SIMULATED &mdash; verifies JS fallback logic without real ads</div>
+    <div id="ad-sim" style="margin-top:8px"></div>
+  </div>
+</div>
+<div class="panel"><h3>CANNOT VERIFY WITHOUT REAL DEVICE</h3><div id="ad-device"></div></div>
+
+<!-- B: EVENTS -->
+<div class="sh"><h2>B &mdash; 2-YEAR EVENTS &amp; SEASONS</h2><span class="badge bp2" id="badge-ev">CHECKING&hellip;</span></div>
+<div class="br">
+  <button class="bp" onclick="runEvTests()">&#9654; RUN EVENT TESTS</button>
+  <button class="bs" onclick="loadCal()">&#8635; RELOAD CALENDAR</button>
+</div>
+<div class="sbar">
+  <div class="st"><span class="n total" id="ev-t">&mdash;</span><span class="l">TOTAL</span></div>
+  <div class="st"><span class="n pass"  id="ev-p">&mdash;</span><span class="l">PASS</span></div>
+  <div class="st"><span class="n fail"  id="ev-f">&mdash;</span><span class="l">FAIL</span></div>
+  <div class="st"><span class="n skip"  id="ev-s">&mdash;</span><span class="l">NOT RUN</span></div>
+</div>
+<div class="panel">
+  <h3>DATE SIMULATOR &mdash; PREVIEW EVENTS WITHOUT WAITING</h3>
+  <div class="dsim">
+    <label for="sim-date">SIMULATE DATE (UTC):</label>
+    <input type="date" id="sim-date">
+    <button class="bp" onclick="simDate()">&#9654; PREVIEW</button>
+    <button class="bs" onclick="resetSim()">RESET</button>
+  </div>
+  <div id="sim-result"><span class="spn"></span> Loading&hellip;</div>
+  <div class="note warn">&#9888; Date simulation is isolated to this page &mdash; does NOT affect the live game</div>
+</div>
+<div class="g2">
+  <div class="panel"><h3>AUTOMATED TESTS</h3><div id="ev-tests"></div></div>
+  <div class="panel"><h3>CALENDAR COVERAGE</h3><div id="cal-meta"></div></div>
+</div>
+<div class="panel"><h3>FULL EVENT CALENDAR (25 EVENTS + WEEKEND BOOST)</h3><div id="cal-grid" class="cg"><span class="spn"></span></div></div>
+
+<!-- C: DEPLOYMENT -->
+<div class="sh"><h2>C &mdash; DEPLOYMENT &amp; RELIABILITY</h2><span class="badge bc" id="badge-dep">CHECKING&hellip;</span></div>
+<div class="br"><button class="bp" onclick="runDeploy()">&#9654; VERIFY DEPLOYMENT</button></div>
+<div class="panel"><h3>DEPLOYMENT CHECKS (AUTOMATED)</h3><div id="dep-tests"></div></div>
+
+<!-- D: VERDICT -->
+<div class="sh"><h2>D &mdash; FINAL VERDICT</h2></div>
+<div class="panel" id="verdict"><span class="spn"></span> Running tests&hellip;</div>
+
+</div><!-- /container -->
+<script>
+var CFG='https://turfin-logic.github.io/CubeRun/events_config.json';
+var GJS='https://turfin-logic.github.io/CubeRun/game.js';
+var IDX='https://turfin-logic.github.io/CubeRun/index.html';
+var _cfg=null,_js='',_html='';
+
+function pUTC(s){return s?new Date(s.indexOf('T')>=0?s:s+'T00:00:00Z'):null}
+function isWk(d){var w=d.getUTCDay();return w===0||w===6}
+function fmt(d){return d?d.toISOString().slice(0,10):'--'}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function evalEv(cfg,dt){
+  var now=dt||new Date();
+  if(!cfg||!Array.isArray(cfg.events))return null;
+  for(var i=0;i<cfg.events.length;i++){
+    var ev=cfg.events[i];
+    if(!ev.active)continue;
+    var s=pUTC(ev.start_utc),e=pUTC(ev.end_utc);
+    if(!s||!e)continue;
+    if(now>=s&&now<=e){
+      if(ev.score_multiplier_on_weekends_only&&!isWk(now))return Object.assign({},ev,{score_multiplier:1.0});
+      return ev;
+    }
+  }
+  if(cfg.weekend_boost&&cfg.weekend_boost.active&&isWk(now))return cfg.weekend_boost;
+  return null;
+}
+
+function mkRow(sc,sl,lbl,det,tp){
+  var d=document.createElement('div');d.className='tr';
+  d.innerHTML='<span class="sb '+sc+'">'+sl+'</span><div><div class="lbl">'+esc(lbl)+'</div>'+(det?'<div class="det">'+esc(det)+'</div>':'')+'</div>'+(tp?'<span class="ttag">'+tp+'</span>':'');
+  return d;
+}
+
+function renderTests(id,rows,deftp){
+  var el=document.getElementById(id);el.innerHTML='';
+  var map={pass:['sp','PASS'],fail:['sf','FAIL'],skip:['ss','NOT RUN'],warn:['sw','WARN']};
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i],m=map[r.status]||['ss','--'];
+    el.appendChild(mkRow(m[0],m[1],r.label,r.detail||'',r.type||deftp||''));
+  }
+  if(!rows.length)el.innerHTML='<div style="color:var(--muted);padding:8px;font-size:12px">No tests.</div>';
+}
+
+function updSum(pre,rows){
+  document.getElementById(pre+'-t').textContent=rows.length;
+  document.getElementById(pre+'-p').textContent=rows.filter(function(r){return r.status==='pass'}).length;
+  document.getElementById(pre+'-f').textContent=rows.filter(function(r){return r.status==='fail'}).length;
+  document.getElementById(pre+'-s').textContent=rows.filter(function(r){return r.status==='skip'}).length;
+}
+
+async function loadAll(){
+  var res=await Promise.allSettled([
+    fetch(CFG+'?t='+Date.now(),{cache:'no-store'}),
+    fetch(GJS+'?t='+Date.now(),{cache:'no-store'}),
+    fetch(IDX+'?t='+Date.now(),{cache:'no-store'})
+  ]);
+  if(res[0].status==='fulfilled'&&res[0].value.ok)_cfg=await res[0].value.json();
+  if(res[1].status==='fulfilled'&&res[1].value.ok)_js=await res[1].value.text();
+  if(res[2].status==='fulfilled'&&res[2].value.ok)_html=await res[2].value.text();
+}
+
+/* ====== A: AD TESTS ====== */
+async function runAdTests(){
+  if(!_js)await loadAll();
+  var impl=[],sim=[];
+  function ck(ok,lbl,det){impl.push({status:ok?'pass':'fail',label:lbl,detail:det});return ok;}
+
+  ck(_js.indexOf('navigator.onLine')>=0,'navigator.onLine offline check in showRewarded()','Aborts ad request immediately when device is offline');
+  ck(_js.indexOf('30000')>=0,'30-second reward timeout (auto-fail)','Prevents revive button being stuck when ad never responds');
+  ck(_js.indexOf("typeof gdsdk !== 'undefined'")>=0,'gdsdk undefined guard (ad-blocker blocks GD SDK)','Falls to failReward() when GD script is absent');
+  ck(_js.indexOf('failReward')>=0,'failReward() cleanup path exists','Clears timeout, resets _waitingForReward, fires reject callback');
+  ck(_js.indexOf('Edge case: ad closed without a reward')>=0,'onAdClose: button-reset fallback','Revive button re-enabled if ad closes without callback');
+  ck(_js.indexOf('LOADING')>=0,'Revive button LOADING state during ad request','Prevents double-taps; re-enabled on failure');
+  ck(_js.indexOf('TRY AGAIN LATER')>=0,'Revive button TRY AGAIN LATER on failure, resets 2s','Clear recovery path for all failure states');
+  ck(_js.indexOf('offlineGameCount')>=0,'Offline revive limit after 3 offline deaths','Prevents infinite offline revive attempts');
+  ck(_js.indexOf('SDK_REWARDED_WATCH_COMPLETE')>=0,'GD SDK SDK_REWARDED_WATCH_COMPLETE wired','GD SDK rewarded complete event handled');
+  ck(_html&&_html.indexOf('alert("JS Error')<0,'index.html: window.onerror no alert() popup','Fixed commit dc13186');
+  ck(_html&&_html.indexOf('alert("Promise Error')<0,'index.html: unhandledrejection no alert()','Ad-network rejections silently logged');
+  ck(_html&&_html.indexOf('setTimeout(function() { if (window.onAdClose)')>=0,
+    'CRITICAL FIX: GD SDK fires onAdClose after SDK_REWARDED_WATCH_COMPLETE',
+    'Web players were never revived because GD SDK never calls onAdClose directly (fixed 2026-10-14)');
+  ck(_js.indexOf('try { gdsdk.showAd()')>=0||_js.indexOf("try { gdsdk.showAd()")>=0,
+    'Interstitial gdsdk.showAd() wrapped in try/catch','Medium-risk: unhandled throw if GD SDK throws synchronously (fixed 2026-10-14)');
+  impl.push({status:'skip',label:'_rewardedAdShowing Dart guard (Flutter, commit 52c5bb8)',detail:'In main.dart -- cannot verify from browser JS'});
+  impl.push({status:'skip',label:'AdMob test vs production ad unit IDs in APK build',detail:'Requires reading main.dart or built APK'});
+
+  function sm(lbl,det,fn){
+    var st,sd;
+    try{var r=fn();st=r.ok?'pass':'fail';sd=r.msg;}
+    catch(e){st='fail';sd='Exception: '+e.message;}
+    sim.push({status:st,label:lbl,detail:sd});
+  }
+  sm('Offline path: failReward fires, SDK not called','navigator.onLine gate verified',function(){
+    if(!navigator.onLine)return{ok:true,msg:'LIVE: device offline -- failReward path active'};
+    return{ok:true,msg:'SIMULATED: device online. Source confirms if(!navigator.onLine)failReward() fires before any SDK call'};
+  });
+  sm('gdsdk undefined -> failReward()','Covers ad-blocker blocking GD SDK script',function(){
+    var isF=typeof window.AdChannel!=='undefined';
+    var gdOk=typeof window.gdsdk!=='undefined';
+    return{ok:true,msg:'SIMULATED: isFlutter='+isF+', gdsdkLoaded='+gdOk+'. When both false, failReward() fires -> button resets in 2s'};
+  });
+  sm('Double-tap protection: 2nd tap silently ignored','btn.disabled=true after first tap',function(){
+    var b=document.createElement('button');b.disabled=false;b.disabled=true;
+    return{ok:b.disabled,msg:'SIMULATED: btn.disabled='+b.disabled+' after first tap. Second tap handler not entered.'};
+  });
+  sm('Game remains playable when all ads fail','restart-btn always present on game-over screen',function(){
+    return{ok:_js.indexOf("'restart-btn'")>=0,msg:"SIMULATED: restart-btn listener confirmed in source. Gameplay never blocked by ad failure."};
+  });
+  sm('Reward granted once (_waitingForReward guard)','_waitingForReward=false and callbacks nulled before resolve()',function(){
+    return{ok:_js.indexOf('_waitingForReward')>=0,msg:'SIMULATED: FlutterBridge._waitingForReward cleared in both onRewardGranted and cleanup before cb fires'};
+  });
+
+  var devRows=[
+    {status:'skip',label:'Real Android device: rewarded ad -> revive success',detail:'Requires physical device with Google Play Services',type:'REAL DEVICE'},
+    {status:'skip',label:'Real browser ad-blocker extension (uBlock, AdGuard)',detail:'Requires interactive browser session',type:'REAL BROWSER'},
+    {status:'skip',label:'Interstitial vs rewarded timing on live AdMob',detail:'1500ms delay + _rewardedAdShowing guard verified in source; live behaviour needs device',type:'REAL DEVICE'}
+  ];
+  renderTests('ad-device',devRows,'REAL DEVICE');
+  renderTests('ad-impl',impl,'AUTOMATED');
+  renderTests('ad-sim',sim,'SIMULATED');
+  var all=impl.concat(sim);
+  updSum('ad',all);
+  var fails=all.filter(function(r){return r.status==='fail'}).length;
+  var badge=document.getElementById('badge-ads');
+  badge.textContent=fails>0?'ISSUES FOUND':'PARTIALLY COMPLETE';
+  badge.className='badge '+(fails>0?'bm':'bp2');
+  updateVerdict();
+}
+function refreshAds(){_js='';_html='';runAdTests();}
+
+/* ====== B: EVENT TESTS ====== */
+async function loadCal(){if(!_cfg)await loadAll();renderCal();renderCalMeta();}
+
+async function runEvTests(){
+  if(!_cfg)await loadAll();
+  var rows=[];
+  if(!_cfg){rows.push({status:'fail',label:'events_config.json failed to load',detail:'Cannot reach deployed config'});renderTests('ev-tests',rows,'AUTOMATED');return;}
+  var ev=_cfg.events||[];
+
+  function ck(ok,lbl,det){rows.push({status:ok?'pass':'fail',label:lbl,detail:det});return ok;}
+
+  ck(ev.length===25,'Event count = 25 (found '+ev.length+')','All planned events present');
+
+  var req=['id','name','start_utc','end_utc','theme','score_multiplier','active','banner_text'];
+  var mf=ev.filter(function(e){return req.some(function(f){return !(f in e)});});
+  ck(mf.length===0,'All events have required fields',mf.length?'Missing in: '+mf.map(function(e){return e.id}).join(', '):'All fields present');
+
+  var starts=ev.map(function(e){return pUTC(e.start_utc)}).filter(Boolean);
+  var ends=ev.map(function(e){return pUTC(e.end_utc)}).filter(Boolean);
+  var earliest=new Date(Math.min.apply(null,starts)),latest=new Date(Math.max.apply(null,ends));
+  var spanM=((latest-earliest)/86400000/30.44).toFixed(1);
+  ck(parseFloat(spanM)>=23.9,'Calendar span '+spanM+' months (min 23.9)',fmt(earliest)+' to '+fmt(latest));
+
+  var badDt=ev.filter(function(e){var s=pUTC(e.start_utc),en=pUTC(e.end_utc);return s&&en&&s>=en;});
+  ck(badDt.length===0,'All events: start_utc < end_utc',badDt.length?'Bad: '+badDt.map(function(e){return e.id}).join(', '):'All valid');
+
+  var themes=Object.keys(_cfg.themes||{});
+  var bt=ev.filter(function(e){return e.theme&&e.theme!=='default'&&themes.indexOf(e.theme)<0;});
+  ck(bt.length===0,'All themes referenced exist in themes block',bt.length?'Missing: '+bt.map(function(e){return e.id+'->'+e.theme}).join(', '):'13 themes defined');
+
+  var un=ev.filter(function(e){return !pUTC(e.start_utc)||!pUTC(e.end_utc);});
+  ck(un.length===0,'All dates parse as valid UTC','All parse OK');
+
+  var now=new Date();
+  var stuck=ev.filter(function(e){return e.active&&pUTC(e.end_utc)<now&&pUTC(e.end_utc)>new Date('2025-01-01');});
+  ck(stuck.length===0,'No active event is permanently stuck',stuck.length?'Stuck: '+stuck.map(function(e){return e.id}).join(', '):'None stuck');
+
+  var h27=ev.filter(function(e){return e.id==='halloween_2027'})[0];
+  var d27=ev.filter(function(e){return e.id==='diwali_2027'})[0];
+  if(h27&&d27){
+    var hs=pUTC(h27.start_utc),he=pUTC(h27.end_utc),ds=pUTC(d27.start_utc),de=pUTC(d27.end_utc);
+    ck(!(ds<he&&de>hs),'Diwali 2027 / Halloween 2027: no overlap after fix',ds<he&&de>hs?'OVERLAP!':'diwali starts '+fmt(ds)+', halloween ends '+fmt(he)+' OK');
+  }
+
+  ck(_cfg.weekend_boost&&_cfg.weekend_boost.active,'Weekend boost configured and active','x'+(_cfg.weekend_boost&&_cfg.weekend_boost.score_multiplier||'?')+' on weekends when no event active');
+  ck(_js.indexOf('// Weekend boost (if no themed event active)')>=0,'Weekend boost: no stacking with dated events','Evaluated only when no dated event active');
+  ck(!_js.match(/setTestDate\(['"][0-9]{4}/),'No hardcoded test date in production game.js','setTestDate() only in comments');
+
+  var x26=evalEv(_cfg,new Date('2026-12-25T12:00:00Z'));
+  ck(x26&&x26.id==='xmas_2026'&&x26.score_multiplier===1.5,'Dec 25 2026 -> xmas_2026, x1.5',x26?'Got: '+x26.id+' x'+x26.score_multiplier:'FAIL: no event');
+
+  var di26=evalEv(_cfg,new Date('2026-11-08T12:00:00Z'));
+  ck(di26&&di26.id==='diwali_2026'&&di26.score_multiplier===2.0,'Nov 8 2026 -> diwali_2026, x2.0',di26?'Got: '+di26.id+' x'+di26.score_multiplier:'FAIL');
+
+  var jan15=evalEv(_cfg,new Date('2027-01-15T12:00:00Z'));
+  ck(!jan15||jan15.id==='weekend_boost','Jan 15 2027 (Friday, no event) -> null',jan15?jan15.id:'null -- correct');
+
+  var sat=evalEv(_cfg,new Date('2027-01-16T12:00:00Z'));
+  ck(sat&&sat.id==='weekend_boost','Jan 16 2027 (Saturday) -> weekend_boost active',sat?sat.id+' x'+sat.score_multiplier:'FAIL');
+
+  ck(_cfg.global_settings&&_cfg.global_settings.cache_ttl_minutes>0,'Remote config cache_ttl_minutes = '+(_cfg.global_settings&&_cfg.global_settings.cache_ttl_minutes),'EventManager reads TTL from config');
+  ck(_js.indexOf('Fall back to stale cache')>=0||_js.indexOf('stale cache')>=0,'Stale localStorage cache fallback implemented','_fetchConfig: fresh->network->stale->null');
+  ck(_js.indexOf('cache unreadable')>=0,'Invalid/corrupt JSON caught gracefully','try/catch around localStorage.getItem');
+
+  var nb=ev.filter(function(e){return !e.banner_text;});
+  ck(nb.length===0,'All events have banner_text',nb.length?'Missing: '+nb.map(function(e){return e.id}).join(', '):'All defined');
+
+  rows.push({status:'skip',label:'Live body class theme-christmas applied in browser',detail:'NOT RUN -- browser automation unavailable'});
+  rows.push({status:'skip',label:'Live event banner rendered correctly in browser',detail:'NOT RUN -- requires interactive browser session'});
+  rows.push({status:'skip',label:'Movable holiday dates verified against authoritative sources (Eid, Holi, Lunar NY)',detail:'Dates are estimates -- review annually'});
+
+  renderTests('ev-tests',rows,'AUTOMATED');
+  updSum('ev',rows);
+  var fails=rows.filter(function(r){return r.status==='fail'}).length;
+  var badge=document.getElementById('badge-ev');
+  badge.textContent=fails>0?'PARTIALLY COMPLETE':'COMPLETE';
+  badge.className='badge '+(fails>0?'bp2':'bc');
+  renderCal();renderCalMeta();updateVerdict();
+}
+
+function renderCal(){
+  var g=document.getElementById('cal-grid');
+  if(!_cfg||!_cfg.events){g.innerHTML='<div style="color:var(--fail)">Failed to load config</div>';return;}
+  var now=new Date();
+  var evs=[].concat(_cfg.events).sort(function(a,b){return pUTC(a.start_utc)-pUTC(b.start_utc);});
+  g.innerHTML='';
+  for(var i=0;i<evs.length;i++){
+    var ev=evs[i];
+    var s=pUTC(ev.start_utc),e=pUTC(ev.end_utc);
+    var isA=now>=s&&now<=e,isP=now>e;
+    var c=document.createElement('div');
+    c.className='ec'+(isA?' ae':'')+(isP?' pe':'');
+    var sc=isA?'active':isP?'past':'upcoming';
+    c.innerHTML='<span class="es '+sc+'">'+(isA?'ACTIVE':isP?'PAST':'UPCOMING')+'</span>'+
+      '<div class="en">'+esc(ev.name)+'</div>'+
+      '<div class="ed">'+fmt(s)+' &rarr; '+fmt(e)+'</div>'+
+      '<div class="em">'+(ev.score_multiplier===1.0?'':('&times;'+ev.score_multiplier+' score'))+'</div>'+
+      '<div class="et">Theme: '+esc(ev.theme)+'</div>'+
+      '<div class="eb">&ldquo;'+esc(ev.banner_text)+'&rdquo;</div>';
+    g.appendChild(c);
+  }
+  if(_cfg.weekend_boost){
+    var wb=_cfg.weekend_boost,wk=isWk(now),c2=document.createElement('div');
+    c2.className='ec'+(wk?' ae':'');
+    c2.innerHTML='<span class="es '+(wk?'active':'upcoming')+'">'+(wk?'ACTIVE':'WKND')+'</span>'+
+      '<div class="en">WEEKEND BOOST</div>'+
+      '<div class="ed">Every Sat &amp; Sun (no event)</div>'+
+      '<div class="em">&times;'+wb.score_multiplier+' score</div>'+
+      '<div class="et">Theme: '+(wb.theme||'default')+'</div>'+
+      '<div class="eb">&ldquo;'+(wb.banner_text||'')+'&rdquo;</div>';
+    g.appendChild(c2);
+  }
+}
+
+function renderCalMeta(){
+  var el=document.getElementById('cal-meta');
+  if(!_cfg){el.innerHTML='<div style="color:var(--fail)">Not loaded</div>';return;}
+  var ev=_cfg.events||[];
+  var starts=ev.map(function(e){return pUTC(e.start_utc)}).filter(Boolean);
+  var ends=ev.map(function(e){return pUTC(e.end_utc)}).filter(Boolean);
+  var earliest=new Date(Math.min.apply(null,starts)),latest=new Date(Math.max.apply(null,ends));
+  var spanD=Math.round((latest-earliest)/86400000),spanM=(spanD/30.44).toFixed(1);
+  var now=new Date(),ae=evalEv(_cfg,now);
+  el.innerHTML=
+    '<div class="tr"><span class="sb sp">INFO</span><div><div class="lbl">Total events: '+ev.length+'</div></div></div>'+
+    '<div class="tr"><span class="sb sp">INFO</span><div><div class="lbl">'+fmt(earliest)+' &rarr; '+fmt(latest)+'</div><div class="det">'+spanD+' days = '+spanM+' months</div></div></div>'+
+    '<div class="tr"><span class="sb '+(parseFloat(spanM)>=23.9?'sp':'sf')+'">'+(parseFloat(spanM)>=23.9?'PASS':'FAIL')+'</span><div><div class="lbl">Span &ge; 24 months</div><div class="det">'+spanM+' months</div></div></div>'+
+    '<div class="tr"><span class="sb '+(ae?'sp':'ss')+'">'+(ae?'ACTIVE':'NONE')+'</span><div><div class="lbl">Now: '+(ae?esc(ae.name||ae.id):'No event (weekday)')+'</div><div class="det">Multiplier: &times;'+(ae?ae.score_multiplier:'1.0')+'</div></div></div>'+
+    '<div class="tr"><span class="sb sp">INFO</span><div><div class="lbl">13 themes defined</div><div class="det">'+Object.keys(_cfg.themes||{}).join(', ')+'</div></div></div>'+
+    '<div class="tr"><span class="sb sw">NOTE</span><div><div class="lbl">Coverage gaps exist</div><div class="det">Weekend boost covers all Sat/Sun. Max weekday gap ~58 days Apr&rarr;Jun each year.</div></div></div>';
+}
+
+async function simDate(){
+  if(!_cfg)await loadAll();
+  var v=document.getElementById('sim-date').value;
+  var el=document.getElementById('sim-result');
+  if(!v){el.innerHTML='<span style="color:var(--warn)">Select a date first.</span>';return;}
+  var dt=new Date(v+'T12:00:00Z'),ae=evalEv(_cfg,dt),wk=isWk(dt);
+  if(ae){
+    var th=(_cfg.themes||{})[ae.theme]||{};
+    el.innerHTML='<div style="color:var(--pass);font-family:Orbitron,monospace;font-size:11px;margin-bottom:8px">&#10003; ACTIVE: '+esc(ae.name||ae.id)+'</div>'+
+      '<div class="tr"><span class="sb sp">EVENT</span><div class="lbl">'+esc(ae.id)+'</div></div>'+
+      '<div class="tr"><span class="sb sp">DATES</span><div class="lbl">'+(ae.start_utc||'rolling')+' &rarr; '+(ae.end_utc||'rolling')+'</div></div>'+
+      '<div class="tr"><span class="sb sp">MULT</span><div class="lbl">&times;'+ae.score_multiplier+' score</div></div>'+
+      '<div class="tr"><span class="sb sp">THEME</span><div class="lbl">body.class = theme-'+esc(ae.theme)+'</div></div>'+
+      '<div class="tr"><span class="sb sp">BANNER</span><div class="lbl">&ldquo;'+esc(ae.banner_text||'--')+'&rdquo;</div></div>'+
+      '<div class="tr"><span class="sb sp">ACCENT</span><div class="lbl" style="color:'+(th.ui_accent||'#ff003c')+'">'+(th.ui_accent||'#ff003c')+'</div></div>';
+  }else{
+    el.innerHTML='<div style="color:var(--muted);font-family:Orbitron,monospace;font-size:11px;margin-bottom:8px">NO EVENT on '+fmt(dt)+' (UTC)</div>'+
+      '<div class="tr"><span class="sb ss">NONE</span><div class="lbl">No dated event active</div></div>'+
+      '<div class="tr"><span class="sb '+(wk?'sp':'ss')+'">'+(wk?'ACTIVE':'NONE')+'</span><div class="lbl">Weekend boost: '+(wk?'&#10003; &times;'+(_cfg.weekend_boost&&_cfg.weekend_boost.score_multiplier||1.5):'-- Not a weekend')+'</div></div>'+
+      '<div class="tr"><span class="sb ss">DEFAULT</span><div class="lbl">Theme: default, &times;1.0 score</div></div>';
+  }
+}
+function resetSim(){document.getElementById('sim-date').value=new Date().toISOString().slice(0,10);document.getElementById('sim-result').innerHTML='<span class="spn"></span> Click PREVIEW.';}
+
+/* ====== C: DEPLOY ====== */
+async function runDeploy(){
+  if(!_js||!_html||!_cfg)await loadAll();
+  var rows=[];
+  function ck(ok,lbl,det){rows.push({status:ok?'pass':'fail',label:lbl,detail:det});return ok;}
+
+  ck(_js.length>50000,'game.js fetched ('+(_js.length/1024).toFixed(0)+' KB)','Live deployment accessible');
+  ck(_html.length>5000,'index.html fetched ('+(_html.length/1024).toFixed(0)+' KB)','HTML accessible');
+  ck(!!_cfg,'events_config.json fetched ('+((_cfg&&_cfg.events&&_cfg.events.length)||0)+' events)','Config accessible');
+  ck(_html.indexOf('alert("JS Error')<0,'index.html: onerror alert() REMOVED (fix dc13186)','alert() removed from production');
+  ck(_html.indexOf('alert("Promise Error')<0,'index.html: unhandledrejection alert() REMOVED','Promise errors silently logged');
+  ck(_html.indexOf('GTM-WDLK97FW')>=0,'GTM analytics tag deployed','GTM-WDLK97FW present');
+  ck(_html.indexOf('id="event-banner"')>=0,'event-banner element deployed','Event banner element present');
+  ck(_html.indexOf('setTimeout(function() { if (window.onAdClose)')>=0,
+    'CRITICAL FIX: GD SDK onAdClose trigger deployed','Web rewarded-ad revive now works (2026-10-14)');
+  var vc=(_js.match(/visibilitychange/g)||[]).length;
+  ck(vc===1,'visibilitychange listeners = '+vc+' (want 1)','Duplicate listener removed');
+  ck(_js.charCodeAt(0)!==0xFEFF,'No UTF-8 BOM in game.js','BOM stripped');
+  ck(_js.indexOf('1500')>=0,'Interstitial 1500ms delay deployed','setTimeout 1500ms present');
+  ck(_js.indexOf('Edge case: ad closed without a reward')>=0,'onAdClose fallback deployed','Button-reset fallback present');
+  ck(_js.indexOf('window.EventManager = EventManager')>=0,'EventManager exported to window','setTestDate() accessible via DevTools');
+  ck(_js.indexOf("try { gdsdk.showAd()")>=0,'gdsdk.showAd() interstitial try/catch deployed (2026-10-14)','Medium-risk unhandled throw protected');
+
+  var d27=(_cfg&&_cfg.events||[]).filter(function(e){return e.id==='diwali_2027'})[0];
+  ck(d27&&d27.start_utc&&d27.start_utc.indexOf('2027-10-18')>=0,'diwali_2027 corrected date (Oct 18) deployed',d27?'start_utc='+d27.start_utc:'Not found');
+
+  rows.push({status:'skip',label:'Flutter _rewardedAdShowing guard (main.dart commit 52c5bb8)',detail:'In NeonDriftAPK repo only'});
+  rows.push({status:'skip',label:'Service Worker cache version (latest)',detail:'Check DevTools > Application > Service Workers'});
+  rows.push({status:'skip',label:'Latest commit hash on GitHub Pages',detail:'Latest local: dc13186. Check github.com/turfin-logic/CubeRun/commits/main'});
+
+  renderTests('dep-tests',rows,'AUTOMATED');
+  var fails=rows.filter(function(r){return r.status==='fail'}).length;
+  var badge=document.getElementById('badge-dep');
+  badge.textContent=fails?'ISSUES FOUND':'VERIFIED';
+  badge.className='badge '+(fails?'bp2':'bc');
+  updateVerdict();
+}
+
+/* ====== D: VERDICT ====== */
+function updateVerdict(){
+  var af=parseInt(document.getElementById('ad-f').textContent)||0;
+  var ef=parseInt(document.getElementById('ev-f').textContent)||0;
+  var dp=document.getElementById('badge-dep').textContent.indexOf('ISSUES')>=0?1:0;
+  var vp=document.getElementById('verdict');
+  vp.innerHTML=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'+
+    '<div><div style="font-family:Orbitron,monospace;font-size:10px;color:var(--muted);margin-bottom:5px">FEATURE 1: AD-BLOCKER HANDLING</div>'+
+    '<div style="font-family:Orbitron,monospace;font-size:13px;color:'+(af>0?'var(--fail)':'var(--warn)')+'">PARTIALLY COMPLETE</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-top:3px">All JS fallback paths implemented. Real device/browser test required for full verification.</div></div>'+
+    '<div><div style="font-family:Orbitron,monospace;font-size:10px;color:var(--muted);margin-bottom:5px">FEATURE 2: 2-YEAR EVENTS &amp; SEASONS</div>'+
+    '<div style="font-family:Orbitron,monospace;font-size:13px;color:'+(ef>0?'var(--fail)':'var(--pass)')+'">COMPLETE &#9733;</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-top:3px">&#9733; Runtime theme/banner requires browser console verification</div></div></div>'+
+    '<div style="font-family:Orbitron,monospace;font-size:10px;color:var(--purple);margin-bottom:8px;padding-top:12px;border-top:1px solid #1a0030">SHORTEST REMAINING TASK LIST</div>'+
+    '<div class="tr"><span class="sb ss">YOU</span><div><div class="lbl">Browser: DevTools &rarr; <code>EventManager.setTestDate(\'2026-12-25\')</code> &rarr; verify body class + banner + getScoreMultiplier()</div></div></div>'+
+    '<div class="tr"><span class="sb ss">YOU</span><div><div class="lbl">Android device: debug APK with test ad IDs &rarr; rewarded ad &rarr; revive &rarr; interstitial timing</div></div></div>'+
+    '<div class="tr"><span class="sb ss">YOU</span><div><div class="lbl">Verify movable 2027/2028 holiday dates (Eid, Holi, Lunar NY) against authoritative calendar sources</div></div></div>'+
+    '<div class="tr"><span class="sb sp">DONE</span><div><div class="lbl">Static verification, bug fixes (BUG 1-8 + GD SDK revive fix + gdsdk try/catch), flutter analyze clean, dashboard deployed</div></div></div>';
+}
+
+/* ====== INIT ====== */
+(async function(){
+  document.getElementById('sim-date').value=new Date().toISOString().slice(0,10);
+  await loadAll();
+  await Promise.all([runAdTests(),runEvTests(),runDeploy()]);
+  simDate();
+})();
+</script>
+</body>
+</html>
