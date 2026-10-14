@@ -521,3 +521,65 @@ body.theme-halloween { --neon-pink: #7000FF; --neon-blue: #FF8C00; --bg-color: #
 body.theme-halloween .glitch::before { text-shadow: -3px 0 #7000FF; }
 body.theme-halloween .glitch::after  { text-shadow:  3px 0 #FF8C00; }
 body.theme-halloween .cyber-btn { border-color: #7000FF; box-shadow: 0 0 15px #7000FF; }
+
+/* ── In-game Ad Status Toast ─────────────────────────────────────────── */
+#ad-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(0,0,0,0.85);
+    border: 1px solid var(--neon-pink);
+    color: var(--neon-pink);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    padding: 8px 18px;
+    border-radius: 4px;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    text-align: center;
+    max-width: 80vw;
+    box-shadow: 0 0 12px rgba(255,0,60,0.4);
+}
+#ad-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ── HUD Event Ticker (in-game) ───────────────────────────────────────── */
+#hud-event-ticker {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 2px 8px;
+    opacity: 0.9;
+    animation: eventBannerPulse 2s ease-in-out infinite;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ── HUD Multiplier Badge ─────────────────────────────────────────────── */
+#hud-multiplier {
+    font-size: 0.65em;
+    color: var(--neon-pink);
+    margin-left: 8px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    vertical-align: middle;
+    animation: eventBannerPulse 1.5s ease-in-out infinite;
+}
+
+/* ── Event Score Bonus note on game-over screen ───────────────────────── */
+#event-score-note {
+    color: var(--neon-pink);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    letter-spacing: 1px;
+    animation: eventBannerPulse 1.5s ease-in-out infinite;
+}

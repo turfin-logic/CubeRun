@@ -1,4 +1,4 @@
-﻿// game.js Ã¢â‚¬â€ CUBE RUN (Production Build)
+// game.js Ã¢â‚¬â€ CUBE RUN (Production Build)
 // Skill: html5-canvas-mobile-game
 
 const canvas = document.getElementById('gameCanvas');
@@ -221,13 +221,21 @@ function createGlowCircle(color, r, glow=6) {
     return oc;
 }
 function initSprites() {
-    SPRITES.player   = createGlowSprite('#ff003c',30,30,20);
-    SPRITES.obsRed   = createGlowSprite('#ff003c',60,80,15);
-    SPRITES.obsMag   = createGlowSprite('#ff00ff',60,80,15);
-    SPRITES.partRed  = createGlowCircle('#ff003c',2,6);
-    SPRITES.partPurp = createGlowCircle('#7000ff',2,6);
-    SPRITES.bgDot1   = createGlowCircle('#ff003c',1,3);
-    SPRITES.bgDot2   = createGlowCircle('#7000ff',1,3);
+    // Read active event theme colors (set by EventManager._applyTheme)
+    const ET = window.CR_EVENT_THEME || {};
+    const pc  = ET.playerColor    || '#ff003c';
+    const oc  = ET.obstacleColor  || '#ff003c';
+    const oc2 = ET.particleColors && ET.particleColors[1] ? ET.particleColors[1] : '#ff00ff';
+    const tc  = ET.trailColor     || '#ff003c';
+    const pd1 = ET.particleColors && ET.particleColors[0] ? ET.particleColors[0] : '#ff003c';
+    const pd2 = ET.particleColors && ET.particleColors[1] ? ET.particleColors[1] : '#7000ff';
+    SPRITES.player   = createGlowSprite(pc,  30, 30, 20);
+    SPRITES.obsRed   = createGlowSprite(oc,  60, 80, 15);
+    SPRITES.obsMag   = createGlowSprite(oc2, 60, 80, 15);
+    SPRITES.partRed  = createGlowCircle(pd1, 2, 6);
+    SPRITES.partPurp = createGlowCircle(pd2, 2, 6);
+    SPRITES.bgDot1   = createGlowCircle(pd1, 1, 3);
+    SPRITES.bgDot2   = createGlowCircle(pd2, 1, 3);
 }
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ OBJECT POOLS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -291,6 +299,21 @@ const player = {
 };
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ FLUTTER BRIDGE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── IN-GAME AD STATUS TOAST ──────────────────────────────────────────────
+function showAdToast(msg) {
+    let t = document.getElementById('ad-toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'ad-toast';
+        const gc = document.getElementById('game-container');
+        if (gc) gc.appendChild(t); else document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('visible');
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove('visible'), 3500);
+}
+
 const FlutterBridge = {
     isFlutter() { return typeof window.AdChannel !== 'undefined'; },
     _adStartTime: 0,
@@ -527,7 +550,23 @@ function update(dt) {
     });
 }
 
-function updateScoreDisplay() { document.getElementById('scoreValue').textContent = score; }
+function updateScoreDisplay() {
+    document.getElementById('scoreValue').textContent = score;
+    // Show active score multiplier in HUD if > 1
+    const mul = EventManager.getScoreMultiplier();
+    let mulEl = document.getElementById('hud-multiplier');
+    if (mul > 1.0) {
+        if (!mulEl) {
+            mulEl = document.createElement('div');
+            mulEl.id = 'hud-multiplier';
+            const sd = document.getElementById('score-display');
+            if (sd) sd.appendChild(mulEl);
+        }
+        mulEl.textContent = '×' + mul.toFixed(1) + ' EVENT';
+    } else if (mulEl) {
+        mulEl.textContent = '';
+    }
+}
 
 function draw() {
     const W=window.innerWidth, H=window.innerHeight;
@@ -539,7 +578,11 @@ function draw() {
     ctx.moveTo(0,FLOOR); ctx.lineTo(W,FLOOR); ctx.stroke();
 
     // Moving grid
-    ctx.strokeStyle='rgba(255,0,60,0.12)'; ctx.lineWidth=1;
+    // Event theme: grid color
+    const _et=window.CR_EVENT_THEME;
+    const _gc=_et?_et.obstacleColor:'#ff003c';
+    const _gr=parseInt(_gc.slice(1,3)||'ff',16),_gg=parseInt(_gc.slice(3,5)||'00',16),_gb=parseInt(_gc.slice(5,7)||'3c',16);
+    ctx.strokeStyle='rgba('+_gr+','+_gg+','+_gb+',0.12)'; ctx.lineWidth=1;
     const off=(frameCount*baseSpeed)%50;
     ctx.beginPath();
     for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
@@ -556,7 +599,7 @@ function draw() {
     obstaclePool.active.forEach(o=>{
         if (CURRENT_MODE === 'LASER') {
             // Full-width neon red laser beam
-            ctx.fillStyle = '#ff003c';
+            ctx.fillStyle = (_et&&_et.obstacleColor)||'#ff003c';
             ctx.globalAlpha = 0.5;
             ctx.fillRect(o.x, o.y - 4, o.width, o.height + 8);
             ctx.globalAlpha = 1.0;
@@ -565,7 +608,7 @@ function draw() {
             ctx.fillStyle = 'rgba(255,200,200,0.7)';
             ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
         } else if (CURRENT_MODE === 'TOPDOWN') {
-            ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
+            ctx.strokeStyle = (_et&&_et.obstacleColor)||'#ff003c'; ctx.lineWidth=3;
             ctx.globalAlpha = 0.3;
             ctx.strokeRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
             ctx.globalAlpha = 1.0;
@@ -577,7 +620,7 @@ function draw() {
     });
 
     // Player trail
-    ctx.globalAlpha=0.2; ctx.fillStyle='#ff003c';
+    ctx.globalAlpha=0.2; ctx.fillStyle=(_et&&_et.trailColor)||'#ff003c';
     for(let i=0;i<player.trail.length;i++) {
         const pt=player.trail[i];
         ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
@@ -594,7 +637,7 @@ function draw() {
     // Player
     if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED) {
         if (CURRENT_MODE === 'TOPDOWN') {
-             ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
+             ctx.fillStyle=player.invincible?'#ffffff':((_et&&_et.playerColor)||'#ff003c'); 
              ctx.globalAlpha = 0.4;
              ctx.fillRect(player.x - 6, player.y - 6, player.width + 12, player.height + 12);
              ctx.globalAlpha = 1.0;
@@ -673,6 +716,22 @@ function gameOver() {
     const data=SaveData.load();
     document.getElementById('finalScore').textContent=score;
     document.getElementById('highScore').textContent=data.highScore;
+    // Show event score bonus note
+    const _mul = EventManager.getScoreMultiplier();
+    const _ev  = EventManager.getActiveEvent ? EventManager.getActiveEvent() : null;
+    let _me = document.getElementById('event-score-note');
+    if (!_me) {
+        _me = document.createElement('p');
+        _me.id = 'event-score-note';
+        const statsDiv = document.querySelector('.stats');
+        if (statsDiv) statsDiv.appendChild(_me);
+    }
+    if (_me) {
+        if (_mul > 1.0 && _ev) {
+            _me.textContent = '×' + _mul.toFixed(1) + ' ' + (_ev.name || 'EVENT') + ' BONUS ACTIVE!';
+            _me.style.display = 'block';
+        } else { _me.style.display = 'none'; }
+    }
     document.getElementById('new-record-badge').style.display=isNew?'block':'none';
 
     hideHUD();
@@ -858,6 +917,7 @@ document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
     }
     catch(e) { 
         btn.textContent = '❌ TRY AGAIN LATER';
+        showAdToast('Ad unavailable — tap REVIVE again in a moment.');
         setTimeout(() => {
             btn.textContent = '\u26A1 REVIVE (WATCH AD)';
             btn.disabled = false;
@@ -1055,6 +1115,7 @@ const EventManager = (function() {
         const theme = themes[themeId] || themes['default'] || {};
 
         // Store on window so game loop can read particle/trail colors
+        EventManager._activeEventObj = event;
         window.CR_EVENT_THEME = {
             id: themeId,
             playerColor:    theme.player_color   || '#00f3ff',
@@ -1086,10 +1147,19 @@ const EventManager = (function() {
         if (!banner) return;
         if (!event || !event.banner_text) {
             banner.style.display = 'none';
+            const _tk = document.getElementById('hud-event-ticker');
+            if (_tk) _tk.style.display = 'none';
             return;
         }
         banner.textContent = event.banner_text;
         banner.style.display = 'block';
+        // Also update the HUD event ticker (visible during gameplay)
+        let ticker = document.getElementById('hud-event-ticker');
+        if (ticker) {
+            ticker.textContent = event.banner_text;
+            ticker.style.color = event.banner_color || 'var(--neon-pink)';
+            ticker.style.display = 'block';
+        }
         banner.style.background = 'rgba(0,0,0,0.7)';
         banner.style.color = event.banner_color || '#ff003c';
         banner.style.border = '1px solid ' + (event.banner_color || '#ff003c');
@@ -1118,6 +1188,13 @@ const EventManager = (function() {
             _activeEvent = _evaluateActiveEvent(config);
             _applyTheme(_activeEvent, config);
             _updateBanner(_activeEvent);
+            // Reinit canvas sprites so gameplay reflects the active event theme
+            if (typeof initSprites === 'function') initSprites();
+            // Push event bgColor onto game-container canvas background
+            if (window.CR_EVENT_THEME && window.CR_EVENT_THEME.bgColor) {
+                const _gc = document.getElementById('game-container');
+                if (_gc) _gc.style.background = window.CR_EVENT_THEME.bgColor;
+            }
 
             if (_activeEvent) {
                 console.log('EventManager: active event =>', _activeEvent.id,
