@@ -69,13 +69,14 @@
         }(document, 'script', 'gamedistribution-sdk'));
     </script>
     <script>
+        // Dev-only error overlay removed from production — was alert()-based.
+        // Ad network / fetch unhandledrejections are normal; alerts would block gameplay.
         window.onerror = function(msg, url, line, col, error) {
-            alert("JS Error: " + msg + "\nLine: " + line + "\nCol: " + col);
-            document.body.innerHTML += '<div style="position:fixed;top:0;left:0;z-index:9999;background:red;color:white;padding:10px;font-size:12px;max-width:100vw;">ERROR: ' + msg + '<br>Line: ' + line + '</div>';
-            return false;
+            console.error('[CubeRun]', msg, 'at', url + ':' + line, error);
+            return true; // suppress default browser error UI
         };
         window.addEventListener("unhandledrejection", function(e) {
-            alert("Promise Error: " + e.reason);
+            console.warn('[CubeRun] Unhandled rejection:', e.reason);
         });
     </script>
     <!-- Fast APK Detection -->
