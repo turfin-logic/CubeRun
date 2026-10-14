@@ -1,4 +1,4 @@
-﻿// game.js Ã¢â‚¬â€ CUBE RUN (Production Build)
+// game.js Ã¢â‚¬â€ CUBE RUN (Production Build)
 // Skill: html5-canvas-mobile-game
 
 const canvas = document.getElementById('gameCanvas');
@@ -62,15 +62,6 @@ CEILING = window.innerHeight * 0.18;
 FLOOR   = window.innerHeight * 0.82;
 if(typeof initSprites === 'function') initSprites();
 
-document.addEventListener('visibilitychange', () => {
-    if (typeof audioCtx !== 'undefined' && audioCtx !== null) {
-        if (document.hidden && audioCtx.state === 'running') {
-            audioCtx.suspend();
-        } else if (!document.hidden && audioCtx.state === 'suspended' && GAME_STATE === STATE.PLAYING) {
-            audioCtx.resume();
-        }
-    }
-});
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SETTINGS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const Settings = {
@@ -391,7 +382,20 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-window.onAdClose = () => { clearTimeout(window._rewardTimeout); if (window._pendingRevive) { window._pendingRevive = false; revivePlayer(); } else if (window._onRewardFailed) { window._onRewardFailed('Ad Closed'); } };
+window.onAdClose = () => {
+    clearTimeout(window._rewardTimeout);
+    if (window._pendingRevive) {
+        window._pendingRevive = false;
+        revivePlayer();
+    } else if (window._onRewardFailed) {
+        window._onRewardFailed('Ad Closed');
+    } else {
+        // Edge case: ad closed without a reward and no pending callbacks.
+        // Reset the button so the player isn't stuck.
+        const btn = document.getElementById('revive-btn');
+        if (btn) { btn.textContent = '\u26A1 REVIVE (WATCH AD)'; btn.disabled = false; }
+    }
+};
 
 // Global aliases for Android WebView compatibility
 window.onRewardGranted = () => { if(window.FlutterBridge) window.FlutterBridge.onRewardGranted(); };
@@ -696,11 +700,12 @@ function gameOver() {
         reviveBtn.disabled = false;
     }
 
-    // Show Interstitial Ad every 3 deaths to balance revenue and UX
+    // Show Interstitial Ad every 3 deaths. Delayed 1500ms so game-over screen
+    // and revive button render before the ad overlay appears (AdMob policy + UX).
     if (typeof window.deathCount === 'undefined') window.deathCount = 0;
     window.deathCount++;
     if (window.deathCount % 3 === 0) {
-        FlutterBridge.showInterstitial();
+        setTimeout(() => { FlutterBridge.showInterstitial(); }, 1500);
     }
 }
 
