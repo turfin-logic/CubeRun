@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuberun-v7'; // Bumped 2026-10-16: Alien Invasion-style event popups + side pills
+const CACHE_NAME = 'cuberun-v8'; // Bumped 2026-10-16: Opening loading screen + restored authentic colors
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

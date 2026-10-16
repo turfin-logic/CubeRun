@@ -221,21 +221,13 @@ function createGlowCircle(color, r, glow=6) {
     return oc;
 }
 function initSprites() {
-    // Read active event theme colors (set by EventManager._applyTheme)
-    const ET = window.CR_EVENT_THEME || {};
-    const pc  = ET.playerColor    || '#ff003c';
-    const oc  = ET.obstacleColor  || '#ff003c';
-    const oc2 = ET.particleColors && ET.particleColors[1] ? ET.particleColors[1] : '#ff00ff';
-    const tc  = ET.trailColor     || '#ff003c';
-    const pd1 = ET.particleColors && ET.particleColors[0] ? ET.particleColors[0] : '#ff003c';
-    const pd2 = ET.particleColors && ET.particleColors[1] ? ET.particleColors[1] : '#7000ff';
-    SPRITES.player   = createGlowSprite(pc,  30, 30, 20);
-    SPRITES.obsRed   = createGlowSprite(oc,  60, 80, 15);
-    SPRITES.obsMag   = createGlowSprite(oc2, 60, 80, 15);
-    SPRITES.partRed  = createGlowCircle(pd1, 2, 6);
-    SPRITES.partPurp = createGlowCircle(pd2, 2, 6);
-    SPRITES.bgDot1   = createGlowCircle(pd1, 1, 3);
-    SPRITES.bgDot2   = createGlowCircle(pd2, 1, 3);
+    SPRITES.player   = createGlowSprite('#ff003c', 30, 30, 20);
+    SPRITES.obsRed   = createGlowSprite('#ff003c', 60, 80, 15);
+    SPRITES.obsMag   = createGlowSprite('#ff00ff', 60, 80, 15);
+    SPRITES.partRed  = createGlowCircle('#ff003c', 2, 6);
+    SPRITES.partPurp = createGlowCircle('#7000ff', 2, 6);
+    SPRITES.bgDot1   = createGlowCircle('#ff003c', 1, 3);
+    SPRITES.bgDot2   = createGlowCircle('#7000ff', 1, 3);
 }
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ OBJECT POOLS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -578,11 +570,7 @@ function draw() {
     ctx.moveTo(0,FLOOR); ctx.lineTo(W,FLOOR); ctx.stroke();
 
     // Moving grid
-    // Event theme: grid color
-    const _et=window.CR_EVENT_THEME;
-    const _gc=_et?_et.obstacleColor:'#ff003c';
-    const _gr=parseInt(_gc.slice(1,3)||'ff',16),_gg=parseInt(_gc.slice(3,5)||'00',16),_gb=parseInt(_gc.slice(5,7)||'3c',16);
-    ctx.strokeStyle='rgba('+_gr+','+_gg+','+_gb+',0.12)'; ctx.lineWidth=1;
+    ctx.strokeStyle='rgba(255,0,60,0.12)'; ctx.lineWidth=1;
     const off=(frameCount*baseSpeed)%50;
     ctx.beginPath();
     for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
@@ -599,7 +587,7 @@ function draw() {
     obstaclePool.active.forEach(o=>{
         if (CURRENT_MODE === 'LASER') {
             // Full-width neon red laser beam
-            ctx.fillStyle = (_et&&_et.obstacleColor)||'#ff003c';
+            ctx.fillStyle = '#ff003c';
             ctx.globalAlpha = 0.5;
             ctx.fillRect(o.x, o.y - 4, o.width, o.height + 8);
             ctx.globalAlpha = 1.0;
@@ -608,7 +596,7 @@ function draw() {
             ctx.fillStyle = 'rgba(255,200,200,0.7)';
             ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
         } else if (CURRENT_MODE === 'TOPDOWN') {
-            ctx.strokeStyle = (_et&&_et.obstacleColor)||'#ff003c'; ctx.lineWidth=3;
+            ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
             ctx.globalAlpha = 0.3;
             ctx.strokeRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
             ctx.globalAlpha = 1.0;
@@ -620,7 +608,7 @@ function draw() {
     });
 
     // Player trail
-    ctx.globalAlpha=0.2; ctx.fillStyle=(_et&&_et.trailColor)||'#ff003c';
+    ctx.globalAlpha=0.2; ctx.fillStyle='#ff003c';
     for(let i=0;i<player.trail.length;i++) {
         const pt=player.trail[i];
         ctx.fillRect(Math.floor(pt.x),Math.floor(pt.y),player.width,player.height);
@@ -637,7 +625,7 @@ function draw() {
     // Player
     if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED) {
         if (CURRENT_MODE === 'TOPDOWN') {
-             ctx.fillStyle=player.invincible?'#ffffff':((_et&&_et.playerColor)||'#ff003c'); 
+             ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
              ctx.globalAlpha = 0.4;
              ctx.fillRect(player.x - 6, player.y - 6, player.width + 12, player.height + 12);
              ctx.globalAlpha = 1.0;
@@ -1140,16 +1128,8 @@ const EventManager = (function() {
             scoreMultiplier: (event && event.score_multiplier) || 1.0
         };
 
-        // Apply body class for CSS overrides
-        document.body.classList.remove(
-            'theme-default','theme-diwali','theme-christmas','theme-newyear',
-            'theme-lunar','theme-valentine','theme-holi','theme-eid',
-            'theme-glitch','theme-summer','theme-tricolor','theme-anniversary','theme-halloween'
-        );
-        document.body.classList.add('theme-' + themeId);
-
-        // Update CSS custom properties for UI colors
-        document.documentElement.style.setProperty('--event-accent', theme.ui_accent || '#ff003c');
+        // Keep game core neon colors authentic
+        document.documentElement.style.setProperty('--event-accent', '#ff003c');
     }
 
     // ── Banner UI ─────────────────────────────────────────────────────────────
@@ -1202,11 +1182,7 @@ const EventManager = (function() {
             _updateBanner(_activeEvent);
             // Reinit canvas sprites so gameplay reflects the active event theme
             if (typeof initSprites === 'function') initSprites();
-            // Push event bgColor onto game-container canvas background
-            if (window.CR_EVENT_THEME && window.CR_EVENT_THEME.bgColor) {
-                const _gc = document.getElementById('game-container');
-                if (_gc) _gc.style.background = window.CR_EVENT_THEME.bgColor;
-            }
+
 
             if (_activeEvent) {
                 console.log('EventManager: active event =>', _activeEvent.id,
@@ -1607,7 +1583,71 @@ window.addScore = function(points) {
     if (evId) EventPopup.trackEventScore(evId, score);
 };
 
-// ── Initialize EventPopup after EventManager is ready ───────────────────────
-setTimeout(() => {
-    EventPopup.init();
-}, 1200);
+// ═══════════════════════════════════════════════════════════════════════════════
+// OPENING LOADING WORKFLOW — Alien Invasion Style
+// ═══════════════════════════════════════════════════════════════════════════════
+function initLoadingWorkflow() {
+    let playerId = localStorage.getItem('cr_player_id');
+    if (!playerId) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let r1 = '', r2 = '';
+        for (let i = 0; i < 6; i++) r1 += chars.charAt(Math.floor(Math.random() * chars.length));
+        for (let i = 0; i < 4; i++) r2 += chars.charAt(Math.floor(Math.random() * chars.length));
+        playerId = 'fROS-' + r1 + '-' + r2;
+        localStorage.setItem('cr_player_id', playerId);
+    }
+    const pidEl = document.getElementById('loading-player-id');
+    if (pidEl) pidEl.textContent = 'PlayerId: ' + playerId;
+
+    const bar = document.getElementById('loading-bar-fill');
+    const status = document.getElementById('loading-status-text');
+    const loadingScreen = document.getElementById('loading-screen');
+
+    let currentPct = 0;
+    const stages = [
+        { target: 35, text: 'LOADING NEON MATRIX... 35%', delay: 180 },
+        { target: 70, text: 'SYNCING 2-YEAR LIVE EVENTS... 70%', delay: 240 },
+        { target: 90, text: 'INITIALIZING AD PROTECTION... 90%', delay: 180 },
+        { target: 100, text: 'SYSTEM READY! 100%', delay: 150 }
+    ];
+
+    let stageIdx = 0;
+    function nextStage() {
+        if (stageIdx < stages.length) {
+            const s = stages[stageIdx];
+            currentPct = s.target;
+            if (bar) bar.style.width = currentPct + '%';
+            if (status) status.textContent = s.text;
+            stageIdx++;
+            setTimeout(nextStage, s.delay);
+        } else {
+            setTimeout(() => {
+                if (loadingScreen) {
+                    loadingScreen.style.transition = 'opacity 0.5s ease';
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.classList.remove('active');
+                        loadingScreen.style.display = 'none';
+
+                        // Reveal main start screen
+                        showScreen('start-screen');
+
+                        // Now initialize and trigger the Alien Invasion event popup workflow!
+                        EventPopup.init();
+                    }, 500);
+                } else {
+                    showScreen('start-screen');
+                    EventPopup.init();
+                }
+            }, 250);
+        }
+    }
+    setTimeout(nextStage, 100);
+}
+
+// Start loading workflow on DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLoadingWorkflow);
+} else {
+    initLoadingWorkflow();
+}

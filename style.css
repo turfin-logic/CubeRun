@@ -449,78 +449,7 @@ p {
     pointer-events: none;
 }
 
-/* ── Diwali ── */
-body.theme-diwali { --neon-pink: #FFD700; --neon-blue: #FF8C00; --bg-color: #1a0500; }
-body.theme-diwali .glitch::before { text-shadow: -3px 0 #FF8C00; }
-body.theme-diwali .glitch::after  { text-shadow:  3px 0 #FF4500; }
-body.theme-diwali .cyber-btn { border-color: #FFD700; box-shadow: 0 0 15px #FFD700; }
-
-/* ── Christmas ── */
-body.theme-christmas { --neon-pink: #00FF44; --neon-blue: #FF0000; --bg-color: #001a00; }
-body.theme-christmas .glitch::before { text-shadow: -3px 0 #FF0000; }
-body.theme-christmas .glitch::after  { text-shadow:  3px 0 #00FF44; }
-body.theme-christmas .cyber-btn { border-color: #00FF44; box-shadow: 0 0 15px #00FF44; }
-
-/* ── New Year ── */
-body.theme-newyear { --neon-pink: #FFD700; --neon-blue: #FF003C; }
-body.theme-newyear .glitch::before { text-shadow: -3px 0 #FF003C; }
-body.theme-newyear .glitch::after  { text-shadow:  3px 0 #00F3FF; }
-
-/* ── Lunar New Year ── */
-body.theme-lunar { --neon-pink: #FF2200; --neon-blue: #FFD700; --bg-color: #1a0000; }
-body.theme-lunar .glitch::before { text-shadow: -3px 0 #FF2200; }
-body.theme-lunar .glitch::after  { text-shadow:  3px 0 #FFD700; }
-body.theme-lunar .cyber-btn { border-color: #FF2200; box-shadow: 0 0 15px #FF2200; }
-
-/* ── Valentine ── */
-body.theme-valentine { --neon-pink: #FF69B4; --neon-blue: #FF003C; --bg-color: #0d0005; }
-body.theme-valentine .glitch::before { text-shadow: -3px 0 #FF003C; }
-body.theme-valentine .glitch::after  { text-shadow:  3px 0 #FF00FF; }
-
-/* ── Holi ── */
-body.theme-holi { --neon-pink: #FF00FF; --neon-blue: #00F3FF; }
-body.theme-holi .glitch::before { text-shadow: -3px 0 #FF2200; }
-body.theme-holi .glitch::after  { text-shadow:  3px 0 #00FF44; }
-
-/* ── Eid ── */
-body.theme-eid { --neon-pink: #00FF44; --neon-blue: #FFD700; --bg-color: #001a00; }
-body.theme-eid .glitch::before { text-shadow: -3px 0 #FFD700; }
-body.theme-eid .glitch::after  { text-shadow:  3px 0 #00FF44; }
-
-/* ── Glitch Mode (April Fools) ── */
-body.theme-glitch { --neon-pink: #00F3FF; --neon-blue: #FF003C; --bg-color: #000000; }
-body.theme-glitch .glitch::before { text-shadow: -3px 0 #FF003C; animation-duration: 0.3s; }
-body.theme-glitch .glitch::after  { text-shadow:  3px 0 #7000FF; animation-duration: 0.2s; }
-body.theme-glitch #game-container { animation: glitch-screen 5s infinite; }
-@keyframes glitch-screen {
-    0%, 95% { filter: none; }
-    96% { filter: hue-rotate(180deg); }
-    97% { filter: invert(1); }
-    98% { filter: hue-rotate(90deg); }
-    99% { filter: none; }
-}
-
-/* ── Summer ── */
-body.theme-summer { --neon-pink: #FF8C00; --neon-blue: #FFD700; --bg-color: #0a0500; }
-body.theme-summer .glitch::before { text-shadow: -3px 0 #FF4500; }
-body.theme-summer .glitch::after  { text-shadow:  3px 0 #FFD700; }
-
-/* ── Tricolor (Independence Day India) ── */
-body.theme-tricolor { --neon-pink: #FF8C00; --neon-blue: #00AA44; }
-body.theme-tricolor .glitch::before { text-shadow: -3px 0 #FF8C00; }
-body.theme-tricolor .glitch::after  { text-shadow:  3px 0 #00AA44; }
-
-/* ── Anniversary ── */
-body.theme-anniversary { --neon-pink: #FFD700; --neon-blue: #FF003C; }
-body.theme-anniversary .glitch::before { text-shadow: -3px 0 #FFD700; }
-body.theme-anniversary .glitch::after  { text-shadow:  3px 0 #00F3FF; }
-body.theme-anniversary .cyber-btn { border-color: #FFD700; box-shadow: 0 0 20px #FFD700; }
-
-/* ── Halloween ── */
-body.theme-halloween { --neon-pink: #7000FF; --neon-blue: #FF8C00; --bg-color: #0d0015; }
-body.theme-halloween .glitch::before { text-shadow: -3px 0 #7000FF; }
-body.theme-halloween .glitch::after  { text-shadow:  3px 0 #FF8C00; }
-body.theme-halloween .cyber-btn { border-color: #7000FF; box-shadow: 0 0 15px #7000FF; }
+/* Theme UI color overrides removed to preserve authentic Cube Run neon colors */
 
 /* ── In-game Ad Status Toast ─────────────────────────────────────────── */
 #ad-toast {
@@ -844,4 +773,101 @@ body.theme-halloween .cyber-btn { border-color: #7000FF; box-shadow: 0 0 15px #7
 
 .ad-toast.visible {
     bottom: 20px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   OPENING LOADING WORKFLOW — Alien Invasion RPG style
+   ═══════════════════════════════════════════════════════════════════ */
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    height: 85%;
+    width: 90%;
+    max-width: 380px;
+    padding: 30px 0;
+    text-align: center;
+}
+
+.loading-subtitle {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 4px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px var(--neon-cyan);
+    margin-bottom: 5px;
+}
+
+.loading-title {
+    font-size: 3rem !important;
+    margin-bottom: 20px !important;
+}
+
+.loading-art {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: loadingArtPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes loadingArtPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(255, 0, 60, 0.4)); }
+    50%      { transform: scale(1.08); filter: drop-shadow(0 0 35px rgba(0, 243, 255, 0.7)); }
+}
+
+.loading-bar-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.loading-bar-track {
+    width: 85%;
+    max-width: 300px;
+    height: 14px;
+    background: #0d0414;
+    border: 2px solid #2a1545;
+    border-radius: 20px;
+    padding: 2px;
+    box-shadow: inset 0 0 8px #000, 0 0 12px rgba(0, 243, 255, 0.2);
+    overflow: hidden;
+}
+
+.loading-bar-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #00FF88, #00F3FF);
+    border-radius: 16px;
+    box-shadow: 0 0 15px #00FF88;
+    transition: width 0.15s ease-out;
+}
+
+.loading-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    color: #aaa;
+    margin-top: 8px;
+}
+
+.loading-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.loading-meta {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px rgba(0,0,0,0.8);
 }
