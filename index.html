@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <!-- Google Tag Manager -->
@@ -201,6 +201,39 @@
                 </div>
             </div>
 
+            <!-- Event Popup Modal (Alien Invasion RPG style) -->
+            <div id="event-popup" class="screen" style="z-index: 50; background: rgba(0,0,0,0.95);">
+                <div class="event-popup-inner">
+                    <div id="event-popup-countdown" class="event-popup-timer">ENDS IN: --</div>
+                    <div id="event-popup-icon" class="event-popup-icon">💀</div>
+                    <h1 id="event-popup-title" class="event-popup-title" data-text="CYBER HORROR">CYBER HORROR</h1>
+                    <div id="event-popup-subtitle" class="event-popup-subtitle">HAS ARRIVED!</div>
+                    <div id="event-popup-bonus" class="event-popup-bonus">
+                        <span class="bonus-label">SCORE BONUS</span>
+                        <span id="event-popup-multiplier" class="bonus-value">×1.5</span>
+                    </div>
+                    <button id="event-popup-continue" class="cyber-btn event-popup-btn">CONTINUE</button>
+                </div>
+            </div>
+
+            <!-- Event Ended Recap Popup -->
+            <div id="event-ended-popup" class="screen" style="z-index: 50; background: rgba(0,0,0,0.95);">
+                <div class="event-popup-inner">
+                    <div class="event-ended-badge">EVENT ENDED</div>
+                    <h2 id="event-ended-name" class="event-popup-title" data-text="CYBER HORROR" style="font-size:2.2rem;">CYBER HORROR</h2>
+                    <div id="event-ended-stats" class="event-ended-stats">
+                        <p>Your best: <span id="event-ended-best">0</span></p>
+                    </div>
+                    <div id="event-ended-next" class="event-ended-next">Next event coming soon...</div>
+                    <button id="event-ended-continue" class="cyber-btn event-popup-btn">CONTINUE</button>
+                </div>
+            </div>
+
+            <!-- Floating Side Event Pills (right side of start screen) -->
+            <div id="event-side-pills" class="event-side-pills"></div>
+
+            <!-- Ad Toast -->
+            <div id="ad-toast" class="ad-toast"></div>
 
         </div><!-- end ui-layer -->
     </div><!-- end game-container -->

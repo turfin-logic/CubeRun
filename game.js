@@ -698,6 +698,8 @@ function quitToMenu() {
     hideAllScreens(); hideHUD();
     canvas.classList.remove('aberration');
     document.getElementById('game-container').classList.remove('glitch-shake');
+    const sidePills = document.getElementById('event-side-pills');
+    if (sidePills) sidePills.style.opacity = '1';
     showScreen('start-screen');
 }
 
@@ -733,6 +735,9 @@ function gameOver() {
         } else { _me.style.display = 'none'; }
     }
     document.getElementById('new-record-badge').style.display=isNew?'block':'none';
+    if (_ev && typeof EventPopup !== 'undefined' && EventPopup.trackEventScore) {
+        EventPopup.trackEventScore(_ev.id, score);
+    }
 
     hideHUD();
     showScreen('game-over-screen');
@@ -822,6 +827,9 @@ function startGame() {
     const modeSelect = document.getElementById('mode-select');
     if (modeSelect) CURRENT_MODE = modeSelect.value;
     
+    const sidePills = document.getElementById('event-side-pills');
+    if (sidePills) sidePills.style.opacity = '0';
+
     resetGame();
     hideAllScreens(); showHUD();
     GAME_STATE=STATE.PLAYING;
@@ -1054,18 +1062,22 @@ const EventManager = (function() {
             }
         } catch(e) { /* cache unreadable, fall through */ }
 
-        // 2. Try network
-        try {
-            const res = await fetch(CONFIG_URL + '?t=' + Date.now(), { cache: 'no-store' });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const data = await res.json();
-            _config = data;
-            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
-            return _config;
-        } catch(fetchErr) {
-            console.warn('EventManager: network fetch failed, using cached config.', fetchErr);
+        // 2. Try network (first relative path, then remote fallback)
+        const urlsToTry = ['events_config.json?t=' + Date.now(), CONFIG_URL + '?t=' + Date.now()];
+        for (const url of urlsToTry) {
+            try {
+                const res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                _config = data;
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+                return _config;
+            } catch(fetchErr) {
+                // Try next url
+            }
         }
+        console.warn('EventManager: network fetch failed, using cached config.');
 
         // 3. Fall back to stale cache
         try {
@@ -1233,7 +1245,33 @@ const EventManager = (function() {
         }
     }
 
-    return { init, getScoreMultiplier, getActiveEventId, getTheme, setTestDate };
+    function getActiveEvent() {
+        return _activeEvent || null;
+    }
+
+    // Find next upcoming event
+    function getNextEvent() {
+        if (!_config || !Array.isArray(_config.events)) return null;
+        const now = _now();
+        let nearest = null;
+        let nearestStart = Infinity;
+        for (const ev of _config.events) {
+            if (!ev.active) continue;
+            const start = _parseUTC(ev.start_utc);
+            if (!start) continue;
+            if (start > now && start.getTime() < nearestStart) {
+                nearest = ev;
+                nearestStart = start.getTime();
+            }
+        }
+        return nearest;
+    }
+
+    function getAllEvents() {
+        return (_config && Array.isArray(_config.events)) ? _config.events.filter(e => e.active) : [];
+    }
+
+    return { init, getScoreMultiplier, getActiveEventId, getActiveEvent, getNextEvent, getAllEvents, getTheme, setTestDate };
 })();
 
 window.EventManager = EventManager;
@@ -1254,3 +1292,322 @@ if (document.readyState === 'loading') {
 } else {
     EventManager.init();
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EVENT POPUP SYSTEM — Alien Invasion RPG-style popups
+// Shows event announcement on game open, event ended recap, and side pills.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const EventPopup = (function() {
+    const SEEN_KEY = 'cr_event_popup_seen';     // sessionStorage: current event seen
+    const ENDED_KEY = 'cr_event_ended_seen';    // localStorage: last ended event id
+    const BEST_KEY = 'cr_event_best_';          // localStorage: best score per event
+    let _countdownInterval = null;
+    let _pillInterval = null;
+
+    // ── Emoji map for event themes ──────────────────────────────────────────
+    const THEME_EMOJI = {
+        halloween: '💀', diwali: '✨', christmas: '🎄', newyear: '🎆',
+        lunar: '🧧', valentine: '💜', holi: '🌈', eid: '🌙',
+        glitch: '⚡', summer: '☀️', tricolor: '🇮🇳', anniversary: '🏆',
+        default: '🎮'
+    };
+
+    const THEME_SUBTITLE = {
+        halloween: 'HAS STRUCK!', diwali: 'IS HERE!', christmas: 'HAS ARRIVED!',
+        newyear: 'HAS BEGUN!', lunar: 'IS HERE!', valentine: 'IS IN THE AIR!',
+        holi: 'EXPLODES!', eid: 'IS HERE!', glitch: 'ACTIVATED!',
+        summer: 'HAS ARRIVED!', tricolor: 'IS HERE!', anniversary: 'CELEBRATION!',
+        default: 'IS LIVE!'
+    };
+
+    // ── Time formatting ─────────────────────────────────────────────────────
+    function _formatCountdown(ms) {
+        if (ms <= 0) return 'ENDED';
+        const s = Math.floor(ms / 1000);
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        if (d > 0) return d + 'D ' + h + 'H ' + m + 'M';
+        if (h > 0) return h + 'H ' + m + 'M';
+        return m + 'M ' + (s % 60) + 'S';
+    }
+
+    function _parseUTC(str) {
+        if (!str) return null;
+        return new Date(str.includes('T') ? str : str + 'T00:00:00Z');
+    }
+
+    // ── Show Event Announcement Popup ────────────────────────────────────────
+    function showEventPopup(event) {
+        if (!event || !event.name) return;
+
+        const themeId = event.theme || 'default';
+        const emoji = THEME_EMOJI[themeId] || THEME_EMOJI.default;
+        const subtitle = THEME_SUBTITLE[themeId] || THEME_SUBTITLE.default;
+        const accent = event.banner_color || '#ff003c';
+
+        // Set popup content
+        const iconEl = document.getElementById('event-popup-icon');
+        const titleEl = document.getElementById('event-popup-title');
+        const subtitleEl = document.getElementById('event-popup-subtitle');
+        const mulEl = document.getElementById('event-popup-multiplier');
+        const cdEl = document.getElementById('event-popup-countdown');
+
+        if (iconEl) iconEl.textContent = emoji;
+        if (titleEl) {
+            titleEl.textContent = event.name.toUpperCase();
+            titleEl.setAttribute('data-text', event.name.toUpperCase());
+        }
+        if (subtitleEl) subtitleEl.textContent = subtitle;
+        if (mulEl) {
+            const mul = event.score_multiplier || 1.0;
+            mulEl.textContent = mul > 1 ? '×' + mul.toFixed(1) : 'ACTIVE';
+            mulEl.style.color = accent;
+            mulEl.style.textShadow = '0 0 20px ' + accent;
+        }
+
+        // Set accent color on popup
+        document.documentElement.style.setProperty('--event-accent', accent);
+
+        // Live countdown
+        if (_countdownInterval) clearInterval(_countdownInterval);
+        const endDate = _parseUTC(event.end_utc);
+        function updateCountdown() {
+            if (!endDate || !cdEl) return;
+            const remaining = endDate.getTime() - Date.now();
+            cdEl.textContent = 'ENDS IN: ' + _formatCountdown(remaining);
+            if (remaining <= 0) {
+                clearInterval(_countdownInterval);
+                cdEl.textContent = 'EVENT ENDED';
+            }
+        }
+        updateCountdown();
+        _countdownInterval = setInterval(updateCountdown, 1000);
+
+        // Show popup
+        const sidePills = document.getElementById('event-side-pills');
+        if (sidePills) sidePills.style.opacity = '0';
+        showScreen('event-popup');
+
+        // Mark as seen this session
+        try { sessionStorage.setItem(SEEN_KEY, event.id); } catch(e) {}
+    }
+
+    // ── Show Event Ended Recap ───────────────────────────────────────────────
+    function showEventEnded(event) {
+        if (!event || !event.name) return;
+
+        const nameEl = document.getElementById('event-ended-name');
+        const bestEl = document.getElementById('event-ended-best');
+        const nextEl = document.getElementById('event-ended-next');
+
+        if (nameEl) {
+            nameEl.textContent = event.name.toUpperCase();
+            nameEl.setAttribute('data-text', event.name.toUpperCase());
+        }
+
+        // Best score during event
+        const bestKey = BEST_KEY + event.id;
+        const best = localStorage.getItem(bestKey) || '0';
+        if (bestEl) bestEl.textContent = best;
+
+        // Next event teaser
+        const nextEvent = EventManager.getNextEvent ? EventManager.getNextEvent() : null;
+        if (nextEl) {
+            if (nextEvent) {
+                const nextStart = _parseUTC(nextEvent.start_utc);
+                const daysUntil = nextStart ? Math.ceil((nextStart.getTime() - Date.now()) / 86400000) : 0;
+                nextEl.textContent = 'Next: ' + nextEvent.name + ' in ' + daysUntil + ' days';
+            } else {
+                nextEl.textContent = 'More events coming soon...';
+            }
+        }
+
+        const sidePills = document.getElementById('event-side-pills');
+        if (sidePills) sidePills.style.opacity = '0';
+        showScreen('event-ended-popup');
+        try { localStorage.setItem(ENDED_KEY, event.id); } catch(e) {}
+    }
+
+    // ── Build Floating Side Pills ────────────────────────────────────────────
+    function buildSidePills() {
+        const container = document.getElementById('event-side-pills');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const activeEvent = EventManager.getActiveEvent ? EventManager.getActiveEvent() : null;
+        const allEvents = EventManager.getAllEvents ? EventManager.getAllEvents() : [];
+        if (!activeEvent && allEvents.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        // Show active event pill + next 2 upcoming
+        const now = Date.now();
+        const pills = [];
+
+        // Active event pill
+        if (activeEvent && activeEvent.id !== 'weekend_boost') {
+            pills.push({ event: activeEvent, type: 'active' });
+        }
+
+        // Upcoming events (max 2)
+        const upcoming = allEvents.filter(ev => {
+            const start = _parseUTC(ev.start_utc);
+            return start && start.getTime() > now && ev.id !== 'weekend_boost';
+        }).sort((a, b) => {
+            return _parseUTC(a.start_utc).getTime() - _parseUTC(b.start_utc).getTime();
+        }).slice(0, 2);
+
+        upcoming.forEach(ev => pills.push({ event: ev, type: 'upcoming' }));
+
+        if (pills.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'flex';
+
+        pills.forEach(({ event: ev, type }) => {
+            const pill = document.createElement('div');
+            pill.className = 'event-pill';
+            const themeId = ev.theme || 'default';
+            const accent = ev.banner_color || '#ff003c';
+            pill.style.borderColor = accent;
+            pill.style.boxShadow = '0 0 10px ' + accent + '40';
+
+            const emoji = THEME_EMOJI[themeId] || THEME_EMOJI.default;
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'event-pill-icon';
+            iconSpan.textContent = emoji;
+
+            const timerSpan = document.createElement('span');
+            timerSpan.className = 'event-pill-timer';
+            timerSpan.dataset.eventEnd = ev.end_utc || '';
+            timerSpan.dataset.eventStart = ev.start_utc || '';
+            timerSpan.dataset.pillType = type;
+
+            // Notification dot for unseen events
+            const seenEvents = JSON.parse(localStorage.getItem('cr_pills_seen') || '[]');
+            if (!seenEvents.includes(ev.id)) {
+                const dot = document.createElement('div');
+                dot.className = 'event-pill-dot';
+                dot.style.background = accent;
+                pill.appendChild(dot);
+            }
+
+            pill.appendChild(iconSpan);
+            pill.appendChild(timerSpan);
+
+            // Click to show event popup
+            pill.addEventListener('click', () => {
+                showEventPopup(ev);
+                // Mark as seen
+                const seen = JSON.parse(localStorage.getItem('cr_pills_seen') || '[]');
+                if (!seen.includes(ev.id)) {
+                    seen.push(ev.id);
+                    localStorage.setItem('cr_pills_seen', JSON.stringify(seen));
+                }
+                const dot = pill.querySelector('.event-pill-dot');
+                if (dot) dot.remove();
+            });
+
+            container.appendChild(pill);
+        });
+
+        // Update pill timers every second
+        if (_pillInterval) clearInterval(_pillInterval);
+        _pillInterval = setInterval(() => {
+            container.querySelectorAll('.event-pill-timer').forEach(el => {
+                const type = el.dataset.pillType;
+                const endStr = el.dataset.eventEnd;
+                const startStr = el.dataset.eventStart;
+                if (type === 'active' && endStr) {
+                    const end = new Date(endStr);
+                    const remaining = end.getTime() - Date.now();
+                    el.textContent = _formatCountdown(remaining);
+                } else if (type === 'upcoming' && startStr) {
+                    const start = new Date(startStr);
+                    const until = start.getTime() - Date.now();
+                    el.textContent = 'IN ' + _formatCountdown(until);
+                }
+            });
+        }, 1000);
+    }
+
+    // ── Save event best score ────────────────────────────────────────────────
+    function trackEventScore(eventId, score) {
+        if (!eventId) return;
+        const key = BEST_KEY + eventId;
+        const prev = parseInt(localStorage.getItem(key) || '0', 10);
+        if (score > prev) {
+            localStorage.setItem(key, String(score));
+        }
+    }
+
+    // ── Main init (call after EventManager.init) ────────────────────────────
+    function init() {
+        const activeEvent = EventManager.getActiveEvent ? EventManager.getActiveEvent() : null;
+        const seenId = sessionStorage.getItem(SEEN_KEY);
+        const lastEndedId = localStorage.getItem(ENDED_KEY);
+        const lastSeenActive = localStorage.getItem('cr_last_active_event');
+
+        // Check if a previously active event has ended (show recap)
+        if (lastSeenActive && (!activeEvent || activeEvent.id !== lastSeenActive)) {
+            // The previously active event ended
+            if (lastEndedId !== lastSeenActive) {
+                // We haven't shown the ended popup for this event yet
+                const allEvents = EventManager.getAllEvents ? EventManager.getAllEvents() : [];
+                const endedEvent = allEvents.find(e => e.id === lastSeenActive);
+                if (endedEvent) {
+                    setTimeout(() => showEventEnded(endedEvent), 800);
+                }
+            }
+        }
+
+        // Show active event popup if not seen this session
+        if (activeEvent && activeEvent.id !== 'weekend_boost' && seenId !== activeEvent.id) {
+            setTimeout(() => showEventPopup(activeEvent), 500);
+        }
+
+        // Remember current active event
+        if (activeEvent && activeEvent.id !== 'weekend_boost') {
+            localStorage.setItem('cr_last_active_event', activeEvent.id);
+        }
+
+        // Build side pills
+        setTimeout(() => buildSidePills(), 300);
+
+        // Wire up continue buttons
+        document.getElementById('event-popup-continue')?.addEventListener('click', () => {
+            hideScreen('event-popup');
+            if (_countdownInterval) clearInterval(_countdownInterval);
+            const sidePills = document.getElementById('event-side-pills');
+            if (sidePills && GAME_STATE === STATE.MENU) sidePills.style.opacity = '1';
+        });
+        document.getElementById('event-ended-continue')?.addEventListener('click', () => {
+            hideScreen('event-ended-popup');
+            const sidePills = document.getElementById('event-side-pills');
+            if (sidePills && GAME_STATE === STATE.MENU) sidePills.style.opacity = '1';
+        });
+    }
+
+    return { init, showEventPopup, showEventEnded, buildSidePills, trackEventScore };
+})();
+
+window.EventPopup = EventPopup;
+
+// ── Wire EventPopup.trackEventScore into score additions ─────────────────────
+const _origAddScore = addScore;
+window.addScore = function(points) {
+    _origAddScore(points);
+    const evId = EventManager.getActiveEventId ? EventManager.getActiveEventId() : null;
+    if (evId) EventPopup.trackEventScore(evId, score);
+};
+
+// ── Initialize EventPopup after EventManager is ready ───────────────────────
+setTimeout(() => {
+    EventPopup.init();
+}, 1200);
