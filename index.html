@@ -100,7 +100,10 @@
             <!-- HUD (visible during gameplay) -->
             <div id="hud">
                 <div id="score-display">SCORE: <span id="scoreValue">0</span><span id="hud-multiplier" style="font-size:0.65em;color:var(--neon-pink);margin-left:8px;font-weight:bold;letter-spacing:1px;"></span></div>
-                <div id="hud-event-ticker" style="display:none;font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:2px;color:var(--neon-pink);text-align:center;padding:2px 0;opacity:0.9;animation:eventBannerPulse 2s ease-in-out infinite;"></div>
+                <div id="hud-event-pill" class="hud-event-pill" style="display:none;" title="Active Event">
+                    <span id="hud-event-pill-icon" class="hud-pill-icon">💀</span>
+                    <span id="hud-event-pill-timer" class="hud-pill-timer">16D.10H</span>
+                </div>
                 <div id="hud-buttons">
                     <button id="pause-btn" class="hud-btn" title="Pause">⏸</button>
                     <button id="settings-btn" class="hud-btn" title="Settings">⚙</button>

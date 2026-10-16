@@ -1148,12 +1148,27 @@ const EventManager = (function() {
         }
         banner.textContent = event.banner_text;
         banner.style.display = 'block';
-        // Also update the HUD event ticker (visible during gameplay)
-        let ticker = document.getElementById('hud-event-ticker');
-        if (ticker) {
-            ticker.textContent = event.banner_text;
-            ticker.style.color = event.banner_color || 'var(--neon-pink)';
-            ticker.style.display = 'block';
+
+        // Also update the in-game HUD event pill (visible during gameplay)
+        const hudPill = document.getElementById('hud-event-pill');
+        const hudIcon = document.getElementById('hud-event-pill-icon');
+        const hudTimer = document.getElementById('hud-event-pill-timer');
+        if (hudPill) {
+            hudPill.style.display = 'flex';
+            if (hudIcon) hudIcon.textContent = (event.theme === 'halloween' ? '💀' : '⚡');
+            if (hudTimer && event.end_utc) {
+                const end = new Date(event.end_utc).getTime();
+                const diff = Math.max(0, end - Date.now());
+                const d = Math.floor(diff / 86400000);
+                const h = Math.floor((diff % 86400000) / 3600000);
+                hudTimer.textContent = d + 'D.' + h + 'H';
+            }
+            hudPill.onclick = () => {
+                if (window.EventPopup && window.EventPopup.showEventPopup) {
+                    if (GAME_STATE === STATE.PLAYING) pauseGame();
+                    window.EventPopup.showEventPopup(event);
+                }
+            };
         }
         banner.style.background = 'rgba(255, 0, 60, 0.12)';
         banner.style.color = '#fff';

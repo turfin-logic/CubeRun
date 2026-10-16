@@ -81,6 +81,37 @@ canvas.aberration {
     text-shadow: 0 0 8px var(--neon-cyan);
 }
 
+.hud-event-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 5, 20, 0.85);
+    border: 1.5px solid var(--neon-pink);
+    border-radius: 18px;
+    padding: 4px 12px;
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 0 10px rgba(255, 0, 60, 0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    animation: eventBannerPulse 2s ease-in-out infinite;
+}
+.hud-event-pill:hover, .hud-event-pill:active {
+    transform: scale(1.06);
+    box-shadow: 0 0 16px var(--neon-pink);
+}
+.hud-pill-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+.hud-pill-timer {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: #47e85c;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 6px #47e85c;
+}
+
 #hud-buttons {
     display: flex;
     gap: 10px;
@@ -1018,11 +1049,9 @@ p {
 @keyframes heroBtnBreathe {
     0%, 100% {
         box-shadow: 0 8px 0 #7a001d, 0 12px 25px rgba(255, 0, 60, 0.4);
-        transform: translateY(0);
     }
     50% {
         box-shadow: 0 8px 0 #7a001d, 0 16px 36px rgba(255, 0, 60, 0.7);
-        transform: translateY(-2px);
     }
 }
 
