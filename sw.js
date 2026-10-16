@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuberun-v10'; // Bumped 2026-10-16: Opening loading screen + restored authentic colors
+const CACHE_NAME = 'cuberun-v11'; // Bumped 2026-10-16: Opening loading screen + restored authentic colors
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
