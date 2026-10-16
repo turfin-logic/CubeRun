@@ -514,128 +514,296 @@ p {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   EVENT POPUP SYSTEM — Alien Invasion RPG style 
+   PREMIUM MOBILE RPG EVENT POPUP — Alien Invasion Style
    ═══════════════════════════════════════════════════════════════════ */
 
-.event-popup-inner {
+.event-rpg-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    max-width: 360px;
+    padding: 10px 0;
+    animation: rpgModalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes rpgModalPop {
+    0%   { opacity: 0; transform: scale(0.7) translateY(30px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Time Capsule Pill */
+.event-time-capsule {
+    background: #000;
+    border: 2px solid #333;
+    border-radius: 20px;
+    padding: 4px 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+}
+.capsule-prefix {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+}
+.capsule-timer {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 900;
+    color: #47e85c;
+    text-shadow: 0 0 8px #47e85c;
+}
+
+/* Hero Header */
+.event-hero-header {
+    text-align: center;
+    margin-bottom: 12px;
+    position: relative;
+}
+.event-crest-horns {
+    height: 28px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: -5px;
+}
+.event-rpg-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.2rem !important;
+    font-weight: 900 !important;
+    color: #fff !important;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0 !important;
+    line-height: 1.05;
+    text-shadow: 
+        -2px -2px 0 #000, 
+         2px -2px 0 #000, 
+        -2px  2px 0 #000, 
+         2px  2px 0 #000,
+         0 4px 0 #8b0000,
+         0 0 20px rgba(255, 0, 60, 0.8);
+}
+.event-rpg-subtitle {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #ff3344;
+    letter-spacing: 3px;
+    text-shadow: 
+        -1px -1px 0 #000, 
+         1px -1px 0 #000, 
+        -1px  1px 0 #000, 
+         1px  1px 0 #000,
+         0 2px 0 #550000;
+    margin-top: 2px;
+}
+
+/* RPG Game Cards */
+.event-rpg-card {
+    width: 100%;
+    background: linear-gradient(180deg, #2b0b14 0%, #170408 100%);
+    border: 3px solid #ff003c;
+    border-radius: 16px;
+    padding: 10px 14px;
+    box-shadow: 0 6px 0 #6e0018, 0 8px 16px rgba(0,0,0,0.7), inset 0 2px 0 rgba(255,255,255,0.15);
+}
+
+.objective-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.card-art-col {
+    background: rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,0,60,0.4);
+    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.card-art-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 0 6px #ff003c);
+}
+.card-text-col {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+.card-action-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #ffaa00;
+    letter-spacing: 1px;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+.card-desc-text {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 2px;
+}
+
+/* Connector Arrow */
+.event-rpg-arrow {
+    margin: 4px 0;
+    animation: arrowBounce 1s ease-in-out infinite alternate;
+}
+@keyframes arrowBounce {
+    0%   { transform: translateY(-2px); }
+    100% { transform: translateY(3px); }
+}
+
+/* Reward Card */
+.reward-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(180deg, #240810 0%, #120206 100%);
+    margin-bottom: 16px;
+}
+.reward-card-header {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000;
+}
+.reward-highlight {
+    color: #ffaa00;
+}
+.reward-items-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+}
+.reward-badge-chip {
+    background: rgba(0,0,0,0.6);
+    border: 2px solid rgba(255, 170, 0, 0.5);
+    border-radius: 10px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+}
+.chip-icon {
+    font-size: 1.1rem;
+}
+.chip-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.72rem;
+    font-weight: 900;
+    color: #FFD700;
+    letter-spacing: 0.5px;
+}
+
+/* Big Juicy Green Button like Alien Invasion */
+.rpg-continue-btn {
+    width: 85%;
+    max-width: 270px;
+    padding: 13px 0;
+    background: #47e85c;
+    border: none;
+    border-radius: 16px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #000;
+    letter-spacing: 3px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #1c872d, 0 10px 20px rgba(0,0,0,0.8);
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+    animation: btnGlowPulse 1.8s ease-in-out infinite;
+}
+@keyframes btnGlowPulse {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(71, 232, 92, 0.4)); }
+    50%      { filter: drop-shadow(0 0 20px rgba(71, 232, 92, 0.8)); }
+}
+.rpg-continue-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #1c872d, 0 4px 10px rgba(0,0,0,0.8);
+}
+
+/* Floating Side Event Badges */
+.event-side-pills {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 25;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+}
+
+.event-pill {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    padding: 20px;
-    max-width: 360px;
-    width: 90%;
-    animation: eventPopupIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    width: 44px;
+    height: 44px;
+    background: #140309;
+    border: 2px solid #ff003c;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #6e0018, 0 6px 12px rgba(0,0,0,0.8);
+    transition: transform 0.15s;
 }
 
-@keyframes eventPopupIn {
-    0%   { opacity: 0; transform: scale(0.7) translateY(40px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
+.event-pill:hover {
+    transform: scale(1.12);
 }
 
-.event-popup-timer {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.85rem;
+.event-pill-icon {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.event-pill-timer {
+    position: absolute;
+    bottom: -10px;
+    background: #000;
+    border: 1px solid #ff003c;
+    border-radius: 8px;
+    padding: 1px 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.42rem;
     font-weight: 700;
-    letter-spacing: 3px;
     color: #fff;
-    background: rgba(255, 0, 60, 0.25);
-    border: 1px solid rgba(255, 0, 60, 0.5);
-    padding: 6px 18px;
-    border-radius: 20px;
-    margin-bottom: 16px;
-    animation: timerPulse 1.5s ease-in-out infinite;
+    white-space: nowrap;
+    text-shadow: 0 0 4px #000;
 }
 
-@keyframes timerPulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(255, 0, 60, 0.3); }
-    50%      { box-shadow: 0 0 20px rgba(255, 0, 60, 0.7); }
-}
-
-.event-popup-icon {
-    font-size: 5rem;
-    margin-bottom: 8px;
-    animation: iconBounce 2s ease-in-out infinite;
-    filter: drop-shadow(0 0 20px rgba(255, 0, 60, 0.8));
-}
-
-@keyframes iconBounce {
-    0%, 100% { transform: scale(1) rotate(0deg); }
-    25%      { transform: scale(1.1) rotate(-3deg); }
-    75%      { transform: scale(1.05) rotate(3deg); }
-}
-
-.event-popup-title {
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 900;
-    font-size: 2.8rem;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    text-shadow: 0 0 30px var(--event-accent, #ff003c), 0 0 60px var(--event-accent, #ff003c);
-    margin-bottom: 4px;
-    line-height: 1.1;
-}
-
-.event-popup-subtitle {
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 700;
-    font-size: 1.4rem;
-    color: var(--event-accent, #ff003c);
-    letter-spacing: 4px;
-    margin-bottom: 20px;
-    text-shadow: 0 0 12px var(--event-accent, #ff003c);
-}
-
-.event-popup-bonus {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid var(--event-accent, #ff003c);
-    border-radius: 12px;
-    padding: 12px 30px;
-    margin-bottom: 24px;
-    box-shadow: 0 0 20px rgba(255, 0, 60, 0.2), inset 0 0 20px rgba(255, 0, 60, 0.05);
-}
-
-.bonus-label {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 4px;
-    color: #888;
-    margin-bottom: 4px;
-}
-
-.bonus-value {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 900;
-    color: var(--event-accent, #FFD700);
-    text-shadow: 0 0 20px var(--event-accent, #FFD700);
-}
-
-.event-popup-btn {
-    font-size: 1.4rem !important;
-    padding: 16px 50px !important;
-    background: var(--event-accent, #ff003c) !important;
-    color: #000 !important;
-    font-weight: 900 !important;
-    border-color: var(--event-accent, #ff003c) !important;
-    box-shadow: 0 0 30px var(--event-accent, #ff003c), inset 0 0 10px rgba(255,255,255,0.2) !important;
-    animation: ctaPulse 1.5s ease-in-out infinite !important;
-}
-
-@keyframes ctaPulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 20px var(--event-accent, #ff003c); }
-    50%      { transform: scale(1.06); box-shadow: 0 0 40px var(--event-accent, #ff003c), 0 0 80px rgba(255,0,60,0.3); }
-}
-
-@media (max-width: 600px) {
-    .event-popup-title { font-size: 2rem; }
-    .event-popup-icon  { font-size: 3.5rem; }
-    .bonus-value       { font-size: 2rem; }
+.event-pill-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background: #ff003c;
+    border: 2px solid #000;
+    border-radius: 50%;
 }
 
 /* Event Ended Popup */
@@ -678,101 +846,6 @@ p {
     letter-spacing: 2px;
     color: #666;
     margin-bottom: 20px;
-}
-
-/* Floating Side Event Pills */
-.event-side-pills {
-    position: absolute;
-    top: 36%;
-    right: 6px;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 25;
-    pointer-events: auto;
-    transition: opacity 0.3s ease;
-}
-
-.event-pill {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    min-height: 48px;
-    background: rgba(12, 6, 22, 0.94);
-    border: 2px solid var(--event-accent, #ff003c);
-    border-radius: 12px;
-    padding: 4px 2px;
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 0 14px rgba(255, 0, 60, 0.4), inset 0 0 8px rgba(0,0,0,0.6);
-}
-
-.event-pill:hover {
-    transform: scale(1.12);
-    box-shadow: 0 0 22px var(--event-accent, #ff003c);
-}
-
-.event-pill-icon {
-    font-size: 1.35rem;
-    line-height: 1;
-    filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
-}
-
-.event-pill-timer {
-    font-family: 'Orbitron', monospace;
-    font-size: 0.44rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.3px;
-    margin-top: 3px;
-    white-space: nowrap;
-    text-shadow: 0 0 4px #000;
-}
-
-.event-pill-dot {
-    position: absolute;
-    top: -3px;
-    right: -3px;
-    width: 10px;
-    height: 10px;
-    background: #ff003c;
-    border-radius: 50%;
-    border: 2px solid #000;
-    animation: dotPulse 1s ease-in-out infinite;
-}
-
-@keyframes dotPulse {
-    0%, 100% { transform: scale(1); }
-    50%      { transform: scale(1.3); }
-}
-
-/* Ad Toast */
-.ad-toast {
-    position: fixed;
-    bottom: -60px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.9);
-    color: #ff003c;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 1px;
-    padding: 10px 20px;
-    border: 1px solid #ff003c;
-    border-radius: 8px;
-    z-index: 9999;
-    transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: none;
-    max-width: 90vw;
-    text-align: center;
-}
-
-.ad-toast.visible {
-    bottom: 20px;
 }
 
 

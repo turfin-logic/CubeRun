@@ -232,17 +232,66 @@
             </div>
 
             <!-- Event Popup Modal (Alien Invasion RPG style) -->
-            <div id="event-popup" class="screen" style="z-index: 50; background: rgba(0,0,0,0.95);">
-                <div class="event-popup-inner">
-                    <div id="event-popup-countdown" class="event-popup-timer">ENDS IN: --</div>
-                    <div id="event-popup-icon" class="event-popup-icon">💀</div>
-                    <h1 id="event-popup-title" class="event-popup-title" data-text="CYBER HORROR">CYBER HORROR</h1>
-                    <div id="event-popup-subtitle" class="event-popup-subtitle">HAS ARRIVED!</div>
-                    <div id="event-popup-bonus" class="event-popup-bonus">
-                        <span class="bonus-label">SCORE BONUS</span>
-                        <span id="event-popup-multiplier" class="bonus-value">×1.5</span>
+            <div id="event-popup" class="screen" style="z-index: 60; background: rgba(5, 2, 10, 0.9); backdrop-filter: blur(10px);">
+                <div class="event-rpg-modal">
+                    <!-- Top Countdown Capsule -->
+                    <div class="event-time-capsule">
+                        <span class="capsule-prefix">FOR THE NEXT</span>
+                        <span id="event-popup-countdown" class="capsule-timer">16D.10H.</span>
                     </div>
-                    <button id="event-popup-continue" class="cyber-btn event-popup-btn">CONTINUE</button>
+
+                    <!-- Hero Title Header with 3D Wings/Horns -->
+                    <div class="event-hero-header">
+                        <div class="event-crest-horns">
+                            <svg viewBox="0 0 120 40" width="120" height="40" class="crest-svg">
+                                <path d="M 10,35 Q 25,5 60,15 Q 95,5 110,35 Q 90,20 60,25 Q 30,20 10,35 Z" fill="#ff003c" filter="drop-shadow(0 0 8px #ff003c)"/>
+                            </svg>
+                        </div>
+                        <h1 id="event-popup-title" class="event-rpg-title">CYBER HORROR</h1>
+                        <div id="event-popup-subtitle" class="event-rpg-subtitle">HAS STRUCK!</div>
+                    </div>
+
+                    <!-- Card 1: Objective -->
+                    <div class="event-rpg-card objective-card">
+                        <div class="card-art-col">
+                            <div id="event-popup-icon" class="card-art-icon">💀</div>
+                        </div>
+                        <div class="card-text-col">
+                            <div id="event-card-action" class="card-action-text">SURVIVE THE HORROR</div>
+                            <div id="event-card-desc" class="card-desc-text">Dodge hazards & beat high scores</div>
+                        </div>
+                    </div>
+
+                    <!-- Chunky Down Arrow -->
+                    <div class="event-rpg-arrow">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="#47e85c" filter="drop-shadow(0 0 6px #47e85c)">
+                            <path d="M 12,22 L 2,10 L 8,10 L 8,2 L 16,2 L 16,10 L 22,10 Z"/>
+                        </svg>
+                    </div>
+
+                    <!-- Card 2: Rewards -->
+                    <div class="event-rpg-card reward-card">
+                        <div class="reward-card-header">
+                            RANK UP AND EARN <span class="reward-highlight">MASSIVE PERKS!</span>
+                        </div>
+                        <div class="reward-items-row">
+                            <div class="reward-badge-chip">
+                                <span class="chip-icon">⚡</span>
+                                <span id="event-popup-multiplier" class="chip-val">×1.5 SCORE</span>
+                            </div>
+                            <div class="reward-badge-chip">
+                                <span class="chip-icon">⭐</span>
+                                <span class="chip-val">BONUS XP</span>
+                            </div>
+                            <div class="reward-badge-chip">
+                                <span class="chip-icon">🏆</span>
+                                <span class="chip-val">RANK BADGE</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Big Juicy Mobile Green Continue Button -->
+                    <button id="event-popup-continue" class="rpg-continue-btn">CONTINUE</button>
                 </div>
             </div>
 

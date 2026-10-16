@@ -1353,10 +1353,10 @@ const EventPopup = (function() {
         function updateCountdown() {
             if (!endDate || !cdEl) return;
             const remaining = endDate.getTime() - Date.now();
-            cdEl.textContent = 'ENDS IN: ' + _formatCountdown(remaining);
+            cdEl.textContent = _formatCountdown(remaining);
             if (remaining <= 0) {
                 clearInterval(_countdownInterval);
-                cdEl.textContent = 'EVENT ENDED';
+                cdEl.textContent = 'ENDED';
             }
         }
         updateCountdown();
