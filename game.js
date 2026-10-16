@@ -898,6 +898,9 @@ document.getElementById('settings-btn')?.addEventListener('click', ()=>{
     if(GAME_STATE===STATE.PLAYING) pauseGame();
     showScreen('settings-screen');
 });
+document.getElementById('menu-settings-btn')?.addEventListener('click', ()=>{
+    showScreen('settings-screen');
+});
 document.getElementById('settings-from-pause-btn')?.addEventListener('click', ()=>showScreen('settings-screen'));
 document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
     hideScreen('settings-screen');
@@ -1152,19 +1155,23 @@ const EventManager = (function() {
             ticker.style.color = event.banner_color || 'var(--neon-pink)';
             ticker.style.display = 'block';
         }
-        banner.style.background = 'rgba(0,0,0,0.7)';
-        banner.style.color = event.banner_color || '#ff003c';
+        banner.style.background = 'rgba(255, 0, 60, 0.12)';
+        banner.style.color = '#fff';
         banner.style.border = '1px solid ' + (event.banner_color || '#ff003c');
-        banner.style.borderRadius = '4px';
+        banner.style.borderRadius = '20px';
         banner.style.padding = '6px 14px';
-        banner.style.fontSize = '0.85rem';
+        banner.style.fontSize = '0.72rem';
         banner.style.fontFamily = "Orbitron, monospace";
         banner.style.letterSpacing = '1px';
         banner.style.textAlign = 'center';
-        banner.style.margin = '8px auto 0';
-        banner.style.maxWidth = '300px';
-        banner.style.textShadow = '0 0 8px ' + (event.banner_color || '#ff003c');
-        banner.style.animation = 'eventBannerPulse 2s ease-in-out infinite';
+        banner.style.cursor = 'pointer';
+        banner.style.pointerEvents = 'auto';
+        banner.style.boxShadow = '0 0 10px rgba(255, 0, 60, 0.3)';
+        banner.onclick = () => {
+            if (window.EventPopup && window.EventPopup.showEventPopup) {
+                window.EventPopup.showEventPopup(event);
+            }
+        };
     }
 
     // ── Public API ─────────────────────────────────────────────────────────────

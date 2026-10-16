@@ -881,3 +881,227 @@ p {
     letter-spacing: 1px;
     text-shadow: 0 0 6px rgba(0,0,0,0.8);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CLEAN MOBILE MAIN MENU — Rider & Hypercasual Architecture
+   ═══════════════════════════════════════════════════════════════════ */
+
+.screen.clean-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 16px 24px;
+    height: 100%;
+    width: 100%;
+}
+
+/* 1. Top Header Bar */
+.menu-top-bar {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 44px;
+    z-index: 30;
+}
+
+.menu-event-pill {
+    animation: eventBannerPulse 2s ease-in-out infinite;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.menu-event-pill:hover, .menu-event-pill:active {
+    transform: scale(1.04);
+}
+
+.menu-icon-btn {
+    width: 42px;
+    height: 42px;
+    background: rgba(20, 20, 25, 0.7);
+    border: 1.5px solid rgba(255, 0, 60, 0.4);
+    border-radius: 50%;
+    color: var(--neon-pink);
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    margin-left: auto;
+}
+.menu-icon-btn:hover {
+    background: rgba(255, 0, 60, 0.2);
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 12px var(--neon-pink);
+    transform: rotate(45deg);
+}
+
+/* 2. Center Hero Area */
+.menu-hero-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    flex-grow: 1;
+}
+
+/* Sleek Mode Pill */
+.clean-mode-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 5, 18, 0.85);
+    border: 1.5px solid rgba(255, 0, 60, 0.45);
+    border-radius: 24px;
+    padding: 6px 10px;
+    width: 90%;
+    max-width: 320px;
+    margin: 12px auto 26px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 0 14px rgba(255, 0, 60, 0.15);
+}
+
+.mode-arrow-btn {
+    background: transparent;
+    border: none;
+    color: var(--neon-pink);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 4px 10px;
+    transition: transform 0.1s, color 0.1s;
+    user-select: none;
+}
+.mode-arrow-btn:active {
+    transform: scale(1.25);
+    color: #fff;
+}
+
+.mode-pill-label {
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-align: center;
+    flex-grow: 1;
+    white-space: nowrap;
+}
+
+/* Hero "START DRIFT" Action Button */
+.hero-play-btn {
+    position: relative;
+    width: 84%;
+    max-width: 280px;
+    height: 64px;
+    background: linear-gradient(135deg, #ff003c 0%, #d10032 100%);
+    border: none;
+    border-radius: 18px;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 8px 0 #7a001d, 0 14px 28px rgba(255, 0, 60, 0.45);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: heroBtnBreathe 2.2s ease-in-out infinite;
+}
+
+@keyframes heroBtnBreathe {
+    0%, 100% {
+        box-shadow: 0 8px 0 #7a001d, 0 12px 25px rgba(255, 0, 60, 0.4);
+        transform: translateY(0);
+    }
+    50% {
+        box-shadow: 0 8px 0 #7a001d, 0 16px 36px rgba(255, 0, 60, 0.7);
+        transform: translateY(-2px);
+    }
+}
+
+.hero-play-btn:active {
+    transform: translateY(6px);
+    box-shadow: 0 2px 0 #7a001d, 0 6px 12px rgba(255, 0, 60, 0.3);
+}
+
+.hero-play-text {
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.hero-hint {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    letter-spacing: 2px;
+    margin-top: 14px !important;
+    margin-bottom: 0 !important;
+    text-align: center;
+}
+
+/* 3. Bottom Dock */
+.menu-bottom-dock {
+    width: 100%;
+    max-width: 340px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    padding-top: 8px;
+}
+
+.dock-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(25, 20, 35, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    color: #ccc;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.dock-btn:hover {
+    background: rgba(45, 30, 65, 0.85);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.dock-mangaverse {
+    border-color: rgba(112, 0, 255, 0.4);
+}
+.dock-mangaverse:hover {
+    border-color: #7000ff;
+    box-shadow: 0 0 14px rgba(112, 0, 255, 0.4);
+}
+
+.dock-playstore {
+    border-color: rgba(0, 243, 255, 0.4);
+}
+.dock-playstore:hover {
+    border-color: #00f3ff;
+    box-shadow: 0 0 14px rgba(0, 243, 255, 0.4);
+}
+
+.dock-btn-icon {
+    font-size: 1rem;
+}

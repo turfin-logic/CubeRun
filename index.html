@@ -137,29 +137,50 @@
                 </div>
             </div>
 
-            <!-- Main Menu Screen -->
-            <div id="start-screen" class="screen">
-                <div class="unified-logo">
-                    <div class="outer-square"></div>
-                    <div class="inner-square"></div>
-                    <div class="center-dot"></div>
+            <!-- Main Menu Screen (Clean Mobile UI) -->
+            <div id="start-screen" class="screen clean-menu">
+                <!-- Top Header Bar -->
+                <div class="menu-top-bar">
+                    <div id="event-banner" class="menu-event-pill" style="display:none;" aria-live="polite"></div>
+                    <button id="menu-settings-btn" class="menu-icon-btn" title="Settings">⚙</button>
                 </div>
-                <h1 class="glitch" data-text="CUBE RUN">CUBE RUN</h1>
-                <!-- Event Banner — shown by EventManager when an event is active -->
-                <div id="event-banner" style="display:none;" aria-live="polite"></div>
-                <p>Tap or Spacebar to switch gravity</p>
-                  <div class="mode-selector" style="margin-top: 15px; margin-bottom: 20px;">
-                      <label style="color: var(--neon-pink); font-family: 'Space Mono', monospace; font-size: 0.9rem; letter-spacing: 2px;">SELECT MODE:</label>
-                      <div class="mode-carousel" style="display: flex; align-items: center; justify-content: space-between; background: rgba(20,20,20,0.8); border: 2px solid var(--neon-pink); border-radius: 4px; margin-top: 8px; max-width: 280px; margin-left: auto; margin-right: auto; padding: 5px;">
-                          <button id="mode-prev" class="mode-nav-btn" style="background: transparent; border: none; color: var(--neon-pink); font-size: 1.5rem; cursor: pointer; padding: 0 10px;">◄</button>
-                          <div id="mode-display" style="color: #fff; font-family: 'Space Mono', monospace; font-size: 0.9rem; text-align: center; flex-grow: 1;">CLASSIC (GRAVITY FLIP)</div>
-                          <button id="mode-next" class="mode-nav-btn" style="background: transparent; border: none; color: var(--neon-pink); font-size: 1.5rem; cursor: pointer; padding: 0 10px;">►</button>
-                      </div>
-                      <input type="hidden" id="mode-select" value="CLASSIC">
-                  </div>
-                <button id="start-btn" class="cyber-btn">START DRIFT</button>
-                <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="cyber-btn mangaverse-btn" style="margin-top: 15px; font-size: 1rem; padding: 10px 20px;">🎮 EXPLORE MANGAVERSE</button>
-                <button onclick="window.open('https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', '_blank')" class="cyber-btn apk-only" style="margin-top: 15px; font-size: 1rem; padding: 10px 20px; background: var(--neon-pink); box-shadow: 0 0 15px var(--neon-pink);">GET IT ON PLAY STORE</button>
+
+                <!-- Center Hero Area -->
+                <div class="menu-hero-area">
+                    <div class="unified-logo">
+                        <div class="outer-square"></div>
+                        <div class="inner-square"></div>
+                        <div class="center-dot"></div>
+                    </div>
+                    <h1 class="glitch" data-text="CUBE RUN">CUBE RUN</h1>
+
+                    <!-- Sleek Mode Selector Pill -->
+                    <div class="clean-mode-pill">
+                        <button id="mode-prev" class="mode-arrow-btn">◄</button>
+                        <div id="mode-display" class="mode-pill-label">CLASSIC (GRAVITY FLIP)</div>
+                        <button id="mode-next" class="mode-arrow-btn">►</button>
+                        <input type="hidden" id="mode-select" value="CLASSIC">
+                    </div>
+
+                    <!-- Hero Play Button -->
+                    <button id="start-btn" class="hero-play-btn">
+                        <span class="hero-play-glow"></span>
+                        <span class="hero-play-text">START DRIFT</span>
+                    </button>
+                    <p class="hero-hint">TAP OR SPACEBAR TO FLIP GRAVITY</p>
+                </div>
+
+                <!-- Bottom Dock for Secondary Actions -->
+                <div class="menu-bottom-dock">
+                    <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="dock-btn dock-mangaverse">
+                        <span class="dock-btn-icon">🎮</span>
+                        <span class="dock-btn-label">Mangaverse</span>
+                    </button>
+                    <button onclick="window.open('https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', '_blank')" class="dock-btn dock-playstore apk-only">
+                        <span class="dock-btn-icon">📲</span>
+                        <span class="dock-btn-label">Google Play</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Pause Screen -->
