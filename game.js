@@ -887,12 +887,17 @@ document.getElementById('tutorial-skip-btn')?.addEventListener('click', () => {
     hideAllScreens();
     startGame();
 });
+document.getElementById('tutorial-replay-btn')?.addEventListener('click', () => {
+    hideAllScreens();
+    showScreen('tutorial-screen');
+});
 document.getElementById('restart-btn')?.addEventListener('click', startGame);
 document.getElementById('pause-btn')?.addEventListener('click', pauseGame);
 document.getElementById('resume-btn')?.addEventListener('click', resumeGame);
 document.getElementById('quit-btn')?.addEventListener('click', quitToMenu);
 document.getElementById('menu-btn-icon')?.addEventListener('click', quitToMenu);
 document.getElementById('menu-btn')?.addEventListener('click', quitToMenu);
+document.getElementById('game-over-menu-btn')?.addEventListener('click', quitToMenu);
 
 document.getElementById('settings-btn')?.addEventListener('click', ()=>{
     if(GAME_STATE===STATE.PLAYING) pauseGame();
@@ -948,9 +953,24 @@ function downloadApk() {
 
 // Custom Carousel Mode UI Logic
 const MODES = [
-    { value: 'CLASSIC', label: 'CLASSIC (GRAVITY FLIP)' },
-    { value: 'LASER', label: 'LASER (JUMP OVER BEAMS)' },
-    { value: 'TOPDOWN', label: 'TOP-DOWN (FREE MOVE)' }
+    {
+        value: 'CLASSIC',
+        label: 'CLASSIC (GRAVITY FLIP)',
+        hint: 'TAP OR SPACEBAR TO FLIP GRAVITY',
+        help: 'Tap or press Space to flip gravity and dodge obstacles.'
+    },
+    {
+        value: 'LASER',
+        label: 'LASER (JUMP OVER BEAMS)',
+        hint: 'TAP OR SPACEBAR TO JUMP',
+        help: 'Tap or press Space to jump over the incoming laser beams.'
+    },
+    {
+        value: 'TOPDOWN',
+        label: 'TOP-DOWN (VERTICAL DODGE)',
+        hint: 'TAP OR DRAG UP/DOWN TO DODGE',
+        help: 'Tap or click to choose a height, or drag up and down to dodge blocks. The arena scrolls toward you automatically.'
+    }
 ];
 let currentModeIndex = 0;
 
@@ -958,14 +978,26 @@ function updateModeCarousel() {
     const modeDisplay = document.getElementById('mode-display');
     const modeInput = document.getElementById('mode-select');
     if (modeDisplay && modeInput) {
-        modeDisplay.textContent = MODES[currentModeIndex].label;
-        modeInput.value = MODES[currentModeIndex].value;
+        const mode = MODES[currentModeIndex];
+        modeDisplay.textContent = mode.label;
+        modeDisplay.setAttribute('aria-label', `Selected mode: ${mode.label}`);
+        modeInput.value = mode.value;
+        const hint = document.getElementById('hero-hint');
+        if (hint) hint.textContent = mode.hint;
+        const tutorialTitle = document.getElementById('tutorial-mode-title');
+        if (tutorialTitle) tutorialTitle.textContent = mode.label;
+        const tutorialHelp = document.getElementById('tutorial-mode-help');
+        if (tutorialHelp) tutorialHelp.textContent = mode.help;
+        const startButton = document.getElementById('start-btn');
+        if (startButton) startButton.setAttribute('aria-label', `Start ${mode.value.toLowerCase()} mode`);
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     const prevBtn = document.getElementById('mode-prev');
     const nextBtn = document.getElementById('mode-next');
+
+    updateModeCarousel();
     
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {

@@ -159,9 +159,9 @@
 
                     <!-- Sleek Mode Selector Pill -->
                     <div class="clean-mode-pill">
-                        <button id="mode-prev" class="mode-arrow-btn">◄</button>
-                        <div id="mode-display" class="mode-pill-label">CLASSIC (GRAVITY FLIP)</div>
-                        <button id="mode-next" class="mode-arrow-btn">►</button>
+                        <button id="mode-prev" class="mode-arrow-btn" type="button" aria-label="Previous game mode" title="Previous game mode">◄</button>
+                        <div id="mode-display" class="mode-pill-label" aria-live="polite">CLASSIC (GRAVITY FLIP)</div>
+                        <button id="mode-next" class="mode-arrow-btn" type="button" aria-label="Next game mode" title="Next game mode">►</button>
                         <input type="hidden" id="mode-select" value="CLASSIC">
                     </div>
 
@@ -170,7 +170,8 @@
                         <span class="hero-play-glow"></span>
                         <span class="hero-play-text">START DRIFT</span>
                     </button>
-                    <p class="hero-hint">TAP OR SPACEBAR TO FLIP GRAVITY</p>
+                    <p id="hero-hint" class="hero-hint">TAP OR SPACEBAR TO FLIP GRAVITY</p>
+                    <button id="tutorial-replay-btn" class="menu-help-btn" type="button">HOW TO PLAY</button>
                 </div>
 
                 <!-- Bottom Dock for Secondary Actions -->
@@ -214,7 +215,7 @@
 
             <!-- Game Over Screen -->
             <div id="game-over-screen" class="screen">
-                <button id="menu-btn-icon" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); border-radius: 50%; color: var(--neon-pink); cursor: pointer; z-index: 9999; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--neon-pink);">
+                <button id="menu-btn-icon" type="button" aria-label="Return to main menu" title="Main menu" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); border-radius: 50%; color: var(--neon-pink); cursor: pointer; z-index: 9999; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--neon-pink);">
                     <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 </button>
                 <h2 class="glitch" data-text="SYSTEM FAILURE">SYSTEM FAILURE</h2>
@@ -227,6 +228,7 @@
                   <div id="game-over-btns" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
                       <button id="revive-btn" class="cyber-btn revive-btn" style="display: none;">🚀 WATCH AD TO REVIVE</button>
                       <button id="restart-btn" class="cyber-btn">REBOOT SYSTEM</button>
+                      <button id="game-over-menu-btn" class="cyber-btn game-over-menu-btn">MAIN MENU</button>
                       <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="cyber-btn mangaverse-btn" style="font-size: 1rem; padding: 10px 20px; width: 100%;">🎮 EXPLORE MANGAVERSE</button>
                       <button onclick="window.open('https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', '_blank')" class="cyber-btn apk-only" style="font-size: 1rem; padding: 10px 20px; background: transparent; width: 100%;">GET IT ON PLAY STORE</button>
                   </div>
@@ -243,11 +245,11 @@
             <!-- Tutorial Screen -->
             <div id="tutorial-screen" class="screen">
                 <h2 class="glitch" data-text="SYSTEM TUTORIAL">SYSTEM TUTORIAL</h2>
-                <div style="text-align: left; background: rgba(0,0,0,0.7); padding: 15px; border: 1px solid var(--neon-pink); margin-bottom: 20px; font-family: 'Space Mono', monospace; font-size: 0.9rem; line-height: 1.5; color: #fff;">
-                    <p style="color: var(--neon-cyan); margin-bottom: 10px;"><strong>HOW TO PLAY:</strong> Use Tap or Spacebar to switch gravity and avoid obstacles.</p>
-                    <p>⚡ <strong>CLASSIC (GRAVITY FLIP):</strong> Tap to flip gravity. Survive as long as you can.</p>
-                    <p>🔴 <strong>LASER (EVADE BEAMS):</strong> Jump to evade incoming laser beams.</p>
-                    <p>🕹️ <strong>TOP-DOWN (FREE MOVE):</strong> Move freely in all directions to dodge.</p>
+                <div class="tutorial-card">
+                    <p class="tutorial-kicker">YOUR MODE</p>
+                    <h3 id="tutorial-mode-title">CLASSIC (GRAVITY FLIP)</h3>
+                    <p id="tutorial-mode-help">Tap or press Space to flip gravity and dodge obstacles.</p>
+                    <p class="tutorial-tip">Tip: pause any time with the pause button or Esc.</p>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
                     <button id="tutorial-got-it-btn" class="cyber-btn" style="background: var(--neon-pink); color: black;">GOT IT</button>
