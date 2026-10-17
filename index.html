@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=16">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="manifest.json">
@@ -105,8 +105,12 @@
                     <span id="hud-event-pill-timer" class="hud-pill-timer">16D.10H</span>
                 </div>
                 <div id="hud-buttons">
-                    <button id="pause-btn" class="hud-btn" title="Pause">⏸</button>
-                    <button id="settings-btn" class="hud-btn" title="Settings">⚙</button>
+                    <button id="pause-btn" class="hud-btn" type="button" title="Pause" aria-label="Pause game">
+                        <img src="assets/ui/vector/ic_system_pause-in-ring_01.svg" alt="">
+                    </button>
+                    <button id="settings-btn" class="hud-btn" type="button" title="Settings" aria-label="Open settings">
+                        <img src="assets/ui/vector/ic_system_gear-ring.svg" alt="">
+                    </button>
                 </div>
             </div>
 
@@ -200,11 +204,15 @@
                 <h2 class="cyber-text">⚙ SETTINGS</h2>
                 <div class="setting-row">
                     <label>SOUND FX</label>
-                    <button class="toggle-btn" id="sfx-toggle" data-key="sfx">ON</button>
+                    <button class="toggle-btn icon-toggle" id="sfx-toggle" type="button" data-key="sfx" data-label="Sound FX" data-icon-on="assets/ui/vector/ic_media_volume-on_01.svg" data-icon-off="assets/ui/vector/ic_media_volume-off_01.svg" aria-label="Sound FX: on" aria-pressed="true">
+                        <img src="assets/ui/vector/ic_media_volume-on_01.svg" alt="">
+                    </button>
                 </div>
                 <div class="setting-row">
                     <label>MUSIC</label>
-                    <button class="toggle-btn" id="music-toggle" data-key="music">ON</button>
+                    <button class="toggle-btn icon-toggle" id="music-toggle" type="button" data-key="music" data-label="Music" data-icon-on="assets/ui/vector/ic_media_volume-on_01.svg" data-icon-off="assets/ui/vector/ic_media_volume-off_01.svg" aria-label="Music: on" aria-pressed="true">
+                        <img src="assets/ui/vector/ic_media_volume-on_01.svg" alt="">
+                    </button>
                 </div>
                 <div class="setting-row">
                     <label>VIBRATION</label>
@@ -340,6 +348,6 @@
         </div><!-- end ui-layer -->
     </div><!-- end game-container -->
 
-    <script src="game.js?v=14"></script>
+    <script src="game.js?v=16"></script>
 </body>
 </html>

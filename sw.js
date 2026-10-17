@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuberun-v15'; // Bumped 2026-10-17: Refresh mode guidance and tutorial UI
+const CACHE_NAME = 'cuberun-v16'; // Bumped 2026-10-17: Cache neon HUD and audio toggle icons
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -6,7 +6,11 @@ const ASSETS_TO_CACHE = [
     './game.js',
     './manifest.json',
     './icon-192.png',
-    './icon-512.png'
+    './icon-512.png',
+    './assets/ui/vector/ic_system_pause-in-ring_01.svg',
+    './assets/ui/vector/ic_system_gear-ring.svg',
+    './assets/ui/vector/ic_media_volume-on_01.svg',
+    './assets/ui/vector/ic_media_volume-off_01.svg'
 ];
 
 self.addEventListener('install', event => {

@@ -75,7 +75,18 @@ const Settings = {
     syncUI() {
         ['sfx','music','vibration'].forEach(k => {
             const b = document.querySelector(`[data-key="${k}"]`);
-            if (b) { b.textContent = this[k] ? 'ON' : 'OFF'; b.classList.toggle('active', this[k]); }
+            if (b) {
+                const enabled = Boolean(this[k]);
+                const icon = b.querySelector('img');
+                if (icon && b.dataset.iconOn && b.dataset.iconOff) {
+                    icon.src = enabled ? b.dataset.iconOn : b.dataset.iconOff;
+                    b.setAttribute('aria-label', `${b.dataset.label}: ${enabled ? 'on' : 'off'}`);
+                } else {
+                    b.textContent = enabled ? 'ON' : 'OFF';
+                }
+                b.setAttribute('aria-pressed', String(enabled));
+                b.classList.toggle('active', enabled);
+            }
         });
     }
 };

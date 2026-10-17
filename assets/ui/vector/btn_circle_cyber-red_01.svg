@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+<g transform="matrix(1.0480 0 0 1.0480 -3.074 -3.074)">
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#200C10"/>
+      <stop offset="100%" stop-color="#100608"/>
+    </linearGradient>
+    <linearGradient id="neonEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF1744"/>
+      <stop offset="50%" stop-color="#D01030"/>
+      <stop offset="100%" stop-color="#800A20"/>
+    </linearGradient>
+    <linearGradient id="hl" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF1744" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#FF1744" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer glow bleed -->
+  <circle cx="64" cy="64" r="62" fill="#FF1744" opacity="0.06"/>
+  <!-- Main circle with neon stroke -->
+  <circle cx="64" cy="64" r="56" fill="url(#face)" stroke="url(#neonEdge)" stroke-width="2.5"/>
+  <!-- Inner accent ring -->
+  <circle cx="64" cy="64" r="48" fill="none" stroke="#FF1744" stroke-width="0.8" stroke-opacity="0.3"/>
+  <!-- Top highlight -->
+  <ellipse cx="64" cy="46" rx="34" ry="20" fill="url(#hl)"/>
+</g>
+</svg>

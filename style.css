@@ -124,13 +124,22 @@ canvas.aberration {
     color: var(--text-main);
     font-size: 18px;
     width: 40px;
+    min-width: 40px;
     height: 40px;
+    min-height: 40px;
     border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
+}
+.hud-btn img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    filter: drop-shadow(0 0 4px var(--neon-pink));
+    pointer-events: none;
 }
 .hud-btn:active { background: rgba(255, 0, 60, 0.2); }
 
@@ -282,6 +291,26 @@ p {
     background: var(--neon-pink);
     border-color: var(--neon-pink);
     color: #000;
+}
+.toggle-btn.icon-toggle {
+    display: flex;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+}
+.toggle-btn.icon-toggle img {
+    display: block;
+    width: 30px;
+    height: 30px;
+    filter: drop-shadow(0 0 4px var(--neon-pink));
+    pointer-events: none;
+}
+.toggle-btn.icon-toggle:not(.active) {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: #555;
 }
 
 /* Screen Shake on Game Over */
