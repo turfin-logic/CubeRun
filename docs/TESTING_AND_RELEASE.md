@@ -16,7 +16,7 @@ git push origin main
 # → Players see new version on next load
 ```
 
-**Service Worker Note:** If you change `sw.js`, bump `CACHE_NAME` (currently `cuberun-v18`) and update asset query versions in `index.html` when changing `game.js` or `style.css`. Add new offline-required assets to `ASSETS_TO_CACHE`.
+**Service Worker Note:** If you change `sw.js`, bump `CACHE_NAME` (currently `cuberun-v19`) and update asset query versions in `index.html` when changing `game.js` or `style.css`. Add new offline-required assets to `ASSETS_TO_CACHE`.
 
 `game_source.js` is intentionally gitignored; keep the local source synchronized with `game.js`, but do not force-add it to the public repository.
 
@@ -83,6 +83,7 @@ Upload the `.aab` to Play Console → Internal/Closed/Open Testing → Productio
 - Confirm a fresh load opens directly on the clean start screen without loading/event overlays or an event-config request.
 - Start each mode and verify its mode-specific obstacles; check score phases at 50, 150, and 300.
 - Confirm game over can be dismissed immediately with a tap, the retry button, or Space; revive remains a separate rewarded action.
+- The clutch revive appears only at 70%+ of an established best score or on a new record attempt; short (18 s or less) runs never trigger interstitials, even after three session deaths.
 - Existing event configuration and local cache data are intentionally retained but unused by the arcade flow.
 
 ---

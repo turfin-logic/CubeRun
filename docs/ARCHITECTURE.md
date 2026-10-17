@@ -99,14 +99,15 @@ requestAnimationFrame loop
 - Boot directly to the clean start screen; no loading sequence or event popup is initialized.
 - Gameplay phases are score-driven (50 / 150 / 300), with a smooth color transition and a short phase banner.
 - Obstacle patterns are mode-aware: gravity-flip pairs/staircases, vertical-dodge gates, and laser obstacles.
-- A tap or Space immediately restarts from game over; rewarded revive remains optional.
+- A tap or Space immediately restarts from game over; the rewarded revive is highlighted only near an established high score.
+- Interstitials remain on the third-death cadence, require that run to exceed 18 seconds, and use a session-scoped death count that survives page reloads in the same tab. Pending interstitials are suppressed while a retry is in progress.
 - Legacy event configuration and cached values are left untouched but are not fetched or shown in normal play.
 
 ---
 
 ## Service Worker Strategy
 
-- Cache: `cuberun-v18` (instant-retry arcade refresh)
+- Cache: `cuberun-v19` (clutch-revive and phase polish)
 - Strategy: **Stale-While-Revalidate** for all game assets
 - Bypassed (always network): `gamedistribution.*`, `google.*`, `events_config.json`
 - Bypassed because `events_config.json` must always be fresh for live event scheduling

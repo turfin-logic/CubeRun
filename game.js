@@ -10,14 +10,15 @@ let GAME_STATE = STATE.MENU;
 let CURRENT_MODE = 'CLASSIC';
 let score = 0, frameCount = 0, baseSpeed = 7, rafId = null, lastTime = 0;
 let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlashUntil = 0;
-let sessionStartedAt = Date.now(), lastInterstitialAt = 0;
+let lastInterstitialAt = 0;
+let sessionDeathCount = Math.max(0, Number.parseInt(sessionStorage.getItem('cr_session_death_count') || '0', 10) || 0);
 let patternQueue = [], patternTimer = 72, patternIndex = 0, classicLane = 'top';
 let floatTexts = [];
 const RUN_PHASES = [
-    { score: 0, name: 'NEON', title: 'PHASE 1: NEON', grid: '#00f3ff', obstacle: '#00f3ff', speed: 1, scoreMultiplier: 1 },
-    { score: 50, name: 'OVERDRIVE', title: 'PHASE 2: OVERDRIVE', grid: '#b000ff', obstacle: '#b000ff', speed: 1.04, scoreMultiplier: 1.2 },
-    { score: 150, name: 'INFERNO', title: 'PHASE 3: INFERNO', grid: '#ff003c', obstacle: '#ff003c', speed: 1.08, scoreMultiplier: 1.5 },
-    { score: 300, name: 'MATRIX', title: 'PHASE 4: MATRIX', grid: '#00ff66', obstacle: '#00ff66', speed: 1.12, scoreMultiplier: 2 }
+    { score: 0, name: 'NEON', title: 'PHASE I: NEON', grid: '#00f3ff', obstacle: '#00f3ff', speed: 1, scoreMultiplier: 1 },
+    { score: 50, name: 'OVERDRIVE', title: 'PHASE II: OVERDRIVE', grid: '#b000ff', obstacle: '#b000ff', speed: 1.04, scoreMultiplier: 1.2 },
+    { score: 150, name: 'INFERNO', title: 'PHASE III: OVERDRIVE', grid: '#ff003c', obstacle: '#ff003c', speed: 1.08, scoreMultiplier: 1.5 },
+    { score: 300, name: 'MATRIX', title: 'PHASE IV: MATRIX', grid: '#00ff66', obstacle: '#00ff66', speed: 1.12, scoreMultiplier: 2 }
 ];
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SPRITES & POOLS (Defined early to prevent ReferenceError) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -431,7 +432,7 @@ window.onAdClose = () => {
         // Edge case: ad closed without a reward and no pending callbacks.
         // Reset the button so the player isn't stuck.
         const btn = document.getElementById('revive-btn');
-        if (btn) { btn.textContent = '\u26A1 REVIVE (WATCH AD)'; btn.disabled = false; }
+        if (btn) { btn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)'; btn.disabled = false; }
     }
 };
 
@@ -497,11 +498,11 @@ function getObstaclePattern() {
         switch (sequence % 4) {
             case 1:
                 return [
-                    { y: lane(0.24), width: 44, height: 58, delay: 30 },
+                    { y: lane(0.24), width: 44, height: 58, delay: 36 },
                     { y: lane(0.72), width: 44, height: 58, delay: interval }
                 ];
             case 2: {
-                const gap = 90;
+                const gap = Math.round(player.height * 1.5);
                 const blockHeight = Math.max(24, (FLOOR - CEILING - gap) / 2);
                 return [
                     { y: CEILING, width: 62, height: blockHeight, pairY: CEILING + blockHeight + gap, pairHeight: blockHeight, delay: interval }
@@ -509,8 +510,8 @@ function getObstaclePattern() {
             }
             case 3:
                 return [
-                    { y: lane(0.72), width: 44, height: 58, delay: 32 },
-                    { y: lane(0.48), width: 44, height: 58, delay: 32 },
+                    { y: lane(0.72), width: 44, height: 58, delay: 42 },
+                    { y: lane(0.48), width: 44, height: 58, delay: 42 },
                     { y: lane(0.24), width: 44, height: 58, delay: interval }
                 ];
             default:
@@ -521,10 +522,10 @@ function getObstaclePattern() {
     const otherLane = classicLane === 'top' ? 'bottom' : 'top';
     const patterns = [
         [{ lane: classicLane, delay: interval }],
-        [{ lane: otherLane, delay: 52 }, { lane: classicLane, delay: interval }],
+        [{ lane: otherLane, delay: 36 }, { lane: classicLane, delay: interval }],
         [
-            { lane: classicLane, delay: 54 },
-            { lane: otherLane, delay: 54 },
+            { lane: classicLane, delay: 42 },
+            { lane: otherLane, delay: 42 },
             { lane: classicLane, delay: interval }
         ]
     ];
@@ -554,7 +555,7 @@ function update(dt) {
     const nextPhase=currentRunPhase();
     if(nextPhase!==phaseIndex) {
         phaseIndex=nextPhase;
-        phaseFlashUntil=performance.now()+800;
+        phaseFlashUntil=performance.now()+600;
         canvas.classList.toggle('aberration', phaseIndex===2);
         updateScoreDisplay();
     }
@@ -741,6 +742,21 @@ function draw() {
     ctx.stroke();
     ctx.globalAlpha=1;
 
+    if (phaseIndex === 2) {
+        const tunnelHeight = FLOOR - CEILING;
+        ctx.strokeStyle = 'rgba(255, 0, 60, 0.22)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+            const y = CEILING + ((i * 71 + frameCount * 0.8) % tunnelHeight);
+            const x = W - ((frameCount * (3 + i * 0.24)) % (W + 50));
+            const length = 16 + (i % 4) * 9;
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - length, y);
+        }
+        ctx.stroke();
+    }
+
     // BG particles
     bgParticles.forEach(p=>{
         if (!p.sprite) p.sprite = Math.random()>0.5 ? SPRITES.bgDot1 : SPRITES.bgDot2;
@@ -842,7 +858,9 @@ function draw() {
     }
 
     if(performance.now()<phaseFlashUntil) {
-        const alpha=Math.min(1,(phaseFlashUntil-performance.now())/220);
+        const remaining=phaseFlashUntil-performance.now();
+        const elapsed=600-remaining;
+        const alpha=Math.min(1,elapsed/90,remaining/180);
         ctx.globalAlpha=alpha;
         ctx.fillStyle=visuals.grid;
         ctx.font='900 15px Orbitron, sans-serif';
@@ -920,6 +938,7 @@ function gameOver() {
     setTimeout(()=>gameContainer.classList.remove('game-over-flash'),220);
     canvas.classList.remove('aberration');
 
+    const previousBest=SaveData.load().highScore;
     const isNew=SaveData.updateHighScore(score);
     document.getElementById('finalScore').textContent=score;
     bestScore=SaveData.load().highScore;
@@ -934,22 +953,21 @@ function gameOver() {
     const reviveBtn = document.getElementById('revive-btn');
     if (!navigator.onLine) {
         window.offlineGameCount++;
-        reviveBtn.style.display = window.offlineGameCount > 3 ? 'none' : 'block';
-    } else {
-        reviveBtn.style.display = 'block';
     }
-    if (reviveBtn.style.display !== 'none') {
-        reviveBtn.textContent = '\u26A1 REVIVE (WATCH AD)';
+    const clutchRun=previousBest>=30&&(isNew||score>=previousBest*0.7);
+    const reviveAvailable=clutchRun&&(navigator.onLine||window.offlineGameCount<=3);
+    reviveBtn.style.display=reviveAvailable?'block':'none';
+    reviveBtn.classList.toggle('clutch-revive',reviveAvailable);
+    if (reviveAvailable) {
+        reviveBtn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)';
         reviveBtn.disabled = false;
     }
 
-    if (typeof window.deathCount === 'undefined') window.deathCount = 0;
-    window.deathCount++;
+    sessionDeathCount++;
+    sessionStorage.setItem('cr_session_death_count', String(sessionDeathCount));
     const now=Date.now();
     const runDuration=now-runStartedAt;
-    const sessionDuration=now-sessionStartedAt;
-    const adReadyForBreak=runDuration>=20000||sessionDuration>=120000;
-    if (window.deathCount % 3 === 0 && adReadyForBreak && now-lastInterstitialAt>=90000) {
+    if (runDuration>18000 && sessionDeathCount>=3 && sessionDeathCount%3===0 && now-lastInterstitialAt>=90000) {
         lastInterstitialAt=now;
         setTimeout(() => {
             if(GAME_STATE===STATE.GAMEOVER) FlutterBridge.showInterstitial();
@@ -1124,7 +1142,7 @@ document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
         btn.textContent = '❌ TRY AGAIN LATER';
         showAdToast('Ad unavailable — tap REVIVE again in a moment.');
         setTimeout(() => {
-            btn.textContent = '\u26A1 REVIVE (WATCH AD)';
+            btn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)';
             btn.disabled = false;
         }, 2000);
     }

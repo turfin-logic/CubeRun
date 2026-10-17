@@ -1,11 +1,11 @@
-const CACHE_NAME = 'cuberun-v18'; // Instant-retry arcade refresh
+const CACHE_NAME = 'cuberun-v19'; // Clutch revive and phase polish
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './game.js',
-    './style.css?v=18',
-    './game.js?v=18',
+    './style.css?v=19',
+    './game.js?v=19',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
