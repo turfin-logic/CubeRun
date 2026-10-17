@@ -1,11 +1,11 @@
-const CACHE_NAME = 'cuberun-v19'; // Clutch revive and phase polish
+const CACHE_NAME = 'cuberun-v20'; // Runtime lifecycle and resize fixes
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './game.js',
-    './style.css?v=19',
-    './game.js?v=19',
+    './style.css?v=20',
+    './game.js?v=20',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
@@ -60,6 +60,20 @@ self.addEventListener('fetch', event => {
                 return networkResponse;
             }).catch(() => {
                 console.log('SW: Network failed, relying on cache');
+                if (cachedResponse) return cachedResponse;
+                if (event.request.mode === 'navigate') {
+                    return caches.match('./index.html').then(appShell => {
+                        if (appShell) return appShell;
+                        return new Response('This asset is unavailable offline.', {
+                            status: 503,
+                            statusText: 'Service Unavailable'
+                        });
+                    });
+                }
+                return new Response('This asset is unavailable offline.', {
+                    status: 503,
+                    statusText: 'Service Unavailable'
+                });
             });
             return cachedResponse || fetchPromise;
         })

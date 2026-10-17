@@ -11,7 +11,25 @@ let CURRENT_MODE = 'CLASSIC';
 let score = 0, frameCount = 0, baseSpeed = 7, rafId = null, lastTime = 0;
 let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlashUntil = 0;
 let lastInterstitialAt = 0;
-let sessionDeathCount = Math.max(0, Number.parseInt(sessionStorage.getItem('cr_session_death_count') || '0', 10) || 0);
+function loadSessionDeathCount() {
+    try {
+        const count=Number.parseInt(sessionStorage.getItem('cr_session_death_count')||'0',10);
+        return Number.isFinite(count)?Math.max(0,count):0;
+    } catch(error) {
+        console.warn('[CubeRun] Session storage unavailable; death count is not persistent.',error);
+        return 0;
+    }
+}
+function saveSessionDeathCount(count) {
+    try {
+        sessionStorage.setItem('cr_session_death_count',String(count));
+    } catch(error) {
+        console.warn('[CubeRun] Unable to persist session death count.',error);
+    }
+}
+let sessionDeathCount = loadSessionDeathCount();
+let activeRunId = 0, interstitialTimer = null, reviveCountdownInterval = null, reviveCountdownElement = null;
+let reviveRequestRunId = null;
 let patternQueue = [], patternTimer = 72, patternIndex = 0, classicLane = 'top';
 let floatTexts = [];
 const RUN_PHASES = [
@@ -48,6 +66,7 @@ let resizeTimer;
 function resizeCanvas() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
+        const previousCeiling=CEILING, previousFloor=FLOOR;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width  = window.innerWidth  * dpr;
         canvas.height = window.innerHeight * dpr;
@@ -58,7 +77,32 @@ function resizeCanvas() {
         
         CEILING = window.innerHeight * 0.18;
         FLOOR   = window.innerHeight * 0.82;
-        if(typeof initSprites === 'function') initSprites();
+        const oldRange=Math.max(1,previousFloor-previousCeiling);
+        const newRange=FLOOR-CEILING;
+        if(CURRENT_MODE==='CLASSIC') {
+            const progress=(player.y-previousCeiling)/Math.max(1,oldRange-player.height);
+            if(!player.isSwapping) {
+                player.y=player.gravityDir===1?FLOOR-player.height:CEILING;
+            } else {
+                player.y=CEILING+Math.max(0,Math.min(1,progress))*(newRange-player.height);
+            }
+            obstaclePool.active.forEach(obstacle=>{
+                const topDistance=Math.abs(obstacle.y-previousCeiling);
+                const bottomDistance=Math.abs(obstacle.y+obstacle.height-previousFloor);
+                obstacle.y=topDistance<=bottomDistance?CEILING:FLOOR-obstacle.height;
+            });
+        } else {
+            player.y=Math.max(CEILING,Math.min(FLOOR-player.height,player.y));
+            if(player.targetY!==undefined) {
+                player.targetY=Math.max(CEILING+player.height/2,Math.min(FLOOR-player.height/2,player.targetY));
+            }
+            obstaclePool.active.forEach(obstacle=>{
+                obstacle.y=CEILING+(obstacle.y-previousCeiling)/oldRange*newRange;
+            });
+        }
+        if(CURRENT_MODE==='LASER') player.y=FLOOR-player.height-60;
+        player.trail=[];
+        if(typeof initSprites==='function') initSprites();
     }, 100);
 }
 window.addEventListener('resize', resizeCanvas);
@@ -425,9 +469,11 @@ window.onAdClose = () => {
     clearTimeout(window._rewardTimeout);
     if (window._pendingRevive) {
         window._pendingRevive = false;
-        revivePlayer();
+        const shouldRevive=reviveRequestRunId===activeRunId&&GAME_STATE===STATE.GAMEOVER;
+        reviveRequestRunId=null;
+        if(shouldRevive) revivePlayer();
     } else if (window._onRewardFailed) {
-        window._onRewardFailed('Ad Closed');
+        window.FlutterBridge.onRewardFailed();
     } else {
         // Edge case: ad closed without a reward and no pending callbacks.
         // Reset the button so the player isn't stuck.
@@ -907,7 +953,30 @@ function resumeGame() {
     startGameLoop();
 }
 
+function cancelPendingInterstitial() {
+    if(interstitialTimer!==null) {
+        clearTimeout(interstitialTimer);
+        interstitialTimer=null;
+    }
+}
+
+function cancelReviveCountdown() {
+    if(reviveCountdownInterval!==null) {
+        clearInterval(reviveCountdownInterval);
+        reviveCountdownInterval=null;
+    }
+    if(reviveCountdownElement) {
+        reviveCountdownElement.remove();
+        reviveCountdownElement=null;
+    }
+}
+
 function quitToMenu() {
+    activeRunId++;
+    cancelPendingInterstitial();
+    cancelReviveCountdown();
+    window._pendingRevive=false;
+    reviveRequestRunId=null;
     cancelAnimationFrame(rafId);
     stopDrone();
     GAME_STATE=STATE.MENU;
@@ -954,7 +1023,7 @@ function gameOver() {
     if (!navigator.onLine) {
         window.offlineGameCount++;
     }
-    const clutchRun=previousBest>=30&&(isNew||score>=previousBest*0.7);
+    const clutchRun=score>=30&&(isNew||(previousBest>=30&&score>=previousBest*0.7));
     const reviveAvailable=clutchRun&&(navigator.onLine||window.offlineGameCount<=3);
     reviveBtn.style.display=reviveAvailable?'block':'none';
     reviveBtn.classList.toggle('clutch-revive',reviveAvailable);
@@ -964,18 +1033,22 @@ function gameOver() {
     }
 
     sessionDeathCount++;
-    sessionStorage.setItem('cr_session_death_count', String(sessionDeathCount));
+    saveSessionDeathCount(sessionDeathCount);
     const now=Date.now();
     const runDuration=now-runStartedAt;
     if (runDuration>18000 && sessionDeathCount>=3 && sessionDeathCount%3===0 && now-lastInterstitialAt>=90000) {
         lastInterstitialAt=now;
-        setTimeout(() => {
-            if(GAME_STATE===STATE.GAMEOVER) FlutterBridge.showInterstitial();
+        const endedRunId=activeRunId;
+        interstitialTimer=setTimeout(() => {
+            interstitialTimer=null;
+            if(GAME_STATE===STATE.GAMEOVER&&activeRunId===endedRunId) FlutterBridge.showInterstitial();
         }, 900);
     }
 }
 
 function revivePlayer() {
+    if(GAME_STATE!==STATE.GAMEOVER||reviveCountdownInterval!==null) return;
+    cancelPendingInterstitial();
     hideScreen('game-over-screen');
     let count = 3;
     const countdownEl = document.createElement('div');
@@ -991,14 +1064,17 @@ function revivePlayer() {
     countdownEl.style.fontFamily = 'monospace';
     countdownEl.innerText = count;
     document.body.appendChild(countdownEl);
+    reviveCountdownElement=countdownEl;
 
-    const interval = setInterval(() => {
+    reviveCountdownInterval = setInterval(() => {
         count--;
         if (count > 0) {
             countdownEl.innerText = count;
         } else {
-            clearInterval(interval);
+            clearInterval(reviveCountdownInterval);
+            reviveCountdownInterval=null;
             countdownEl.remove();
+            reviveCountdownElement=null;
             GAME_STATE=STATE.PLAYING;
             player.y=FLOOR-player.height; player.gravityDir=1; player.isSwapping=false;
             player.invincible=true; setTimeout(()=>player.invincible=false,2000);
@@ -1029,6 +1105,11 @@ function resetGame() {
 }
 
 function startGame() {
+    activeRunId++;
+    cancelPendingInterstitial();
+    cancelReviveCountdown();
+    window._pendingRevive=false;
+    reviveRequestRunId=null;
     getAudio(); // unlock AudioContext on user gesture
     const modeSelect = document.getElementById('mode-select');
     if (modeSelect) CURRENT_MODE = modeSelect.value;
@@ -1134,14 +1215,22 @@ document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
 // Revive button
 document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
     const btn=document.getElementById('revive-btn');
+    const requestRunId=activeRunId;
+    reviveRequestRunId=requestRunId;
     btn.disabled=true; btn.textContent='⏳ LOADING...';
     try { 
-        await FlutterBridge.showRewarded(); window._pendingRevive = true; 
+        await FlutterBridge.showRewarded();
+        if(requestRunId===activeRunId&&GAME_STATE===STATE.GAMEOVER) {
+            window._pendingRevive=true;
+        }
     }
     catch(e) { 
+        if(requestRunId!==activeRunId||GAME_STATE!==STATE.GAMEOVER) return;
+        reviveRequestRunId=null;
         btn.textContent = '❌ TRY AGAIN LATER';
         showAdToast('Ad unavailable — tap REVIVE again in a moment.');
         setTimeout(() => {
+            if(requestRunId!==activeRunId||GAME_STATE!==STATE.GAMEOVER) return;
             btn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)';
             btn.disabled = false;
         }, 2000);

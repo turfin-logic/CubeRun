@@ -100,14 +100,15 @@ requestAnimationFrame loop
 - Gameplay phases are score-driven (50 / 150 / 300), with a smooth color transition and a short phase banner.
 - Obstacle patterns are mode-aware: gravity-flip pairs/staircases, vertical-dodge gates, and laser obstacles.
 - A tap or Space immediately restarts from game over; the rewarded revive is highlighted only near an established high score.
-- Interstitials remain on the third-death cadence, require that run to exceed 18 seconds, and use a session-scoped death count that survives page reloads in the same tab. Pending interstitials are suppressed while a retry is in progress.
+- Interstitials remain on the third-death cadence, require that run to exceed 18 seconds, and use a session-scoped death count that survives page reloads in the same tab. Pending interstitials and revive countdowns are cancelled when their run is abandoned.
+- Orientation/viewport changes keep the player and active obstacles aligned with the resized arena.
 - Legacy event configuration and cached values are left untouched but are not fetched or shown in normal play.
 
 ---
 
 ## Service Worker Strategy
 
-- Cache: `cuberun-v19` (clutch-revive and phase polish)
+- Cache: `cuberun-v20` (runtime lifecycle and resize fixes)
 - Strategy: **Stale-While-Revalidate** for all game assets
 - Bypassed (always network): `gamedistribution.*`, `google.*`, `events_config.json`
 - Bypassed because `events_config.json` must always be fresh for live event scheduling
