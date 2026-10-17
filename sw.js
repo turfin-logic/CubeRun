@@ -1,9 +1,11 @@
-const CACHE_NAME = 'cuberun-v16'; // Bumped 2026-10-17: Cache neon HUD and audio toggle icons
+const CACHE_NAME = 'cuberun-v17'; // Responsive neon UI refresh
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './game.js',
+    './style.css?v=17',
+    './game.js?v=17',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',

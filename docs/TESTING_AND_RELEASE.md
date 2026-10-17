@@ -16,7 +16,7 @@ git push origin main
 # → Players see new version on next load
 ```
 
-**Service Worker Note:** If you change `sw.js`, bump `CACHE_NAME` (currently `cuberun-v16`) and update asset query versions in `index.html` when changing `game.js` or `style.css`. Add new offline-required assets to `ASSETS_TO_CACHE`.
+**Service Worker Note:** If you change `sw.js`, bump `CACHE_NAME` (currently `cuberun-v17`) and update asset query versions in `index.html` when changing `game.js` or `style.css`. Add new offline-required assets to `ASSETS_TO_CACHE`.
 
 `game_source.js` is intentionally gitignored; keep the local source synchronized with `game.js`, but do not force-add it to the public repository.
 

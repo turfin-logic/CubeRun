@@ -1265,3 +1265,367 @@ button:focus-visible {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Cohesive neon UI polish */
+#hud {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "score actions"
+        "event event";
+    gap: 8px 12px;
+    padding: max(12px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 12px max(14px, env(safe-area-inset-left));
+}
+
+#hud.active { display: grid; }
+
+#score-display {
+    grid-area: score;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: clamp(0.78rem, 3.8vw, 1.15rem);
+    letter-spacing: 0.04em;
+}
+
+.hud-event-pill {
+    grid-area: event;
+    justify-self: center;
+    min-height: 32px;
+    border-color: rgba(255, 0, 60, 0.62);
+    background: linear-gradient(110deg, rgba(28, 6, 18, 0.94), rgba(8, 9, 18, 0.94));
+    animation-duration: 3.5s;
+}
+
+#hud-buttons {
+    grid-area: actions;
+    justify-self: end;
+    gap: 8px;
+}
+
+.hud-btn {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(25, 14, 25, 0.94), rgba(7, 7, 13, 0.94));
+    border-color: rgba(255, 0, 60, 0.46);
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.07), 0 5px 14px rgba(0, 0, 0, 0.38);
+}
+
+.hud-btn img { width: 30px; height: 30px; }
+
+.screen.clean-menu {
+    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    background:
+        radial-gradient(ellipse at 50% 43%, rgba(40, 8, 28, 0.38), transparent 55%),
+        linear-gradient(180deg, rgba(3, 0, 5, 0.97), rgba(3, 0, 8, 0.92));
+    border: 0;
+    box-shadow: none;
+}
+
+.menu-top-bar {
+    gap: 12px;
+    min-height: 52px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    background: linear-gradient(110deg, rgba(18, 12, 22, 0.86), rgba(8, 8, 14, 0.82));
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24), inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+#event-banner.menu-event-pill {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: calc(100% - 60px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: 12px !important;
+    padding: 8px 12px !important;
+    font-size: clamp(0.58rem, 2.4vw, 0.72rem) !important;
+    letter-spacing: 0.06em !important;
+    animation-duration: 3.5s;
+}
+
+.menu-icon-btn {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    margin-left: auto;
+    border-radius: 14px;
+    border-color: rgba(255, 0, 60, 0.48);
+    background: linear-gradient(145deg, rgba(30, 13, 26, 0.95), rgba(8, 7, 14, 0.95));
+}
+
+.menu-icon-btn img {
+    width: 30px;
+    height: 30px;
+    filter: drop-shadow(0 0 5px rgba(255, 0, 60, 0.65));
+}
+
+.menu-icon-btn:hover { transform: translateY(-1px); }
+
+.menu-hero-area { max-width: 440px; }
+
+.menu-hero-area .unified-logo {
+    width: 84px;
+    height: 84px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(0, 243, 255, 0.14);
+    border-radius: 24px;
+    background: radial-gradient(circle, rgba(26, 10, 30, 0.95), rgba(3, 0, 5, 0.88));
+    box-shadow: 0 0 42px rgba(255, 0, 60, 0.12), inset 0 0 22px rgba(0, 243, 255, 0.06);
+}
+
+.menu-hero-area h1 {
+    margin-bottom: 0;
+    font-size: clamp(2.25rem, 10vw, 3.15rem);
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 26px rgba(255, 0, 60, 0.35);
+}
+
+.menu-hero-area h1.glitch::before,
+.menu-hero-area h1.glitch::after,
+.screen h2.glitch::before,
+.screen h2.glitch::after {
+    display: none;
+}
+
+.clean-mode-pill {
+    min-height: 54px;
+    margin: 20px auto 24px;
+    border-color: rgba(0, 243, 255, 0.24);
+    background: linear-gradient(110deg, rgba(16, 12, 24, 0.96), rgba(10, 7, 16, 0.92));
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.05), 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.mode-arrow-btn {
+    color: var(--neon-blue);
+    border-radius: 12px;
+}
+
+.mode-pill-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hero-play-btn {
+    height: 62px;
+    border: 1px solid rgba(255, 255, 255, 0.19);
+    border-radius: 18px;
+    background: linear-gradient(135deg, #ff174d, #c90038 70%, #9e002d);
+    box-shadow: 0 5px 0 #700020, 0 12px 28px rgba(255, 0, 60, 0.3), inset 0 1px rgba(255, 255, 255, 0.22);
+    animation: none;
+}
+
+.hero-play-btn:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 5px 0 #700020, 0 14px 32px rgba(255, 0, 60, 0.4), inset 0 1px rgba(255, 255, 255, 0.24);
+}
+
+.hero-play-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #700020, 0 6px 14px rgba(255, 0, 60, 0.28);
+}
+
+.hero-hint {
+    color: rgba(220, 228, 240, 0.64) !important;
+    font-size: 0.62rem !important;
+    letter-spacing: 0.12em;
+}
+
+.menu-help-btn {
+    border-color: rgba(0, 243, 255, 0.32);
+    background: rgba(0, 243, 255, 0.045);
+    color: #9cfaff;
+}
+
+.dock-btn {
+    min-height: 48px;
+    border-radius: 14px;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(14, 12, 21, 0.88);
+}
+
+.dock-mangaverse { border-color: rgba(112, 0, 255, 0.32); }
+.dock-playstore { border-color: rgba(0, 243, 255, 0.28); }
+
+#pause-screen,
+#settings-screen,
+#tutorial-screen,
+#game-over-screen {
+    width: min(460px, calc(100% - 28px));
+    height: auto;
+    max-height: calc(100% - 28px);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 30px 24px;
+    gap: 12px;
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    border-radius: 24px;
+    background: linear-gradient(155deg, rgba(20, 13, 25, 0.99), rgba(5, 5, 11, 0.99) 72%);
+    box-shadow: 0 0 0 100vmax rgba(2, 0, 5, 0.78), 0 22px 80px rgba(0, 0, 0, 0.72), inset 0 1px rgba(255, 255, 255, 0.07);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 0, 60, 0.6) rgba(255, 255, 255, 0.035);
+}
+
+#pause-screen::-webkit-scrollbar,
+#settings-screen::-webkit-scrollbar,
+#tutorial-screen::-webkit-scrollbar,
+#game-over-screen::-webkit-scrollbar { width: 7px; }
+
+#pause-screen::-webkit-scrollbar-track,
+#settings-screen::-webkit-scrollbar-track,
+#tutorial-screen::-webkit-scrollbar-track,
+#game-over-screen::-webkit-scrollbar-track {
+    margin: 12px 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+#pause-screen::-webkit-scrollbar-thumb,
+#settings-screen::-webkit-scrollbar-thumb,
+#tutorial-screen::-webkit-scrollbar-thumb,
+#game-over-screen::-webkit-scrollbar-thumb {
+    border: 2px solid rgba(8, 5, 12, 0.9);
+    border-radius: 999px;
+    background: rgba(255, 0, 60, 0.62);
+}
+
+#pause-screen h2,
+#settings-screen h2,
+#tutorial-screen h2,
+#game-over-screen h2 {
+    width: 100%;
+    margin: 0 0 8px;
+    font-size: clamp(1.35rem, 6vw, 1.8rem);
+    letter-spacing: 0.055em;
+    text-shadow: 0 0 18px rgba(255, 0, 60, 0.28);
+}
+
+#settings-screen { gap: 10px; }
+
+#settings-screen .setting-row {
+    width: 100%;
+    max-width: none;
+    min-height: 64px;
+    margin: 0;
+    padding: 8px 12px 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
+    color: rgba(240, 240, 240, 0.86);
+}
+
+#settings-screen .setting-row label {
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
+}
+
+#settings-screen .toggle-btn {
+    min-width: 76px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 13px;
+}
+
+#settings-screen .toggle-btn.icon-toggle {
+    min-width: 48px;
+    width: 48px;
+    height: 48px;
+    padding: 6px;
+}
+
+#settings-screen .toggle-btn.icon-toggle.active {
+    border-color: rgba(255, 0, 60, 0.74);
+    background: rgba(255, 0, 60, 0.14);
+    box-shadow: 0 0 16px rgba(255, 0, 60, 0.12), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+#settings-screen .toggle-btn.icon-toggle:not(.active) {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.035);
+}
+
+#settings-screen #settings-back-btn,
+#pause-screen .cyber-btn,
+#tutorial-screen .cyber-btn,
+#game-over-screen .cyber-btn {
+    min-height: 50px;
+    border-radius: 12px;
+    clip-path: none;
+    animation: none;
+    box-shadow: inset 0 0 12px rgba(255, 0, 60, 0.08), 0 6px 18px rgba(0, 0, 0, 0.32);
+    font-size: 0.92rem;
+    letter-spacing: 0.08em;
+}
+
+#pause-screen .cyber-btn { width: 100%; }
+#settings-screen #settings-back-btn { width: 100%; margin-top: 8px !important; }
+#tutorial-screen .tutorial-card { width: 100%; }
+
+#game-over-screen .stats {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid rgba(0, 243, 255, 0.14);
+    border-radius: 16px;
+    background: rgba(0, 243, 255, 0.035);
+}
+
+#game-over-screen .stats p {
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
+}
+
+.screen#game-over-screen {
+    padding-top: 66px;
+    box-shadow: 0 0 0 100vmax rgba(2, 0, 5, 0.88), 0 22px 80px rgba(0, 0, 0, 0.72), inset 0 1px rgba(255, 255, 255, 0.07);
+}
+
+#game-over-screen #menu-btn-icon {
+    top: 12px !important;
+    left: 14px !important;
+    width: 42px !important;
+    height: 42px !important;
+}
+
+#game-over-screen .mangaverse-btn {
+    background: rgba(112, 0, 255, 0.12) !important;
+    border: 1px solid rgba(164, 104, 255, 0.55) !important;
+    box-shadow: none !important;
+}
+
+#game-over-btns,
+#game-over-screen .sta-container {
+    width: 100%;
+}
+
+#game-over-btns .cyber-btn { width: 100%; }
+
+@media (max-width: 380px) {
+    .screen.clean-menu { padding-left: 12px; padding-right: 12px; }
+    .menu-top-bar { gap: 8px; }
+    #event-banner.menu-event-pill { padding: 7px 9px !important; }
+    .menu-hero-area .unified-logo { width: 72px; height: 72px; margin-bottom: 12px; }
+    .clean-mode-pill { margin: 14px auto 18px; }
+    #pause-screen, #settings-screen, #tutorial-screen, #game-over-screen { padding: 24px 18px; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+    .screen.clean-menu { padding-top: 8px; padding-bottom: 8px; }
+    .menu-top-bar { min-height: 48px; }
+    .menu-icon-btn { width: 44px; height: 44px; flex-basis: 44px; }
+    .menu-icon-btn img { width: 30px; height: 30px; }
+    .menu-hero-area .unified-logo { display: none; }
+    .menu-hero-area h1 { font-size: clamp(1.6rem, 6vh, 2.2rem); }
+    .clean-mode-pill { min-height: 44px; margin: 8px auto 12px; }
+    .hero-play-btn { height: 50px; }
+    .hero-hint { margin-top: 8px !important; }
+    .menu-bottom-dock { padding-top: 4px; }
+    .dock-btn { min-height: 40px; padding: 6px 10px; }
+}

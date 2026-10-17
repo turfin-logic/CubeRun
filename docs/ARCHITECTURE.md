@@ -113,7 +113,7 @@ Game boot
 
 ## Service Worker Strategy
 
-- Cache: `cuberun-v16` (bumped 2026-10-17)
+- Cache: `cuberun-v17` (responsive neon UI refresh)
 - Strategy: **Stale-While-Revalidate** for all game assets
 - Bypassed (always network): `gamedistribution.*`, `google.*`, `events_config.json`
 - Bypassed because `events_config.json` must always be fresh for live event scheduling
