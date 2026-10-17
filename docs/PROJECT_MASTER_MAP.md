@@ -32,13 +32,13 @@
 
 | File | Purpose |
 |---|---|
-| `index.html` | Main HTML: UI screens, GTM, GameDistribution SDK, Service Worker |
+| `index.html` | Main HTML: UI screens, GTM, and Service Worker registration |
 | `game_source.js` | **UNOBFUSCATED SOURCE** — local source mirror, kept synchronized with `game.js`; intentionally excluded from public Git by `.gitignore`. |
-| `game.js` | Production build served to players; synchronize from `game_source.js` before release. |
+| `game.js` | Production build and optional, on-demand GameDistribution SDK integration |
 | `style.css` | Cyberpunk neon theme + event theme overrides |
 | `assets/ui/vector/` | CC0 neon UI SVG assets used by the HUD and settings; referenced icons are precached by the service worker. |
 | `ads.js` | GameDistribution web ad SDK integration |
-| `sw.js` | Service Worker — offline caching (cache v16 as of 2026-10-17) |
+| `sw.js` | Service Worker — offline caching (cache v21) |
 | `events_config.json` | 24-month live event schedule (fetched fresh — not cached by SW) |
 | `app-ads.txt` | AdMob authorized seller declaration |
 | `manifest.json` | PWA web app manifest |

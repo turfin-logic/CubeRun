@@ -31,7 +31,7 @@
 │  turfin-logic.github.io/CubeRun/                    │
 │  • index.html, game.js, style.css, sw.js            │
 │  • events_config.json (live event config)           │
-│  • GameDistribution SDK (web-only ads)              │
+│  • Optional GameDistribution SDK (loaded on ad use)  │
 │  • GTM Analytics                                    │
 └─────────────────────────────────────────────────────┘
 ```

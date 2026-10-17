@@ -374,13 +374,88 @@ function showAdToast(msg) {
     t._tid = setTimeout(() => t.classList.remove('visible'), 3500);
 }
 
+const GAME_DISTRIBUTION_SDK_URL = 'https://html5.api.gamedistribution.com/main.min.js';
+let gameDistributionSdkPromise = null;
+let gameDistributionSdkReady = false;
+let gameDistributionSdkReadyResolver = null;
+
+function loadGameDistributionSdk() {
+    if (gameDistributionSdkReady && window.gdsdk && typeof window.gdsdk.showAd === 'function') {
+        return Promise.resolve(window.gdsdk);
+    }
+    if (gameDistributionSdkPromise) return gameDistributionSdkPromise;
+
+    window.GD_OPTIONS = {
+        gameId: 'b13fb38f722340388cd26e643ed2d6f8',
+        onEvent(event) {
+            switch (event.name) {
+                case 'SDK_READY':
+                    gameDistributionSdkReady = true;
+                    if (gameDistributionSdkReadyResolver) {
+                        const resolve = gameDistributionSdkReadyResolver;
+                        gameDistributionSdkReadyResolver = null;
+                        resolve(window.gdsdk);
+                    }
+                    break;
+                case 'SDK_GAME_START':
+                    if (window.resumeGameFromAd) window.resumeGameFromAd();
+                    break;
+                case 'SDK_GAME_PAUSE':
+                    if (window.pauseGameForAd) window.pauseGameForAd();
+                    break;
+                case 'SDK_REWARDED_WATCH_COMPLETE':
+                    if (window.FlutterBridge) window.FlutterBridge.onRewardGranted();
+                    setTimeout(() => {
+                        if (window.onAdClose) window.onAdClose();
+                    }, 100);
+                    break;
+            }
+        }
+    };
+
+    let sdkScript;
+    const loadingPromise = new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            gameDistributionSdkReadyResolver = null;
+            if (gameDistributionSdkPromise === loadingPromise) gameDistributionSdkPromise = null;
+            sdkScript.remove();
+            reject(new Error('GameDistribution SDK did not become ready in time.'));
+        }, 10000);
+
+        gameDistributionSdkReadyResolver = sdk => {
+            clearTimeout(timeoutId);
+            resolve(sdk);
+        };
+
+        sdkScript = document.createElement('script');
+        sdkScript.id = 'gamedistribution-sdk';
+        sdkScript.async = true;
+        sdkScript.src = GAME_DISTRIBUTION_SDK_URL;
+        sdkScript.onerror = () => {
+            clearTimeout(timeoutId);
+            gameDistributionSdkReadyResolver = null;
+            if (gameDistributionSdkPromise === loadingPromise) gameDistributionSdkPromise = null;
+            sdkScript.remove();
+            reject(new Error('GameDistribution SDK could not be loaded.'));
+        };
+        document.head.appendChild(sdkScript);
+    });
+
+    gameDistributionSdkPromise = loadingPromise;
+    return loadingPromise;
+}
+
 const FlutterBridge = {
     isFlutter() { return typeof window.AdChannel !== 'undefined'; },
     _adStartTime: 0,
     _waitingForReward: false,
-    showInterstitial() { 
+    showInterstitial() {
         if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial');
-        else if(typeof gdsdk !== 'undefined') { try { gdsdk.showAd(); } catch(e) { console.warn('[CubeRun] interstitial gdsdk threw:', e); } }
+        else {
+            loadGameDistributionSdk()
+                .then(sdk => sdk.showAd())
+                .catch(error => console.warn('[CubeRun] Interstitial ad unavailable:', error));
+        }
     },
     showRewarded() {
         return new Promise((resolve,reject) => {
@@ -413,21 +488,24 @@ const FlutterBridge = {
 
             if(this.isFlutter()) {
                 window.AdChannel.postMessage('showRewarded');
-            } else if(typeof gdsdk !== 'undefined' && typeof gdsdk.showAd !== 'undefined') {
-                try {
-                    const adPromise = gdsdk.showAd('rewarded');
-                    if (adPromise && typeof adPromise.then === 'function') {
-                        adPromise.then(() => {
-                            if (FlutterBridge._waitingForReward) FlutterBridge.onRewardGranted();
-                        }).catch(() => {
-                            failReward();
-                        });
-                    }
-                } catch(e) {
-                    failReward();
-                }
             } else {
-                failReward();
+                loadGameDistributionSdk()
+                    .then(sdk => {
+                        if (!FlutterBridge._waitingForReward) return;
+                        const adPromise = sdk.showAd('rewarded');
+                        if (adPromise && typeof adPromise.then === 'function') {
+                            adPromise.then(() => {
+                                if (FlutterBridge._waitingForReward) FlutterBridge.onRewardGranted();
+                            }).catch(error => {
+                                console.warn('[CubeRun] Rewarded ad failed:', error);
+                                failReward();
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.warn('[CubeRun] Rewarded ad unavailable:', error);
+                        failReward();
+                    });
             }
         });
     },

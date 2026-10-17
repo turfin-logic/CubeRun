@@ -1,11 +1,11 @@
-const CACHE_NAME = 'cuberun-v20'; // Runtime lifecycle and resize fixes
+const CACHE_NAME = 'cuberun-v21'; // Load ad SDK only when an ad is requested
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './game.js',
     './style.css?v=20',
-    './game.js?v=20',
+    './game.js?v=21',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
@@ -45,7 +45,15 @@ self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
     
     // External APIs, trackers, and live config should bypass cache
-    if (event.request.url.includes('gamedistribution') || event.request.url.includes('google') || event.request.url.includes('events_config.json')) {
+    if (event.request.url.includes('gamedistribution')) {
+        event.respondWith(fetch(event.request).catch(() => new Response('Ad SDK unavailable.', {
+            status: 503,
+            statusText: 'Service Unavailable'
+        })));
+        return;
+    }
+
+    if (event.request.url.includes('google') || event.request.url.includes('events_config.json')) {
         event.respondWith(fetch(event.request).catch(() => new Response('{}', { status: 200 }))); // Fail gracefully
         return;
     }

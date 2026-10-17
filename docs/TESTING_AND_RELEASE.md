@@ -85,6 +85,7 @@ Upload the `.aab` to Play Console → Internal/Closed/Open Testing → Productio
 - Confirm game over can be dismissed immediately with a tap, the retry button, or Space; revive remains a separate rewarded action.
 - The clutch revive appears only at 70%+ of an established best score or on a new record attempt; short (18 s or less) runs never trigger interstitials, even after three session deaths.
 - Resize/rotate during each mode and confirm the player/obstacles stay inside the new arena; retry during a pending ad/countdown and confirm no stale ad or extra run starts.
+- Block the GameDistribution SDK request and confirm the menu and gameplay still start; rewarded ads should report unavailable without pausing the run or granting a revive.
 - Existing event configuration and local cache data are intentionally retained but unused by the arcade flow.
 
 ---

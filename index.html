@@ -38,39 +38,6 @@
             });
         }
     </script>
-    <!-- GameDistribution SDK -->
-    <script>
-        window["GD_OPTIONS"] = {
-            "gameId": "b13fb38f722340388cd26e643ed2d6f8",
-              "onEvent": function(event) {
-                  switch (event.name) {
-                      case "SDK_GAME_START":
-                          if (window.FlutterBridge && window.FlutterBridge._waitingForReward) {
-                              console.log("Fallback granting reward on SDK_GAME_START");
-                              window.FlutterBridge.onRewardGranted();
-                          }
-                          if (window.resumeGameFromAd) window.resumeGameFromAd();
-                          break;
-                    case "SDK_GAME_PAUSE":
-                        if (window.pauseGameForAd) window.pauseGameForAd();
-                        break;
-                    case "SDK_REWARDED_WATCH_COMPLETE":
-                        // 1. Grant reward (resolves promise, sets window._pendingRevive = true)
-                        if (window.FlutterBridge) window.FlutterBridge.onRewardGranted();
-                        // 2. GD SDK never calls onAdClose — fire it manually so revivePlayer() runs.
-                        setTimeout(function() { if (window.onAdClose) window.onAdClose(); }, 100);
-                        break;
-                }
-            },
-        };
-        (function(d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) return;
-            js = d.createElement(s); js.id = id;
-            js.src = 'https://html5.api.gamedistribution.com/main.min.js';
-            fjs.parentNode.insertBefore(js, fjs);
-        }(document, 'script', 'gamedistribution-sdk'));
-    </script>
     <script>
         // Dev-only error overlay removed from production — was alert()-based.
         // Ad network / fetch unhandledrejections are normal; alerts would block gameplay.
@@ -236,6 +203,6 @@
         </div><!-- end ui-layer -->
     </div><!-- end game-container -->
 
-    <script src="game.js?v=20"></script>
+    <script src="game.js?v=21"></script>
 </body>
 </html>
