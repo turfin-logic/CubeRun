@@ -494,9 +494,7 @@ const FlutterBridge = {
                         if (!FlutterBridge._waitingForReward) return;
                         const adPromise = sdk.showAd('rewarded');
                         if (adPromise && typeof adPromise.then === 'function') {
-                            adPromise.then(() => {
-                                if (FlutterBridge._waitingForReward) FlutterBridge.onRewardGranted();
-                            }).catch(error => {
+                            adPromise.catch(error => {
                                 console.warn('[CubeRun] Rewarded ad failed:', error);
                                 failReward();
                             });
@@ -1096,13 +1094,8 @@ function gameOver() {
     showScreen('game-over-screen');
 
     // Keep the optional rewarded revive secondary to the instant retry action.
-    if (typeof window.offlineGameCount === 'undefined') window.offlineGameCount = 0;
     const reviveBtn = document.getElementById('revive-btn');
-    if (!navigator.onLine) {
-        window.offlineGameCount++;
-    }
-    const clutchRun=score>=30&&(isNew||(previousBest>=30&&score>=previousBest*0.7));
-    const reviveAvailable=clutchRun&&(navigator.onLine||window.offlineGameCount<=3);
+    const reviveAvailable=score>=30;
     reviveBtn.style.display=reviveAvailable?'block':'none';
     reviveBtn.classList.toggle('clutch-revive',reviveAvailable);
     if (reviveAvailable) {
@@ -1398,27 +1391,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-// Offline Logic (Disabled to prevent blocking game on false positives)
-/*
-let offlineTimer = null;
-function handleOffline() {
-    console.log('Network went offline.');
-    offlineTimer = setTimeout(() => {
-        document.getElementById('offline-screen').classList.add('active');
-        if(GAME_STATE === STATE.PLAYING) pauseGame();
-    }, 5000);
-}
-function handleOnline() {
-    console.log('Network came online.');
-    if (offlineTimer) clearTimeout(offlineTimer);
-    document.getElementById('offline-screen').classList.remove('active');
-}
-window.addEventListener('offline', handleOffline);
-window.addEventListener('online', handleOnline);
-// Initial check
-if (!navigator.onLine) handleOffline();
-*/
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EVENT MANAGER — Cube Run Live-Ops Event System

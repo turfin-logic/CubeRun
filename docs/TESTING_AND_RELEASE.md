@@ -59,7 +59,7 @@ Upload the `.aab` to Play Console → Internal/Closed/Open Testing → Productio
 - [ ] `key.properties` present and pointing to correct keystore
 - [ ] Build signed with upload keystore (NOT a debug keystore)
 - [ ] Test on real device: ads load, rewarded ad completes, revive works
-- [ ] Test offline behavior: "CONNECTION LOST" screen shows, retry works
+- [ ] Test offline behavior: previously loaded game remains playable; reconnect uses the current app shell
 - [ ] No debug banner visible (`debugShowCheckedModeBanner: false` ✅)
 
 ---
@@ -83,7 +83,8 @@ Upload the `.aab` to Play Console → Internal/Closed/Open Testing → Productio
 - Confirm a fresh load opens directly on the clean start screen without loading/event overlays or an event-config request.
 - Start each mode and verify its mode-specific obstacles; check score phases at 50, 150, and 300.
 - Confirm game over can be dismissed immediately with a tap, the retry button, or Space; revive remains a separate rewarded action.
-- The clutch revive appears only at 70%+ of an established best score or on a new record attempt; short (18 s or less) runs never trigger interstitials, even after three session deaths.
+- The rewarded revive button appears after any run scoring 30 or more, regardless of the player's previous best or `navigator.onLine`; blocked/unavailable ads must fail without granting a revive. Short (18 s or less) runs never trigger interstitials, even after three session deaths.
+- Confirm normal navigation loads the current app shell rather than a stale cached offline screen; the service worker may use its cached shell only when navigation genuinely fails.
 - Resize/rotate during each mode and confirm the player/obstacles stay inside the new arena; retry during a pending ad/countdown and confirm no stale ad or extra run starts.
 - Block the GameDistribution SDK request and confirm the menu and gameplay still start; rewarded ads should report unavailable without pausing the run or granting a revive.
 - Existing event configuration and local cache data are intentionally retained but unused by the arcade flow.

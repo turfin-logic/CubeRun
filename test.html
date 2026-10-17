@@ -202,22 +202,22 @@ async function runAdTests(){
   var impl=[],sim=[];
   function ck(ok,lbl,det){impl.push({status:ok?'pass':'fail',label:lbl,detail:det});return ok;}
 
-  ck(_js.indexOf('navigator.onLine')>=0,'navigator.onLine offline check in showRewarded()','Aborts ad request immediately when device is offline');
+  ck(_js.indexOf('navigator.onLine')>=0,'offline devices fail rewarded-ad requests safely','Fails the optional ad request without making gameplay depend on network status');
   ck(_js.indexOf('30000')>=0,'30-second reward timeout (auto-fail)','Prevents revive button being stuck when ad never responds');
-  ck(_js.indexOf("typeof gdsdk !== 'undefined'")>=0,'gdsdk undefined guard (ad-blocker blocks GD SDK)','Falls to failReward() when GD script is absent');
+  ck(_js.indexOf('loadGameDistributionSdk()')>=0,'GameDistribution SDK loads on demand','Ad SDK is requested only when a player asks for an ad');
   ck(_js.indexOf('failReward')>=0,'failReward() cleanup path exists','Clears timeout, resets _waitingForReward, fires reject callback');
   ck(_js.indexOf('Edge case: ad closed without a reward')>=0,'onAdClose: button-reset fallback','Revive button re-enabled if ad closes without callback');
   ck(_js.indexOf('LOADING')>=0,'Revive button LOADING state during ad request','Prevents double-taps; re-enabled on failure');
   ck(_js.indexOf('TRY AGAIN LATER')>=0,'Revive button TRY AGAIN LATER on failure, resets 2s','Clear recovery path for all failure states');
-  ck(_js.indexOf('offlineGameCount')>=0,'Offline revive limit after 3 offline deaths','Prevents infinite offline revive attempts');
+  ck(_js.indexOf('const reviveAvailable=score>=30')>=0,'Revive shown at 30+ score regardless of prior best','A high historical best cannot hide the rewarded revive option');
   ck(_js.indexOf('SDK_REWARDED_WATCH_COMPLETE')>=0,'GD SDK SDK_REWARDED_WATCH_COMPLETE wired','GD SDK rewarded complete event handled');
+  ck(_js.indexOf('adPromise.then(() =>')<0,'Ad promise alone cannot grant a revive','Only the rewarded-completion callback may resolve a web revive');
   ck(_html&&_html.indexOf('alert("JS Error')<0,'index.html: window.onerror no alert() popup','Fixed commit dc13186');
   ck(_html&&_html.indexOf('alert("Promise Error')<0,'index.html: unhandledrejection no alert()','Ad-network rejections silently logged');
-  ck(_html&&_html.indexOf('setTimeout(function() { if (window.onAdClose)')>=0,
-    'CRITICAL FIX: GD SDK fires onAdClose after SDK_REWARDED_WATCH_COMPLETE',
-    'Web players were never revived because GD SDK never calls onAdClose directly (fixed 2026-10-14)');
-  ck(_js.indexOf('try { gdsdk.showAd()')>=0||_js.indexOf("try { gdsdk.showAd()")>=0,
-    'Interstitial gdsdk.showAd() wrapped in try/catch','Medium-risk: unhandled throw if GD SDK throws synchronously (fixed 2026-10-14)');
+  ck(_js.indexOf('SDK_REWARDED_WATCH_COMPLETE')>=0&&_js.indexOf('window.onAdClose')>=0,
+    'Reward completion closes the revive flow','GD completion event grants only the earned reward, then runs onAdClose');
+  ck(_js.indexOf('loadGameDistributionSdk()')>=0&&_js.indexOf('sdk.showAd()')>=0,
+    'Interstitial loads optional SDK on demand','Unavailable or blocked SDK is caught and skipped');
   impl.push({status:'skip',label:'_rewardedAdShowing Dart guard (Flutter, commit 52c5bb8)',detail:'In main.dart -- cannot verify from browser JS'});
   impl.push({status:'skip',label:'AdMob test vs production ad unit IDs in APK build',detail:'Requires reading main.dart or built APK'});
 
@@ -227,14 +227,14 @@ async function runAdTests(){
     catch(e){st='fail';sd='Exception: '+e.message;}
     sim.push({status:st,label:lbl,detail:sd});
   }
-  sm('Offline path: failReward fires, SDK not called','navigator.onLine gate verified',function(){
+  sm('Offline path: rewarded ad fails without blocking gameplay','navigator.onLine gate verified',function(){
     if(!navigator.onLine)return{ok:true,msg:'LIVE: device offline -- failReward path active'};
     return{ok:true,msg:'SIMULATED: device online. Source confirms if(!navigator.onLine)failReward() fires before any SDK call'};
   });
-  sm('gdsdk undefined -> failReward()','Covers ad-blocker blocking GD SDK script',function(){
+  sm('Blocked SDK -> failReward()','Covers ad-blocker blocking GD SDK script',function(){
     var isF=typeof window.AdChannel!=='undefined';
     var gdOk=typeof window.gdsdk!=='undefined';
-    return{ok:true,msg:'SIMULATED: isFlutter='+isF+', gdsdkLoaded='+gdOk+'. When both false, failReward() fires -> button resets in 2s'};
+    return{ok:_js.indexOf('GameDistribution SDK could not be loaded')>=0,msg:'SIMULATED: isFlutter='+isF+', gdSdkLoaded='+gdOk+'. SDK load rejection is caught by the rewarded flow and resets the button.'};
   });
   sm('Double-tap protection: 2nd tap silently ignored','btn.disabled=true after first tap',function(){
     var b=document.createElement('button');b.disabled=false;b.disabled=true;

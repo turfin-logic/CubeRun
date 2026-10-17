@@ -1,11 +1,11 @@
-const CACHE_NAME = 'cuberun-v21'; // Load ad SDK only when an ad is requested
+const CACHE_NAME = 'cuberun-v22'; // Refresh stale offline screens and revive eligibility
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './game.js',
     './style.css?v=20',
-    './game.js?v=21',
+    './game.js?v=22',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
@@ -55,6 +55,29 @@ self.addEventListener('fetch', event => {
 
     if (event.request.url.includes('google') || event.request.url.includes('events_config.json')) {
         event.respondWith(fetch(event.request).catch(() => new Response('{}', { status: 200 }))); // Fail gracefully
+        return;
+    }
+
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).then(networkResponse => {
+                if (networkResponse.ok) {
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, networkResponse.clone());
+                    });
+                }
+                return networkResponse;
+            }).catch(() => caches.match(event.request).then(cachedResponse => {
+                if (cachedResponse) return cachedResponse;
+                return caches.match('./index.html').then(appShell => {
+                    if (appShell) return appShell;
+                    return new Response('This asset is unavailable offline.', {
+                        status: 503,
+                        statusText: 'Service Unavailable'
+                    });
+                });
+            }))
+        );
         return;
     }
 

@@ -99,7 +99,7 @@ requestAnimationFrame loop
 - Boot directly to the clean start screen; no loading sequence or event popup is initialized.
 - Gameplay phases are score-driven (50 / 150 / 300), with a smooth color transition and a short phase banner.
 - Obstacle patterns are mode-aware: gravity-flip pairs/staircases, vertical-dodge gates, and laser obstacles.
-- A tap or Space immediately restarts from game over; the rewarded revive is highlighted only near an established high score.
+- A tap or Space immediately restarts from game over; the rewarded revive button appears after any run scoring at least 30.
 - Interstitials remain on the third-death cadence, require that run to exceed 18 seconds, and use a session-scoped death count that survives page reloads in the same tab. Pending interstitials and revive countdowns are cancelled when their run is abandoned.
 - Orientation/viewport changes keep the player and active obstacles aligned with the resized arena.
 - Legacy event configuration and cached values are left untouched but are not fetched or shown in normal play.

@@ -38,7 +38,7 @@
 | `style.css` | Cyberpunk neon theme + event theme overrides |
 | `assets/ui/vector/` | CC0 neon UI SVG assets used by the HUD and settings; referenced icons are precached by the service worker. |
 | `ads.js` | GameDistribution web ad SDK integration |
-| `sw.js` | Service Worker — offline caching (cache v21) |
+| `sw.js` | Service Worker — offline caching (cache v22) |
 | `events_config.json` | 24-month live event schedule (fetched fresh — not cached by SW) |
 | `app-ads.txt` | AdMob authorized seller declaration |
 | `manifest.json` | PWA web app manifest |

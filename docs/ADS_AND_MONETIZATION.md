@@ -66,7 +66,7 @@ gameOver() called
 
 - SDK is loaded by `game.js` only when an ad is requested; game startup and core play do not depend on the ad network.
 - Game ID: `b13fb38f722340388cd26e643ed2d6f8`
-- Rewarded: `gdsdk.showAd('rewarded')` → `SDK_REWARDED_WATCH_COMPLETE` event
+- Rewarded: `gdsdk.showAd('rewarded')` → `SDK_REWARDED_WATCH_COMPLETE` is the only web callback that grants a revive; a resolved ad promise alone is not proof of completion.
 - Pause/Resume: `SDK_GAME_PAUSE` / `SDK_GAME_START` events
 - If the SDK is blocked or unavailable, rewarded ads fail cleanly and interstitials are skipped; the game remains playable. The service worker returns an unavailable response for failed SDK requests rather than a success-shaped placeholder.
 - `SDK_GAME_START` resumes gameplay but does not grant a reward; rewards require the rewarded-ad completion callback.
