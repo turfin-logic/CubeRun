@@ -9,6 +9,16 @@ const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEO
 let GAME_STATE = STATE.MENU;
 let CURRENT_MODE = 'CLASSIC';
 let score = 0, frameCount = 0, baseSpeed = 7, rafId = null, lastTime = 0;
+let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlashUntil = 0;
+let sessionStartedAt = Date.now(), lastInterstitialAt = 0;
+let patternQueue = [], patternTimer = 72, patternIndex = 0, classicLane = 'top';
+let floatTexts = [];
+const RUN_PHASES = [
+    { score: 0, name: 'NEON', title: 'PHASE 1: NEON', grid: '#00f3ff', obstacle: '#00f3ff', speed: 1, scoreMultiplier: 1 },
+    { score: 50, name: 'OVERDRIVE', title: 'PHASE 2: OVERDRIVE', grid: '#b000ff', obstacle: '#b000ff', speed: 1.04, scoreMultiplier: 1.2 },
+    { score: 150, name: 'INFERNO', title: 'PHASE 3: INFERNO', grid: '#ff003c', obstacle: '#ff003c', speed: 1.08, scoreMultiplier: 1.5 },
+    { score: 300, name: 'MATRIX', title: 'PHASE 4: MATRIX', grid: '#00ff66', obstacle: '#00ff66', speed: 1.12, scoreMultiplier: 2 }
+];
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SPRITES & POOLS (Defined early to prevent ReferenceError) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const SPRITES = {};
@@ -122,6 +132,7 @@ const SaveData = {
         return false; 
     }
 };
+bestScore = SaveData.load().highScore;
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SCREEN HELPERS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function showScreen(id) { document.getElementById(id).classList.add('active'); }
@@ -246,7 +257,7 @@ function initSprites() {
 // Obstacle pool
 const obstaclePool = new ObjectPool(
     () => ({x:0,y:0,width:0,height:0,sprite:null,passed:false}),
-    (o) => {
+    (o, pattern = {}) => {
         o.passed=false;
         o.x=window.innerWidth;
         if (CURRENT_MODE === 'LASER') {
@@ -255,12 +266,13 @@ const obstaclePool = new ObjectPool(
             o.y = CEILING - 20; // Spawn above visible area
             o.sprite = null;
         } else if (CURRENT_MODE === 'TOPDOWN') {
-            o.width=40+Math.random()*60; o.height=40+Math.random()*60; // Square-ish obstacles
-            o.y=CEILING + Math.random() * (FLOOR - CEILING - o.height);
+            o.width=pattern.width || 46;
+            o.height=pattern.height || 58;
+            o.y=pattern.y ?? CEILING + Math.random() * (FLOOR - CEILING - o.height);
             o.sprite=null;
         } else {
             o.width=40+Math.random()*60; o.height=40+Math.random()*80;
-            const top=Math.random()>0.5;
+            const top=pattern.lane ? pattern.lane === 'top' : Math.random()>0.5;
             o.y=top?CEILING:FLOOR-o.height;
             o.sprite=Math.random()>0.5?SPRITES.obsRed:SPRITES.obsMag;
         }
@@ -298,7 +310,7 @@ const player = {
     x:100, y:0, width:30, height:30,
     gravityDir:1, isSwapping:false, invincible:false,
     z: 0, zVelocity: 0,
-    trail:[]
+    trail:[], squashX:1, squashY:1, squashFrames:0
 };
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ FLUTTER BRIDGE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -446,22 +458,109 @@ function startGameLoop() {
     rafId=requestAnimationFrame(loop);
 }
 
+function currentRunPhase() {
+    for (let i = RUN_PHASES.length - 1; i >= 0; i--) {
+        if (score >= RUN_PHASES[i].score) return i;
+    }
+    return 0;
+}
+
+function lerpColor(from, to, amount) {
+    const a=parseInt(from.slice(1),16), b=parseInt(to.slice(1),16);
+    const r=Math.round(((a>>16)&255)+(((b>>16)&255)-((a>>16)&255))*amount);
+    const g=Math.round(((a>>8)&255)+(((b>>8)&255)-((a>>8)&255))*amount);
+    const bl=Math.round((a&255)+((b&255)-(a&255))*amount);
+    return `rgb(${r}, ${g}, ${bl})`;
+}
+
+function getRunVisuals() {
+    let grid=RUN_PHASES[phaseIndex].grid;
+    let obstacle=RUN_PHASES[phaseIndex].obstacle;
+    for(let i=1;i<RUN_PHASES.length;i++) {
+        const threshold=RUN_PHASES[i].score;
+        const blend=(score-(threshold-15))/30;
+        if(blend>=0&&blend<=1) {
+            grid=lerpColor(RUN_PHASES[i-1].grid,RUN_PHASES[i].grid,blend);
+            obstacle=lerpColor(RUN_PHASES[i-1].obstacle,RUN_PHASES[i].obstacle,blend);
+            break;
+        }
+    }
+    return { grid, obstacle };
+}
+
+function getObstaclePattern() {
+    const sequence = patternIndex++;
+    const interval = Math.max(78, 150 - baseSpeed * 5);
+
+    if (CURRENT_MODE === 'TOPDOWN') {
+        const lane = (fraction) => CEILING + fraction * (FLOOR - CEILING - 58);
+        switch (sequence % 4) {
+            case 1:
+                return [
+                    { y: lane(0.24), width: 44, height: 58, delay: 30 },
+                    { y: lane(0.72), width: 44, height: 58, delay: interval }
+                ];
+            case 2: {
+                const gap = 90;
+                const blockHeight = Math.max(24, (FLOOR - CEILING - gap) / 2);
+                return [
+                    { y: CEILING, width: 62, height: blockHeight, pairY: CEILING + blockHeight + gap, pairHeight: blockHeight, delay: interval }
+                ];
+            }
+            case 3:
+                return [
+                    { y: lane(0.72), width: 44, height: 58, delay: 32 },
+                    { y: lane(0.48), width: 44, height: 58, delay: 32 },
+                    { y: lane(0.24), width: 44, height: 58, delay: interval }
+                ];
+            default:
+                return [{ y: lane(Math.random() * 0.72), width: 48, height: 58, delay: interval }];
+        }
+    }
+
+    const otherLane = classicLane === 'top' ? 'bottom' : 'top';
+    const patterns = [
+        [{ lane: classicLane, delay: interval }],
+        [{ lane: otherLane, delay: 52 }, { lane: classicLane, delay: interval }],
+        [
+            { lane: classicLane, delay: 54 },
+            { lane: otherLane, delay: 54 },
+            { lane: classicLane, delay: interval }
+        ]
+    ];
+    classicLane = otherLane;
+    return patterns[sequence % patterns.length];
+}
+
+function spawnPatternObstacle(pattern) {
+    const first = obstaclePool.acquire(pattern);
+    if (pattern.pairY !== undefined) {
+        obstaclePool.acquire({
+            y: pattern.pairY,
+            width: pattern.width,
+            height: pattern.pairHeight
+        });
+    }
+    return first;
+}
+
+function addFloatingText(text, x, y, color) {
+    floatTexts.push({ text, x, y, color, life: 56 });
+}
+
 function update(dt) {
     frameCount++;
     if(frameCount%480===0) baseSpeed=Math.min(baseSpeed+1,22);
-
-    // Drone speed sync
-    if(droneOscs.length>0 && droneOscs[0].gain) {
-        const vol=0.04+(baseSpeed*0.004);
-        droneOscs.slice(0,3).forEach(d=>{ try{d.gain.gain.setTargetAtTime(vol,audioCtx.currentTime,0.1);}catch(e){}});
+    const nextPhase=currentRunPhase();
+    if(nextPhase!==phaseIndex) {
+        phaseIndex=nextPhase;
+        phaseFlashUntil=performance.now()+800;
+        canvas.classList.toggle('aberration', phaseIndex===2);
+        updateScoreDisplay();
     }
-
-    // Chromatic aberration at score > 100
-    if(score>100) canvas.classList.add('aberration');
-    else canvas.classList.remove('aberration');
-
-    // Random stingers
-    if(Math.random()<0.002) playSfx('score');
+    const phase = RUN_PHASES[phaseIndex];
+    const phaseVisuals = getRunVisuals();
+    const runSpeed = baseSpeed * phase.speed;
 
     // Player movement
     if (CURRENT_MODE === 'TOPDOWN') {
@@ -475,9 +574,15 @@ function update(dt) {
         if (player.y > FLOOR - player.height) player.y = FLOOR - player.height;
     } else if (CURRENT_MODE === 'LASER') {
         // Z-axis jump (cube jumps "up" to dodge beams passing through)
+        const wasAirborne=player.z>0||player.zVelocity>0;
         player.z += player.zVelocity * dt;
         player.zVelocity -= 0.6 * dt; // Gravity
         if (player.z <= 0) {
+            if (wasAirborne) {
+                player.squashX = 1.2;
+                player.squashY = 0.8;
+                player.squashFrames = 5;
+            }
             player.z = 0;
             player.zVelocity = 0;
         }
@@ -489,9 +594,26 @@ function update(dt) {
         if(player.isSwapping) {
             const spd=15*dt;
             player.y+=spd*player.gravityDir;
-            if(player.gravityDir===1&&player.y>=FLOOR-player.height){ player.y=FLOOR-player.height; player.isSwapping=false; }
-            if(player.gravityDir===-1&&player.y<=CEILING){ player.y=CEILING; player.isSwapping=false; }
+            if(player.gravityDir===1&&player.y>=FLOOR-player.height){
+                player.y=FLOOR-player.height; player.isSwapping=false;
+                player.squashX=1.2; player.squashY=0.8; player.squashFrames=5;
+            }
+            if(player.gravityDir===-1&&player.y<=CEILING){
+                player.y=CEILING; player.isSwapping=false;
+                player.squashX=1.2; player.squashY=0.8; player.squashFrames=5;
+            }
         }
+    }
+    if(player.squashFrames>0) {
+        if(player.squashFrames<=4) {
+            const spring=(player.squashFrames-1)/3;
+            player.squashX=1+0.2*spring;
+            player.squashY=1-0.2*spring;
+        }
+        player.squashFrames--;
+    } else {
+        player.squashX=1;
+        player.squashY=1;
     }
 
     // Trail
@@ -503,18 +625,25 @@ function update(dt) {
     if(player.trail.length>12) player.trail.shift();
 
     // Spawn obstacles
-    let spawnInterval = Math.max(50, 150 - baseSpeed * 5);
-    if (CURRENT_MODE === 'TOPDOWN') {
-        spawnInterval = Math.max(25, 90 - baseSpeed * 3);
+    if (CURRENT_MODE === 'LASER') {
+        const spawnInterval = Math.max(50, 150 - baseSpeed * 5);
+        if(frameCount%spawnInterval===0) obstaclePool.acquire();
+    } else {
+        patternTimer -= dt;
+        while(patternTimer<=0) {
+            if(patternQueue.length===0) patternQueue=getObstaclePattern();
+            const pattern=patternQueue.shift();
+            spawnPatternObstacle(pattern);
+            patternTimer+=pattern.delay;
+        }
     }
-    if(frameCount%spawnInterval===0) obstaclePool.acquire();
 
     // Update obstacles & collisions
     for(let i=obstaclePool.active.length-1;i>=0;i--) {
         const o=obstaclePool.active[i];
         
         if (CURRENT_MODE === 'LASER') {
-            o.y += baseSpeed * 1.3 * dt; // Move down
+            o.y += runSpeed * 1.3 * dt; // Move down
             // Collision: only hit if cube is NOT jumping (z < 15)
             if(!player.invincible && player.y < o.y + o.height && player.y + player.height > o.y && player.z < 15){
                 gameOver(); return;
@@ -522,17 +651,32 @@ function update(dt) {
             if(!o.passed && o.y > player.y + player.height){
                 o.passed = true;
                 addScore(50); playSfx('score');
+                if(player.z>=15&&player.z<=21) {
+                    addScore(50);
+                    addFloatingText('+50 CLOSE CALL!', player.x + player.width / 2, player.y - player.z - 8, phaseVisuals.obstacle);
+                    playSfx('nearmiss');
+                }
             }
             if(o.y > window.innerHeight + 20){ obstaclePool.release(o); }
         } else {
-            o.x-=baseSpeed*dt;
+            o.x-=runSpeed*dt;
             if(!player.invincible&&player.x<o.x+o.width&&player.x+player.width>o.x&&player.y<o.y+o.height&&player.y+player.height>o.y){
                 gameOver(); return;
             }
             if(!o.passed&&player.x>o.x+o.width){
                 o.passed=true;
-                const near=(player.y<o.y+o.height+30&&player.y+player.height>o.y-30);
-                if(near){ addScore(50); playSfx('nearmiss'); canvas.classList.add('flash-white'); setTimeout(()=>canvas.classList.remove('flash-white'),200); }
+                const gap=player.y>o.y+o.height
+                    ? player.y-(o.y+o.height)
+                    : o.y>player.y+player.height
+                        ? o.y-(player.y+player.height)
+                        : 0;
+                if(gap>0&&gap<=6){
+                    addScore(50);
+                    addFloatingText('+50 CLOSE CALL!', player.x + player.width / 2, player.y - 8, phaseVisuals.obstacle);
+                    playSfx('nearmiss');
+                    canvas.classList.add('flash-white');
+                    setTimeout(()=>canvas.classList.remove('flash-white'),200);
+                }
             }
             if(o.x+o.width<0){ obstaclePool.release(o); addScore(10); }
         }
@@ -545,9 +689,16 @@ function update(dt) {
         if(p.life<=0) particlePool.release(p);
     }
 
+    for(let i=floatTexts.length-1;i>=0;i--) {
+        const item=floatTexts[i];
+        item.y-=0.55*dt;
+        item.life-=dt;
+        if(item.life<=0) floatTexts.splice(i,1);
+    }
+
     // BG particles
     bgParticles.forEach(p=>{
-        p.x+=p.vx*dt-(player.isSwapping?6*dt:0);
+        p.x+=p.vx*phase.speed*dt-(player.isSwapping?6*dt:0);
         if(p.vx<p.baseVx) p.vx+=0.3*dt;
         if(p.x<0){p.x=window.innerWidth; p.y=Math.random()*window.innerHeight; p.vx=p.baseVx;}
     });
@@ -555,38 +706,40 @@ function update(dt) {
 
 function updateScoreDisplay() {
     document.getElementById('scoreValue').textContent = score;
-    // Show active score multiplier in HUD if > 1
-    const mul = EventManager.getScoreMultiplier();
-    let mulEl = document.getElementById('hud-multiplier');
-    if (mul > 1.0) {
-        if (!mulEl) {
-            mulEl = document.createElement('div');
-            mulEl.id = 'hud-multiplier';
-            const sd = document.getElementById('score-display');
-            if (sd) sd.appendChild(mulEl);
-        }
-        mulEl.textContent = '×' + mul.toFixed(1) + ' EVENT';
-    } else if (mulEl) {
-        mulEl.textContent = '';
-    }
+    bestScore = Math.max(bestScore, score);
+    const bestValue = document.getElementById('bestValue');
+    if (bestValue) bestValue.textContent = bestScore;
+    const multiplier = document.getElementById('hud-multiplier');
+    if (multiplier) multiplier.textContent = `×${RUN_PHASES[phaseIndex].scoreMultiplier.toFixed(1)}`;
 }
 
 function draw() {
     const W=window.innerWidth, H=window.innerHeight;
     ctx.clearRect(0,0,W,H);
+    const phase=RUN_PHASES[phaseIndex];
+    const visuals=getRunVisuals();
+    const deathShake=GAME_STATE===STATE.GAMEOVER&&shakeFrames>0;
+    if(deathShake) {
+        ctx.save();
+        const intensity=shakeFrames/4;
+        ctx.translate((Math.random()-0.5)*10*intensity,(Math.random()-0.5)*8*intensity);
+        shakeFrames--;
+    }
 
     // Tunnel lines
-    ctx.strokeStyle='#333'; ctx.lineWidth=2;
+    ctx.strokeStyle=visuals.grid; ctx.globalAlpha=0.38; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(0,CEILING); ctx.lineTo(W,CEILING);
     ctx.moveTo(0,FLOOR); ctx.lineTo(W,FLOOR); ctx.stroke();
+    ctx.globalAlpha=1;
 
     // Moving grid
-    ctx.strokeStyle='rgba(255,0,60,0.12)'; ctx.lineWidth=1;
-    const off=(frameCount*baseSpeed)%50;
+    ctx.strokeStyle=visuals.grid; ctx.globalAlpha=0.14; ctx.lineWidth=1;
+    const off=(frameCount*baseSpeed*phase.speed)%50;
     ctx.beginPath();
     for(let i=-off;i<W;i+=50){ ctx.moveTo(i,CEILING); ctx.lineTo(i,FLOOR); }
     for(let j=CEILING;j<FLOOR;j+=50){ ctx.moveTo(0,j); ctx.lineTo(W,j); }
     ctx.stroke();
+    ctx.globalAlpha=1;
 
     // BG particles
     bgParticles.forEach(p=>{
@@ -598,7 +751,7 @@ function draw() {
     obstaclePool.active.forEach(o=>{
         if (CURRENT_MODE === 'LASER') {
             // Full-width neon red laser beam
-            ctx.fillStyle = '#ff003c';
+            ctx.fillStyle = visuals.obstacle;
             ctx.globalAlpha = 0.5;
             ctx.fillRect(o.x, o.y - 4, o.width, o.height + 8);
             ctx.globalAlpha = 1.0;
@@ -607,14 +760,21 @@ function draw() {
             ctx.fillStyle = 'rgba(255,200,200,0.7)';
             ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
         } else if (CURRENT_MODE === 'TOPDOWN') {
-            ctx.strokeStyle = '#ff003c'; ctx.lineWidth=3;
+            ctx.strokeStyle = visuals.obstacle; ctx.lineWidth=3;
+            ctx.shadowColor = visuals.obstacle; ctx.shadowBlur = 10;
             ctx.globalAlpha = 0.3;
             ctx.strokeRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
             ctx.globalAlpha = 1.0;
             ctx.strokeRect(o.x, o.y, o.width, o.height);
+            ctx.shadowBlur = 0;
         } else {
-            if(o.sprite) ctx.drawImage(o.sprite,Math.floor(o.x-15),Math.floor(o.y-15));
-            else { ctx.fillStyle='#ff00ff'; ctx.fillRect(o.x,o.y,o.width,o.height); }
+            ctx.fillStyle=visuals.obstacle;
+            ctx.shadowColor=visuals.obstacle;
+            ctx.shadowBlur=12;
+            ctx.fillRect(o.x,o.y,o.width,o.height);
+            ctx.shadowBlur=0;
+            ctx.fillStyle='rgba(255,255,255,0.4)';
+            ctx.fillRect(o.x+4,o.y+4,Math.max(2,o.width-8),3);
         }
     });
 
@@ -633,27 +793,65 @@ function draw() {
     });
     ctx.globalAlpha=1;
 
+    floatTexts.forEach(item=>{
+        ctx.globalAlpha=Math.min(1,item.life/18);
+        ctx.font='700 14px Orbitron, sans-serif';
+        ctx.textAlign='center';
+        ctx.fillStyle=item.color;
+        ctx.shadowColor=item.color;
+        ctx.shadowBlur=10;
+        ctx.fillText(item.text,item.x,item.y);
+        ctx.shadowBlur=0;
+    });
+    ctx.globalAlpha=1;
+
     // Player
-    if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED) {
+    if(GAME_STATE===STATE.PLAYING||GAME_STATE===STATE.PAUSED||GAME_STATE===STATE.GAMEOVER) {
         if (CURRENT_MODE === 'TOPDOWN') {
-             ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; 
-             ctx.globalAlpha = 0.4;
-             ctx.fillRect(player.x - 6, player.y - 6, player.width + 12, player.height + 12);
-             ctx.globalAlpha = 1.0;
-             ctx.fillRect(player.x,player.y,player.width,player.height);
+             ctx.save();
+             ctx.translate(player.x+player.width/2,player.y+player.height/2);
+             ctx.scale(player.squashX,player.squashY);
+             ctx.fillStyle=player.invincible?'#ffffff':visuals.obstacle;
+             ctx.shadowColor=ctx.fillStyle; ctx.shadowBlur=14;
+             ctx.fillRect(-player.width/2,-player.height/2,player.width,player.height);
+             ctx.shadowBlur=0;
+             ctx.fillStyle='rgba(255,255,255,0.55)';
+             ctx.fillRect(-player.width/4,-player.height/4,player.width/2,player.height/2);
+             ctx.restore();
         } else if (CURRENT_MODE === 'LASER') {
              // Clean sharp cube, lifted by z
              const drawY = player.y - player.z;
-             ctx.fillStyle = player.invincible ? '#ffffff' : '#ff003c';
-             ctx.fillRect(player.x, drawY, player.width, player.height);
+             ctx.save();
+             ctx.translate(player.x+player.width/2,drawY+player.height/2);
+             ctx.scale(player.squashX,player.squashY);
+             ctx.fillStyle = player.invincible ? '#ffffff' : visuals.obstacle;
+             ctx.fillRect(-player.width/2,-player.height/2,player.width,player.height);
              // Inner highlight
              ctx.fillStyle = 'rgba(255,255,255,0.4)';
-             ctx.fillRect(player.x + 7, drawY + 7, 16, 16);
+             ctx.fillRect(-8,-8,16,16);
+             ctx.restore();
         } else {
             const spr=SPRITES.player;
-            if(spr) ctx.drawImage(spr,Math.floor(player.x-15),Math.floor(player.y-15));
-            else { ctx.fillStyle=player.invincible?'#ffffff':'#ff003c'; ctx.fillRect(player.x,player.y,player.width,player.height); }
+            ctx.save();
+            ctx.translate(player.x+player.width/2,player.y+player.height/2);
+            ctx.scale(player.squashX,player.squashY);
+            if(spr) ctx.drawImage(spr,-player.width/2-15,-player.height/2-15);
+            else { ctx.fillStyle=player.invincible?'#ffffff':visuals.obstacle; ctx.fillRect(-player.width/2,-player.height/2,player.width,player.height); }
+            ctx.restore();
         }
+    }
+
+    if(performance.now()<phaseFlashUntil) {
+        const alpha=Math.min(1,(phaseFlashUntil-performance.now())/220);
+        ctx.globalAlpha=alpha;
+        ctx.fillStyle=visuals.grid;
+        ctx.font='900 15px Orbitron, sans-serif';
+        ctx.textAlign='center';
+        ctx.shadowColor=visuals.grid;
+        ctx.shadowBlur=18;
+        ctx.fillText(phase.title,W/2,H*0.34);
+        ctx.shadowBlur=0;
+        ctx.globalAlpha=1;
     }
 
     // Logo Pulse in Menu
@@ -662,6 +860,7 @@ function draw() {
         const logo = document.querySelector('.unified-logo');
         if(logo) logo.style.transform = `scale(${pulse})`;
     }
+    if(deathShake) ctx.restore();
 }
 
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
@@ -696,9 +895,7 @@ function quitToMenu() {
     GAME_STATE=STATE.MENU;
     hideAllScreens(); hideHUD();
     canvas.classList.remove('aberration');
-    document.getElementById('game-container').classList.remove('glitch-shake');
-    const sidePills = document.getElementById('event-side-pills');
-    if (sidePills) sidePills.style.opacity = '1';
+    document.getElementById('game-container').classList.remove('glitch-shake', 'game-over-flash');
     showScreen('start-screen');
 }
 
@@ -708,67 +905,55 @@ function gameOver() {
     GAME_STATE=STATE.GAMEOVER;
     cancelAnimationFrame(rafId);
     createExplosion(player.x+15,player.y+15);
-    playCrash(); playCreepyMelody(); vibrate([100,50,100]);
+    playCrash(); vibrate([100,50,100]);
+    shakeFrames=4;
     draw();
-    document.getElementById('game-container').classList.add('glitch-shake');
+    requestAnimationFrame(function deathKickFrame() {
+        if(shakeFrames<=0) return;
+        draw();
+        requestAnimationFrame(deathKickFrame);
+    });
+    const gameContainer=document.getElementById('game-container');
+    gameContainer.classList.remove('game-over-flash');
+    void gameContainer.offsetWidth;
+    gameContainer.classList.add('game-over-flash');
+    setTimeout(()=>gameContainer.classList.remove('game-over-flash'),220);
     canvas.classList.remove('aberration');
 
     const isNew=SaveData.updateHighScore(score);
-    const data=SaveData.load();
     document.getElementById('finalScore').textContent=score;
-    document.getElementById('highScore').textContent=data.highScore;
-    // Show event score bonus note
-    const _mul = EventManager.getScoreMultiplier();
-    const _ev  = EventManager.getActiveEvent ? EventManager.getActiveEvent() : null;
-    let _me = document.getElementById('event-score-note');
-    if (!_me) {
-        _me = document.createElement('p');
-        _me.id = 'event-score-note';
-        const statsDiv = document.querySelector('.stats');
-        if (statsDiv) statsDiv.appendChild(_me);
-    }
-    if (_me) {
-        if (_mul > 1.0 && _ev) {
-            _me.textContent = '×' + _mul.toFixed(1) + ' ' + (_ev.name || 'EVENT') + ' BONUS ACTIVE!';
-            _me.style.display = 'block';
-        } else { _me.style.display = 'none'; }
-    }
+    bestScore=SaveData.load().highScore;
+    document.getElementById('highScore').textContent=bestScore;
     document.getElementById('new-record-badge').style.display=isNew?'block':'none';
-    if (_ev && typeof EventPopup !== 'undefined' && EventPopup.trackEventScore) {
-        EventPopup.trackEventScore(_ev.id, score);
-    }
 
     hideHUD();
     showScreen('game-over-screen');
 
-        // Show revive button logic (limited in offline mode)
+    // Keep the optional rewarded revive secondary to the instant retry action.
     if (typeof window.offlineGameCount === 'undefined') window.offlineGameCount = 0;
-    
     const reviveBtn = document.getElementById('revive-btn');
-    
     if (!navigator.onLine) {
         window.offlineGameCount++;
-        if (window.offlineGameCount > 3) {
-            reviveBtn.style.display = 'none';
-        } else {
-            reviveBtn.style.display = 'block';
-        }
+        reviveBtn.style.display = window.offlineGameCount > 3 ? 'none' : 'block';
     } else {
-        // Online: Always show
         reviveBtn.style.display = 'block';
     }
-
     if (reviveBtn.style.display !== 'none') {
         reviveBtn.textContent = '\u26A1 REVIVE (WATCH AD)';
         reviveBtn.disabled = false;
     }
 
-    // Show Interstitial Ad every 3 deaths. Delayed 1500ms so game-over screen
-    // and revive button render before the ad overlay appears (AdMob policy + UX).
     if (typeof window.deathCount === 'undefined') window.deathCount = 0;
     window.deathCount++;
-    if (window.deathCount % 3 === 0) {
-        setTimeout(() => { FlutterBridge.showInterstitial(); }, 1500);
+    const now=Date.now();
+    const runDuration=now-runStartedAt;
+    const sessionDuration=now-sessionStartedAt;
+    const adReadyForBreak=runDuration>=20000||sessionDuration>=120000;
+    if (window.deathCount % 3 === 0 && adReadyForBreak && now-lastInterstitialAt>=90000) {
+        lastInterstitialAt=now;
+        setTimeout(() => {
+            if(GAME_STATE===STATE.GAMEOVER) FlutterBridge.showInterstitial();
+        }, 900);
     }
 }
 
@@ -813,11 +998,15 @@ function resetGame() {
     player.x=100; player.y=FLOOR-player.height;
     player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
     player.z=0; player.zVelocity=0; player.targetY=undefined;
+    player.squashX=1; player.squashY=1; player.squashFrames=0;
+    phaseIndex=0; phaseFlashUntil=0; shakeFrames=0;
+    canvas.classList.remove('aberration');
+    patternQueue=[]; patternTimer=72; patternIndex=0; classicLane='top'; floatTexts=[];
     window._freeRevives = 0;
     obstaclePool.releaseAll(); particlePool.releaseAll();
     initBgParticles();
     updateScoreDisplay();
-    document.getElementById('game-container').classList.remove('glitch-shake');
+    document.getElementById('game-container').classList.remove('glitch-shake', 'game-over-flash');
     canvas.classList.remove('aberration');
 }
 
@@ -825,13 +1014,11 @@ function startGame() {
     getAudio(); // unlock AudioContext on user gesture
     const modeSelect = document.getElementById('mode-select');
     if (modeSelect) CURRENT_MODE = modeSelect.value;
-    
-    const sidePills = document.getElementById('event-side-pills');
-    if (sidePills) sidePills.style.opacity = '0';
 
     resetGame();
     hideAllScreens(); showHUD();
     GAME_STATE=STATE.PLAYING;
+    runStartedAt=Date.now();
     cancelAnimationFrame(rafId);
     startDrone();
     startGameLoop();
@@ -853,7 +1040,12 @@ function handleInput(yPos) {
     }
 }
 window.addEventListener('keydown', e=>{
-    if(e.code==='Space'){ e.preventDefault(); handleInput(window.innerHeight/2); }
+    if(e.code==='Space'){
+        e.preventDefault();
+        if(e.repeat) return;
+        if(GAME_STATE===STATE.GAMEOVER) startGame();
+        else handleInput(window.innerHeight/2);
+    }
     if(e.key==='Escape') pauseGame();
 });
 window.addEventListener('touchstart', e=>{ 
@@ -878,14 +1070,7 @@ window.addEventListener('touchmove', e=>{
 }, {passive:true});
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
 document.getElementById('start-btn')?.addEventListener('click', () => {
-    let completed = localStorage.getItem('cubeRunTutorialCompleted') === 'true';
-    let skips = parseInt(localStorage.getItem('cubeRunTutorialSkips') || '0');
-    if (!completed && skips < 2) {
-        hideAllScreens();
-        showScreen('tutorial-screen');
-    } else {
-        startGame();
-    }
+    startGame();
 });
 document.getElementById('tutorial-got-it-btn')?.addEventListener('click', () => {
     localStorage.setItem('cubeRunTutorialCompleted', 'true');
@@ -903,6 +1088,11 @@ document.getElementById('tutorial-replay-btn')?.addEventListener('click', () => 
     showScreen('tutorial-screen');
 });
 document.getElementById('restart-btn')?.addEventListener('click', startGame);
+window.addEventListener('pointerdown', e=>{
+    if(GAME_STATE===STATE.GAMEOVER&&e.target.closest('#game-over-screen')&&!e.target.closest('button, a')) {
+        startGame();
+    }
+});
 document.getElementById('pause-btn')?.addEventListener('click', pauseGame);
 document.getElementById('resume-btn')?.addEventListener('click', resumeGame);
 document.getElementById('quit-btn')?.addEventListener('click', quitToMenu);
@@ -1322,18 +1512,9 @@ window.EventManager = EventManager;
 // CR_EVENT_THEME.scoreMultiplier is read at the point of score addition.
 // See: function addScore(points) in game loop integration below.
 function addScore(points) {
-    const multiplier = EventManager.getScoreMultiplier();
-    score += Math.round(points * multiplier);
+    score += Math.round(points * RUN_PHASES[phaseIndex].scoreMultiplier);
     updateScoreDisplay();
 }
-
-// Initialize EventManager when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => EventManager.init());
-} else {
-    EventManager.init();
-}
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EVENT POPUP SYSTEM — Alien Invasion RPG-style popups
@@ -1538,80 +1719,3 @@ const EventPopup = (function() {
 })();
 
 window.EventPopup = EventPopup;
-
-// ── Wire EventPopup.trackEventScore into score additions ─────────────────────
-const _origAddScore = addScore;
-window.addScore = function(points) {
-    _origAddScore(points);
-    const evId = EventManager.getActiveEventId ? EventManager.getActiveEventId() : null;
-    if (evId) EventPopup.trackEventScore(evId, score);
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// OPENING LOADING WORKFLOW — Alien Invasion Style
-// ═══════════════════════════════════════════════════════════════════════════════
-function initLoadingWorkflow() {
-    let playerId = localStorage.getItem('cr_player_id');
-    if (!playerId) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let r1 = '', r2 = '';
-        for (let i = 0; i < 6; i++) r1 += chars.charAt(Math.floor(Math.random() * chars.length));
-        for (let i = 0; i < 4; i++) r2 += chars.charAt(Math.floor(Math.random() * chars.length));
-        playerId = 'fROS-' + r1 + '-' + r2;
-        localStorage.setItem('cr_player_id', playerId);
-    }
-    const pidEl = document.getElementById('loading-player-id');
-    if (pidEl) pidEl.textContent = 'PlayerId: ' + playerId;
-
-    const bar = document.getElementById('loading-bar-fill');
-    const status = document.getElementById('loading-status-text');
-    const loadingScreen = document.getElementById('loading-screen');
-
-    let currentPct = 0;
-    const stages = [
-        { target: 35, text: 'LOADING NEON MATRIX... 35%', delay: 180 },
-        { target: 70, text: 'SYNCING 2-YEAR LIVE EVENTS... 70%', delay: 240 },
-        { target: 90, text: 'INITIALIZING AD PROTECTION... 90%', delay: 180 },
-        { target: 100, text: 'SYSTEM READY! 100%', delay: 150 }
-    ];
-
-    let stageIdx = 0;
-    function nextStage() {
-        if (stageIdx < stages.length) {
-            const s = stages[stageIdx];
-            currentPct = s.target;
-            if (bar) bar.style.width = currentPct + '%';
-            if (status) status.textContent = s.text;
-            stageIdx++;
-            setTimeout(nextStage, s.delay);
-        } else {
-            setTimeout(() => {
-                if (loadingScreen) {
-                    loadingScreen.style.transition = 'opacity 0.5s ease';
-                    loadingScreen.style.opacity = '0';
-                    setTimeout(() => {
-                        loadingScreen.classList.remove('active');
-                        loadingScreen.style.display = 'none';
-
-                        // Reveal main start screen
-                        showScreen('start-screen');
-
-                        // Now initialize and trigger the Alien Invasion event popup workflow!
-                        EventPopup.init();
-                    }, 500);
-                } else {
-                    showScreen('start-screen');
-                    EventPopup.init();
-                }
-            }, 250);
-        }
-    }
-    setTimeout(nextStage, 100);
-}
-
-// Start loading workflow on DOM ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLoadingWorkflow);
-} else {
-    initLoadingWorkflow();
-}

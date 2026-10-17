@@ -19,8 +19,8 @@
 │  │           WebView (Game Engine)               │  │
 │  │  • HTML5 Canvas @ 60 FPS                      │  │
 │  │  • Vanilla JS (game.js / game_source.js)      │  │
-│  │  • EventManager (events_config.json)          │  │
-│  │  • CSS Cyberpunk + event themes               │  │
+│  │  • Score-driven arcade phases and patterns    │  │
+│  │  • CSS Cyberpunk                              │  │
 │  │  • Web Audio API                              │  │
 │  │  • localStorage (settings, high score)        │  │
 │  └───────────────────────────────────────────────┘  │
@@ -83,7 +83,7 @@ requestAnimationFrame loop
          ├─ Move player (CLASSIC: gravity swap | TOPDOWN: tap-to-move | LASER: Z-jump)
          ├─ Move obstacles
          ├─ Collision detection
-         ├─ addScore(N) — applies EventManager multiplier
+         ├─ addScore(N) — applies the current phase multiplier
          └─ spawn obstacles (Poisson-like interval)
     └─ draw()
          ├─ background particles
@@ -94,26 +94,19 @@ requestAnimationFrame loop
 
 ---
 
-## Event System
+## Arcade Flow
 
-```
-Game boot
-    └─ EventManager.init()
-         ├─ 1. Check localStorage cache (cr_events_config)
-         │       └─ If fresh (<1h old): use cache
-         ├─ 2. Fetch events_config.json from GitHub Pages
-         │       └─ Store to cache
-         ├─ 3. Fall back to stale cache if fetch fails
-         ├─ 4. Evaluate active event by UTC date
-         ├─ 5. Apply theme (CSS class + window.CR_EVENT_THEME)
-         └─ 6. Show event banner in menu
-```
+- Boot directly to the clean start screen; no loading sequence or event popup is initialized.
+- Gameplay phases are score-driven (50 / 150 / 300), with a smooth color transition and a short phase banner.
+- Obstacle patterns are mode-aware: gravity-flip pairs/staircases, vertical-dodge gates, and laser obstacles.
+- A tap or Space immediately restarts from game over; rewarded revive remains optional.
+- Legacy event configuration and cached values are left untouched but are not fetched or shown in normal play.
 
 ---
 
 ## Service Worker Strategy
 
-- Cache: `cuberun-v17` (responsive neon UI refresh)
+- Cache: `cuberun-v18` (instant-retry arcade refresh)
 - Strategy: **Stale-While-Revalidate** for all game assets
 - Bypassed (always network): `gamedistribution.*`, `google.*`, `events_config.json`
 - Bypassed because `events_config.json` must always be fresh for live event scheduling

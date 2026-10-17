@@ -1,19 +1,16 @@
 # Cube Run — Events & Seasons
 
-> Last updated: 2026-10-14 | System: IMPLEMENTED
+> Last updated: 2026-10-14 | System: LEGACY / NOT INITIALIZED IN ARCADE FLOW
 
 ## How It Works
 
-On every game boot, `EventManager.init()` runs:
+The event configuration and compatibility API remain in the repository, but the arcade build no longer calls `EventManager.init()` during boot. Normal play therefore:
 
-1. **Checks localStorage** for a cached `events_config.json` (1-hour TTL)
-2. **Fetches** `https://turfin-logic.github.io/CubeRun/events_config.json` (always fresh — not cached by Service Worker)
-3. **Falls back** to stale cache if network is unavailable
-4. **Evaluates** current UTC time against event schedules
-5. **Applies** theme (CSS class on `<body>`) and score multiplier
-6. **Shows** event banner in the main menu
+- does not fetch `events_config.json` or show event banners/popups;
+- does not read, overwrite, or clear the existing event cache;
+- uses score-driven arcade phases instead of seasonal themes or event multipliers.
 
-To update a live event: **edit `events_config.json`, commit, push**. GitHub Pages deploys in ~2 minutes.
+The remaining configuration is preserved for reference/future opt-in use. Editing or publishing it does not change the current arcade game.
 
 ---
 
@@ -96,7 +93,7 @@ EventManager.setTestDate(null);          // Return to real time
 ## EventManager API
 
 ```javascript
-EventManager.init()                  // Called automatically on boot
+EventManager.init()                  // Legacy opt-in only; not called on boot
 EventManager.getScoreMultiplier()    // Returns current multiplier (1.0 if no event)
 EventManager.getActiveEventId()      // Returns event ID string or null
 EventManager.getTheme()              // Returns CR_EVENT_THEME object or null

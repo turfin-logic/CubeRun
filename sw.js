@@ -1,11 +1,11 @@
-const CACHE_NAME = 'cuberun-v17'; // Responsive neon UI refresh
+const CACHE_NAME = 'cuberun-v18'; // Instant-retry arcade refresh
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './game.js',
-    './style.css?v=17',
-    './game.js?v=17',
+    './style.css?v=18',
+    './game.js?v=18',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',

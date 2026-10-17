@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="manifest.json">
@@ -99,10 +99,9 @@
 
             <!-- HUD (visible during gameplay) -->
             <div id="hud">
-                <div id="score-display">SCORE: <span id="scoreValue">0</span><span id="hud-multiplier" style="font-size:0.65em;color:var(--neon-pink);margin-left:8px;font-weight:bold;letter-spacing:1px;"></span></div>
-                <div id="hud-event-pill" class="hud-event-pill" style="display:none;" title="Active Event">
-                    <span id="hud-event-pill-icon" class="hud-pill-icon">💀</span>
-                    <span id="hud-event-pill-timer" class="hud-pill-timer">16D.10H</span>
+                <div id="score-display">
+                    <span class="hud-score">SCORE <strong id="scoreValue">0</strong></span>
+                    <span id="hud-multiplier" class="hud-multiplier" aria-label="Score multiplier">×1.0</span>
                 </div>
                 <div id="hud-buttons">
                     <button id="pause-btn" class="hud-btn" type="button" title="Pause" aria-label="Pause game">
@@ -114,41 +113,11 @@
                 </div>
             </div>
 
-            <!-- Loading Screen (Alien Invasion Opening Workflow) -->
-            <div id="loading-screen" class="screen active" style="z-index: 100; background: #030005;">
-                <div class="loading-container">
-                    <div class="loading-subtitle">NEON GRAVITY SURVIVAL</div>
-                    <h1 class="glitch loading-title" data-text="CUBE RUN">CUBE RUN</h1>
-                    
-                    <div class="loading-art">
-                        <div class="unified-logo" style="transform: scale(1.3);">
-                            <div class="outer-square"></div>
-                            <div class="inner-square"></div>
-                            <div class="center-dot"></div>
-                        </div>
-                    </div>
-
-                    <!-- Progress Bar (Alien Invasion RPG style) -->
-                    <div class="loading-bar-wrapper">
-                        <div class="loading-bar-track">
-                            <div id="loading-bar-fill" class="loading-bar-fill"></div>
-                        </div>
-                        <div id="loading-status-text" class="loading-status">INITIALIZING SYSTEM... 0%</div>
-                    </div>
-
-                    <!-- Footer with PlayerId and Version like Screenshot 5 -->
-                    <div class="loading-footer">
-                        <div id="loading-player-id" class="loading-meta">PlayerId: CR-8942-X7B</div>
-                        <div class="loading-meta">Version: 1.0.7</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Main Menu Screen (Clean Mobile UI) -->
-            <div id="start-screen" class="screen clean-menu">
+            <div id="start-screen" class="screen clean-menu active">
                 <!-- Top Header Bar -->
                 <div class="menu-top-bar">
-                    <div id="event-banner" class="menu-event-pill" style="display:none;" aria-live="polite"></div>
+                    <div class="menu-tagline">NEON GRAVITY RUNNER</div>
                     <button id="menu-settings-btn" class="menu-icon-btn" type="button" title="Settings" aria-label="Open settings">
                         <img src="assets/ui/vector/ic_system_gear-ring.svg" alt="">
                     </button>
@@ -228,27 +197,21 @@
                 <button id="menu-btn-icon" type="button" aria-label="Return to main menu" title="Main menu" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); border-radius: 50%; color: var(--neon-pink); cursor: pointer; z-index: 9999; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--neon-pink);">
                     <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 </button>
-                <h2 class="glitch" data-text="SYSTEM FAILURE">SYSTEM FAILURE</h2>
+                <h2>RUN OVER</h2>
                 <div class="stats">
-                    <p>FINAL SCORE: <span id="finalScore">0</span></p>
-                    <p>HIGH SCORE: <span id="highScore">0</span></p>
+                    <p>SCORE <span id="finalScore">0</span></p>
+                    <p>BEST <span id="highScore">0</span></p>
                     <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;">⭐ NEW RECORD!</p>
                 </div>
 
-                  <div id="game-over-btns" style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                      <button id="revive-btn" class="cyber-btn revive-btn" style="display: none;">🚀 WATCH AD TO REVIVE</button>
-                      <button id="restart-btn" class="cyber-btn">REBOOT SYSTEM</button>
-                      <button id="game-over-menu-btn" class="cyber-btn game-over-menu-btn">MAIN MENU</button>
-                      <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="cyber-btn mangaverse-btn" style="font-size: 1rem; padding: 10px 20px; width: 100%;">🎮 EXPLORE MANGAVERSE</button>
-                      <button onclick="window.open('https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', '_blank')" class="cyber-btn apk-only" style="font-size: 1rem; padding: 10px 20px; background: transparent; width: 100%;">GET IT ON PLAY STORE</button>
-                  </div>
-
-                <div class="sta-container" style="margin-top: 20px;">
-                    <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px; text-align: center;">SHARE YOUR SCORE</p>
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        <button onclick="shareToWhatsApp()" class="social-btn whatsapp">WhatsApp</button>
-                        <button onclick="shareToTelegram()" class="social-btn telegram">Telegram</button>
-                    </div>
+                <div id="game-over-actions">
+                    <button id="restart-btn" class="retry-btn" type="button">TAP TO RETRY</button>
+                    <button id="revive-btn" class="revive-btn" type="button" style="display:none;">⚡ REVIVE</button>
+                </div>
+                <p class="retry-hint">OR PRESS SPACE</p>
+                <div class="game-over-dock" aria-label="More games">
+                    <a class="game-over-link" href="https://play.google.com/store/apps/details?id=com.mangaverse.app" target="_blank" rel="noopener noreferrer" aria-label="Explore Mangaverse">🎮</a>
+                    <a class="game-over-link apk-only" href="https://play.google.com/store/apps/details?id=com.neondrift.bosslevel" target="_blank" rel="noopener noreferrer" aria-label="Get on Google Play">▶</a>
                 </div>
             </div>
 
@@ -267,89 +230,12 @@
                 </div>
             </div>
 
-            <!-- Event Popup Modal (Alien Invasion RPG style) -->
-            <div id="event-popup" class="screen" style="z-index: 60; background: rgba(5, 2, 10, 0.9); backdrop-filter: blur(10px);">
-                <div class="event-rpg-modal">
-                    <!-- Top Countdown Capsule -->
-                    <div class="event-time-capsule">
-                        <span class="capsule-prefix">FOR THE NEXT</span>
-                        <span id="event-popup-countdown" class="capsule-timer">16D.10H.</span>
-                    </div>
-
-                    <!-- Hero Title Header with 3D Wings/Horns -->
-                    <div class="event-hero-header">
-                        <div class="event-crest-horns">
-                            <svg viewBox="0 0 120 40" width="120" height="40" class="crest-svg">
-                                <path d="M 10,35 Q 25,5 60,15 Q 95,5 110,35 Q 90,20 60,25 Q 30,20 10,35 Z" fill="#ff003c" filter="drop-shadow(0 0 8px #ff003c)"/>
-                            </svg>
-                        </div>
-                        <h1 id="event-popup-title" class="event-rpg-title">CYBER HORROR</h1>
-                        <div id="event-popup-subtitle" class="event-rpg-subtitle">HAS STRUCK!</div>
-                    </div>
-
-                    <!-- Card 1: Objective -->
-                    <div class="event-rpg-card objective-card">
-                        <div class="card-art-col">
-                            <div id="event-popup-icon" class="card-art-icon">💀</div>
-                        </div>
-                        <div class="card-text-col">
-                            <div id="event-card-action" class="card-action-text">SURVIVE THE HORROR</div>
-                            <div id="event-card-desc" class="card-desc-text">Dodge hazards & beat high scores</div>
-                        </div>
-                    </div>
-
-                    <!-- Chunky Down Arrow -->
-                    <div class="event-rpg-arrow">
-                        <svg viewBox="0 0 24 24" width="28" height="28" fill="#47e85c" filter="drop-shadow(0 0 6px #47e85c)">
-                            <path d="M 12,22 L 2,10 L 8,10 L 8,2 L 16,2 L 16,10 L 22,10 Z"/>
-                        </svg>
-                    </div>
-
-                    <!-- Card 2: Rewards -->
-                    <div class="event-rpg-card reward-card">
-                        <div class="reward-card-header">
-                            RANK UP AND EARN <span class="reward-highlight">MASSIVE PERKS!</span>
-                        </div>
-                        <div class="reward-items-row">
-                            <div class="reward-badge-chip">
-                                <span class="chip-icon">⚡</span>
-                                <span id="event-popup-multiplier" class="chip-val">×1.5 SCORE</span>
-                            </div>
-                            <div class="reward-badge-chip">
-                                <span class="chip-icon">⭐</span>
-                                <span class="chip-val">BONUS XP</span>
-                            </div>
-                            <div class="reward-badge-chip">
-                                <span class="chip-icon">🏆</span>
-                                <span class="chip-val">RANK BADGE</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Big Juicy Mobile Green Continue Button -->
-                    <button id="event-popup-continue" class="rpg-continue-btn">CONTINUE</button>
-                </div>
-            </div>
-
-            <!-- Event Ended Recap Popup -->
-            <div id="event-ended-popup" class="screen" style="z-index: 50; background: rgba(0,0,0,0.95);">
-                <div class="event-popup-inner">
-                    <div class="event-ended-badge">EVENT ENDED</div>
-                    <h2 id="event-ended-name" class="event-popup-title" data-text="CYBER HORROR" style="font-size:2.2rem;">CYBER HORROR</h2>
-                    <div id="event-ended-stats" class="event-ended-stats">
-                        <p>Your best: <span id="event-ended-best">0</span></p>
-                    </div>
-                    <div id="event-ended-next" class="event-ended-next">Next event coming soon...</div>
-                    <button id="event-ended-continue" class="cyber-btn event-popup-btn">CONTINUE</button>
-                </div>
-            </div>
-
             <!-- Ad Toast -->
             <div id="ad-toast" class="ad-toast"></div>
 
         </div><!-- end ui-layer -->
     </div><!-- end game-container -->
 
-    <script src="game.js?v=17"></script>
+    <script src="game.js?v=18"></script>
 </body>
 </html>
