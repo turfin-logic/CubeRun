@@ -30,6 +30,7 @@ function saveSessionDeathCount(count) {
 let sessionDeathCount = loadSessionDeathCount();
 let activeRunId = 0, interstitialTimer = null, reviveCountdownInterval = null, reviveCountdownElement = null;
 let reviveRequestRunId = null;
+let lastTopDownHapticAt = 0, lastTopDownHapticY = 0;
 let patternQueue = [], patternTimer = 72, patternIndex = 0, classicLane = 'top';
 let floatTexts = [];
 const RUN_PHASES = [
@@ -701,7 +702,7 @@ function update(dt) {
         // Smoothly move towards targetY if it exists
         if (player.targetY !== undefined) {
             const dy = player.targetY - (player.y + player.height/2);
-            player.y += dy * 0.15 * dt;
+            player.y += dy * (1 - Math.pow(0.85, dt));
         }
         // Clamp to screen bounds
         if (player.y < CEILING) player.y = CEILING;
@@ -1168,6 +1169,12 @@ function resetGame() {
     player.x=100; player.y=FLOOR-player.height;
     player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
     player.z=0; player.zVelocity=0; player.targetY=undefined;
+    if (CURRENT_MODE === 'TOPDOWN') {
+        player.y=(CEILING+FLOOR-player.height)/2;
+        player.targetY=player.y+player.height/2;
+    }
+    lastTopDownHapticAt=0;
+    lastTopDownHapticY=player.y+player.height/2;
     player.squashX=1; player.squashY=1; player.squashFrames=0;
     phaseIndex=0; phaseFlashUntil=0; shakeFrames=0;
     canvas.classList.remove('aberration');
@@ -1203,12 +1210,21 @@ function startGame() {
 function handleInput(yPos) {
     if (GAME_STATE !== STATE.PLAYING) return;
     if (CURRENT_MODE === 'TOPDOWN') {
-        player.targetY = yPos;
+        const halfHeight=player.height/2;
+        const targetY=Math.max(CEILING+halfHeight,Math.min(FLOOR-halfHeight,yPos));
+        player.targetY=targetY;
+        const now=performance.now();
+        if (Math.abs(targetY-lastTopDownHapticY)>=player.height && now-lastTopDownHapticAt>=160) {
+            vibrate([20]);
+            lastTopDownHapticAt=now;
+            lastTopDownHapticY=targetY;
+        }
     } else if (CURRENT_MODE === 'LASER') {
         // Jump only when on ground (z==0)
         if (player.z <= 0) {
             player.zVelocity = 12;
             playSfx('jump');
+            vibrate([30]);
         }
     } else {
         swapGravity();
