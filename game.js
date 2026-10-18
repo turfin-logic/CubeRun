@@ -702,7 +702,7 @@ function update(dt) {
         // Smoothly move towards targetY if it exists
         if (player.targetY !== undefined) {
             const dy = player.targetY - (player.y + player.height/2);
-            player.y += dy * (1 - Math.pow(0.85, dt));
+            player.y += dy * (1 - Math.pow(0.45, dt));
         }
         // Clamp to screen bounds
         if (player.y < CEILING) player.y = CEILING;
@@ -910,13 +910,17 @@ function draw() {
             ctx.fillStyle = 'rgba(255,200,200,0.7)';
             ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
         } else if (CURRENT_MODE === 'TOPDOWN') {
-            ctx.strokeStyle = visuals.obstacle; ctx.lineWidth=3;
             ctx.shadowColor = visuals.obstacle; ctx.shadowBlur = 10;
+            ctx.fillStyle = visuals.obstacle;
             ctx.globalAlpha = 0.3;
-            ctx.strokeRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
-            ctx.globalAlpha = 1.0;
-            ctx.strokeRect(o.x, o.y, o.width, o.height);
+            ctx.fillRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
+            ctx.globalAlpha = 0.88;
+            ctx.fillRect(o.x, o.y, o.width, o.height);
             ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.45)';
+            ctx.globalAlpha = 0.65;
+            ctx.fillRect(o.x + 5, o.y + 5, Math.max(3, o.width * 0.14), Math.max(4, o.height - 10));
+            ctx.globalAlpha = 1;
         } else {
             ctx.fillStyle=visuals.obstacle;
             ctx.shadowColor=visuals.obstacle;
@@ -1241,9 +1245,10 @@ window.addEventListener('keydown', e=>{
 });
 window.addEventListener('touchstart', e=>{ 
     if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        if (CURRENT_MODE === 'TOPDOWN' && e.cancelable) e.preventDefault();
         handleInput(e.touches[0].clientY);
     }
-}, {passive:true});
+}, {passive:false});
 window.addEventListener('mousedown', e=>{ 
     if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
         handleInput(e.clientY);
@@ -1256,9 +1261,10 @@ window.addEventListener('mousemove', e=>{
 });
 window.addEventListener('touchmove', e=>{ 
     if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+        if (e.cancelable) e.preventDefault();
         handleInput(e.touches[0].clientY);
     }
-}, {passive:true});
+}, {passive:false});
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
 document.getElementById('start-btn')?.addEventListener('click', () => {
     startGame();
