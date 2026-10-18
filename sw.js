@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuberun-v23'; // Refresh mobile performance and haptics
+const CACHE_NAME = 'cuberun-v24';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
