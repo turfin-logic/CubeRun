@@ -1,11 +1,11 @@
-const CACHE_NAME = 'cuberun-v22'; // Refresh stale offline screens and revive eligibility
+const CACHE_NAME = 'cuberun-v23'; // Refresh mobile performance and haptics
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './game.js',
     './style.css?v=20',
-    './game.js?v=22',
+    './game.js?v=23',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',

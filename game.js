@@ -42,6 +42,10 @@ const RUN_PHASES = [
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SPRITES & POOLS (Defined early to prevent ReferenceError) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const SPRITES = {};
 
+function getCanvasScale() {
+    return Math.min(window.devicePixelRatio || 1, window.IS_APK ? 1.5 : 2);
+}
+
 class ObjectPool {
     constructor(createFn, resetFn, size=20) {
         this.createFn=createFn; this.resetFn=resetFn;
@@ -67,7 +71,7 @@ function resizeCanvas() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
         const previousCeiling=CEILING, previousFloor=FLOOR;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const dpr = getCanvasScale();
         canvas.width  = window.innerWidth  * dpr;
         canvas.height = window.innerHeight * dpr;
         canvas.style.width  = window.innerWidth  + 'px';
@@ -107,7 +111,7 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', resizeCanvas);
 // Call immediately for initial setup
-const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const dpr = getCanvasScale();
 canvas.width  = window.innerWidth  * dpr;
 canvas.height = window.innerHeight * dpr;
 canvas.style.width  = window.innerWidth  + 'px';
@@ -266,7 +270,14 @@ function stopDrone() {
     droneOscs = [];
 }
 
-function vibrate(p=[50]) { if(Settings.vibration && navigator.vibrate) navigator.vibrate(p); }
+function vibrate(pattern=[50]) {
+    if (!Settings.vibration) return;
+    if (window.GameHaptics) {
+        window.GameHaptics.postMessage(pattern.length > 1 ? 'medium' : 'light');
+        return;
+    }
+    if (navigator.vibrate) navigator.vibrate(pattern);
+}
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ OFF-SCREEN SPRITES (Glow, pre-rendered once) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function createGlowSprite(color, w, h, glow=15) {
@@ -678,7 +689,7 @@ function update(dt) {
     if(nextPhase!==phaseIndex) {
         phaseIndex=nextPhase;
         phaseFlashUntil=performance.now()+600;
-        canvas.classList.toggle('aberration', phaseIndex===2);
+        canvas.classList.toggle('aberration', phaseIndex===2 && !window.IS_APK);
         updateScoreDisplay();
     }
     const phase = RUN_PHASES[phaseIndex];
@@ -994,12 +1005,6 @@ function draw() {
         ctx.globalAlpha=1;
     }
 
-    // Logo Pulse in Menu
-    if(GAME_STATE===STATE.MENU) {
-        const pulse = 1 + Math.sin(frameCount * 0.05) * 0.05;
-        const logo = document.querySelector('.unified-logo');
-        if(logo) logo.style.transform = `scale(${pulse})`;
-    }
     if(deathShake) ctx.restore();
 }
 
