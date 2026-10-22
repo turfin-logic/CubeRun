@@ -1,0 +1,41 @@
+name: Generate Play Store Assets
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'game.js'
+      - 'index.html'
+      - 'style.css'
+      - 'render_panoramic_screenshots.py'
+      - 'store_assets/**'
+
+jobs:
+  build-playstore-assets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install playwright Pillow
+          playwright install chromium --with-deps
+
+      - name: Run Panoramic Store Asset Generator
+        run: python render_panoramic_screenshots.py
+
+      - name: Upload Store Assets Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-play-store-assets
+          path: store_assets/PANORAMA_EDITION/
+          if-no-files-found: error
