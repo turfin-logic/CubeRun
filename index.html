@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css?v=21">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="manifest.json">
@@ -156,6 +156,14 @@
                     <label>VIBRATION</label>
                     <button class="toggle-btn" id="vib-toggle" type="button" data-key="vibration">ON</button>
                 </div>
+                <!-- APK only (game.js shows it when AdChannel is present and
+                     the no-ads entitlement is inactive). Click asks Flutter to
+                     run the Google Play Billing flow; on success Flutter calls
+                     window.setNoAds(true). -->
+                <div class="setting-row" id="remove-ads-row" style="display:none;">
+                    <label>REMOVE ADS</label>
+                    <button class="cyber-btn" id="remove-ads-btn" type="button" style="background: var(--neon-pink); color: #000;">UPGRADE</button>
+                </div>
                 <button class="cyber-btn" id="settings-back-btn" style="margin-top:20px;">BACK</button>
             </div>
 
@@ -202,6 +210,6 @@
         </div><!-- end ui-layer -->
     </div><!-- end game-container -->
 
-    <script src="game.js?v=25"></script>
+    <script src="game.js?v=26"></script>
 </body>
 </html>

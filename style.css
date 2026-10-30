@@ -28,6 +28,13 @@ body {
     align-items: center;
 }
 
+/* Kill pull-to-refresh and page bounce at the document level. Gameplay
+   touches are already covered by canvas { touch-action: none }; this closes
+   the gap for gestures that begin on UI overlays (menus, settings). */
+html, body {
+    overscroll-behavior: none;
+}
+
 #game-container {
     position: relative;
     width: 100%;

@@ -10,7 +10,18 @@ let GAME_STATE = STATE.MENU;
 let CURRENT_MODE = 'CLASSIC';
 let score = 0, frameCount = 0, baseSpeed = 7, rafId = null, lastTime = 0;
 let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlashUntil = 0;
-let lastInterstitialAt = 0;
+// ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
+// Natural cadence: every 3rd death OR after a 75s gap — whichever comes first.
+// Never shown on runs under 10s, never while Remove Ads is active, and always
+// after the game-over screen has settled (natural break, AdMob-policy safe).
+const INTERSTITIAL_POLICY = {
+    MIN_RUN_MS: 10000,   // runs shorter than this never count toward cadence and never trigger
+    DEATHS: 3,           // …AND at least this many qualifying deaths since the last ad
+    COOLDOWN_MS: 75000,  // …AND at least this long since the last ad (also the launch grace)
+    DELAY_MS: 900        // let the game-over screen settle first
+};
+let lastInterstitialAt = Date.now(); // launch grace period before the first ad
+let deathsSinceInterstitial = 0;
 function loadSessionDeathCount() {
     try {
         const count=Number.parseInt(sessionStorage.getItem('cr_session_death_count')||'0',10);
@@ -67,21 +78,31 @@ class ObjectPool {
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ LAYOUT Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 let CEILING, FLOOR;
+// Play-field size in CSS pixels. Always derived from #game-container — NOT
+// window.innerWidth — so on desktop (>800px) the canvas matches the visible
+// arena and obstacles spawn at the true right edge instead of off-screen.
+let VIEW_W = 0, VIEW_H = 0;
 let resizeTimer;
+
+function layoutCanvas() {
+    const rect = document.getElementById('game-container').getBoundingClientRect();
+    VIEW_W = Math.max(1, Math.round(rect.width));
+    VIEW_H = Math.max(1, Math.round(rect.height));
+    const dpr = getCanvasScale();
+    canvas.width  = VIEW_W * dpr;
+    canvas.height = VIEW_H * dpr;
+    canvas.style.width  = VIEW_W + 'px';
+    canvas.style.height = VIEW_H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    CEILING = VIEW_H * 0.18;
+    FLOOR   = VIEW_H * 0.82;
+}
+
 function resizeCanvas() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
         const previousCeiling=CEILING, previousFloor=FLOOR;
-        const dpr = getCanvasScale();
-        canvas.width  = window.innerWidth  * dpr;
-        canvas.height = window.innerHeight * dpr;
-        canvas.style.width  = window.innerWidth  + 'px';
-        canvas.style.height = window.innerHeight + 'px';
-        
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        
-        CEILING = window.innerHeight * 0.18;
-        FLOOR   = window.innerHeight * 0.82;
+        layoutCanvas();
         const oldRange=Math.max(1,previousFloor-previousCeiling);
         const newRange=FLOOR-CEILING;
         if(CURRENT_MODE==='CLASSIC') {
@@ -112,14 +133,7 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', resizeCanvas);
 // Call immediately for initial setup
-const dpr = getCanvasScale();
-canvas.width  = window.innerWidth  * dpr;
-canvas.height = window.innerHeight * dpr;
-canvas.style.width  = window.innerWidth  + 'px';
-canvas.style.height = window.innerHeight + 'px';
-ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-CEILING = window.innerHeight * 0.18;
-FLOOR   = window.innerHeight * 0.82;
+layoutCanvas();
 if(typeof initSprites === 'function') initSprites();
 
 
@@ -301,8 +315,6 @@ function createGlowCircle(color, r, glow=6) {
 }
 function initSprites() {
     SPRITES.player   = createGlowSprite('#ff003c', 30, 30, 20);
-    SPRITES.obsRed   = createGlowSprite('#ff003c', 60, 80, 15);
-    SPRITES.obsMag   = createGlowSprite('#ff00ff', 60, 80, 15);
     SPRITES.partRed  = createGlowCircle('#ff003c', 2, 6);
     SPRITES.partPurp = createGlowCircle('#7000ff', 2, 6);
     SPRITES.bgDot1   = createGlowCircle('#ff003c', 1, 3);
@@ -313,25 +325,22 @@ function initSprites() {
 
 // Obstacle pool
 const obstaclePool = new ObjectPool(
-    () => ({x:0,y:0,width:0,height:0,sprite:null,passed:false}),
+    () => ({x:0,y:0,width:0,height:0,passed:false}),
     (o, pattern = {}) => {
         o.passed=false;
-        o.x=window.innerWidth;
+        o.x=VIEW_W;
         if (CURRENT_MODE === 'LASER') {
-            o.width = window.innerWidth; o.height = 15;
+            o.width = VIEW_W; o.height = 15;
             o.x = 0;
             o.y = CEILING - 20; // Spawn above visible area
-            o.sprite = null;
         } else if (CURRENT_MODE === 'TOPDOWN') {
             o.width=pattern.width || 46;
             o.height=pattern.height || 58;
             o.y=pattern.y ?? CEILING + Math.random() * (FLOOR - CEILING - o.height);
-            o.sprite=null;
         } else {
             o.width=40+Math.random()*60; o.height=40+Math.random()*80;
             const top=pattern.lane ? pattern.lane === 'top' : Math.random()>0.5;
             o.y=top?CEILING:FLOOR-o.height;
-            o.sprite=Math.random()>0.5?SPRITES.obsRed:SPRITES.obsMag;
         }
     }, 15
 );
@@ -353,8 +362,8 @@ function initBgParticles() {
     bgParticles.length=0;
     // Reduced from 100 to 40 for much better mobile performance
     for(let i=0;i<40;i++) bgParticles.push({
-        x:Math.random()*window.innerWidth,
-        y:Math.random()*window.innerHeight,
+        x:Math.random()*VIEW_W,
+        y:Math.random()*VIEW_H,
         baseVx:-(Math.random()*1.5+0.5),
         vx:0,
         sprite:Math.random()>0.5?SPRITES.bgDot1:SPRITES.bgDot2
@@ -457,11 +466,51 @@ function loadGameDistributionSdk() {
     return loadingPromise;
 }
 
+// ─── REMOVE ADS (IAP entitlement) ─────────────────────────────────────────
+// Single source of truth for the no-ads state. Native Flutter verifies the
+// purchase (or restores it on every launch) and calls window.setNoAds(true).
+// When active: interstitials are fully disabled. The rewarded revive stays
+// available — it is always player-initiated and opt-in.
+const RemoveAds = {
+    KEY: 'ndRemoveAds',
+    _active: false,
+    load() {
+        try { this._active = localStorage.getItem(this.KEY) === 'true'; }
+        catch(error) { this._active = false; }
+        return this._active;
+    },
+    active() { return this._active === true; },
+    set(enabled) {
+        try { localStorage.setItem(this.KEY, enabled ? 'true' : 'false'); } catch(error) {}
+        this.load();
+        this.syncUI();
+        return this._active;
+    },
+    syncUI() {
+        const row=document.getElementById('remove-ads-row');
+        if(row) row.style.display=(window.IS_APK && !this._active) ? 'flex' : 'none';
+    }
+};
+RemoveAds.load();
+
+// Native bridge hooks (Flutter → JS):
+//   setNoAds(true)  → after successful IAP verification or purchase restore
+//   getNoAds()      → Flutter can read current entitlement state
+window.setNoAds = (verified) => {
+    const wasActive = RemoveAds.active();
+    const nowActive = RemoveAds.set(verified === true);
+    // Only toast on a real transition, so silent launch-time restores don't nag.
+    if (nowActive && !wasActive) showAdToast('Ads removed — thank you for supporting Cube Run! \uD83D\uDC9C');
+    return nowActive;
+};
+window.getNoAds = () => RemoveAds.active();
+
 const FlutterBridge = {
     isFlutter() { return typeof window.AdChannel !== 'undefined'; },
     _adStartTime: 0,
     _waitingForReward: false,
     showInterstitial() {
+        if (RemoveAds.active()) return; // no-ads entitlement: hard stop
         if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial');
         else {
             loadGameDistributionSdk()
@@ -553,21 +602,29 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+function consumePendingRevive() {
+    window._pendingRevive = false;
+    const shouldRevive = reviveRequestRunId === activeRunId && GAME_STATE === STATE.GAMEOVER;
+    reviveRequestRunId = null;
+    if (shouldRevive) revivePlayer();
+}
+
 window.onAdClose = () => {
     clearTimeout(window._rewardTimeout);
-    if (window._pendingRevive) {
-        window._pendingRevive = false;
-        const shouldRevive=reviveRequestRunId===activeRunId&&GAME_STATE===STATE.GAMEOVER;
-        reviveRequestRunId=null;
-        if(shouldRevive) revivePlayer();
-    } else if (window._onRewardFailed) {
-        window.FlutterBridge.onRewardFailed();
-    } else {
-        // Edge case: ad closed without a reward and no pending callbacks.
-        // Reset the button so the player isn't stuck.
+    if (window._pendingRevive) { consumePendingRevive(); return; }
+    // Race guard: if native fires onRewardGranted() + onAdClose() inside the
+    // SAME JS task, the revive click-handler's `await` continuation (which
+    // sets _pendingRevive) hasn't run yet. A macrotask re-check (not a
+    // microtask — those are FIFO and order-dependent) always runs after that
+    // continuation, so a fully-watched ad never loses its revive.
+    setTimeout(() => {
+        if (window._pendingRevive) { consumePendingRevive(); return; }
+        if (window._onRewardFailed) { window.FlutterBridge.onRewardFailed(); return; }
+        // Ad closed with no reward and no pending callbacks — reset the
+        // button so the player isn't stuck.
         const btn = document.getElementById('revive-btn');
         if (btn) { btn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)'; btn.disabled = false; }
-    }
+    }, 0);
 };
 
 // Global aliases for Android WebView compatibility
@@ -608,7 +665,12 @@ function lerpColor(from, to, amount) {
     return `rgb(${r}, ${g}, ${bl})`;
 }
 
+// Phase colors only change when score/phase change — cache keyed on both so
+// the lerp rgb() strings aren't rebuilt (and re-allocated) every frame.
+let _visualCache = { key: null, grid: RUN_PHASES[0].grid, obstacle: RUN_PHASES[0].obstacle };
 function getRunVisuals() {
+    const key = phaseIndex * 1e6 + Math.floor(score / 2);
+    if (_visualCache.key === key) return _visualCache;
     let grid=RUN_PHASES[phaseIndex].grid;
     let obstacle=RUN_PHASES[phaseIndex].obstacle;
     for(let i=1;i<RUN_PHASES.length;i++) {
@@ -620,7 +682,8 @@ function getRunVisuals() {
             break;
         }
     }
-    return { grid, obstacle };
+    _visualCache = { key, grid, obstacle };
+    return _visualCache;
 }
 
 function getObstaclePattern() {
@@ -722,7 +785,7 @@ function update(dt) {
             player.zVelocity = 0;
         }
         // Keep cube centered
-        player.x = window.innerWidth / 2 - player.width / 2;
+        player.x = VIEW_W / 2 - player.width / 2;
         player.y = FLOOR - player.height - 60;
     } else {
         // Gravity swap movement
@@ -792,7 +855,7 @@ function update(dt) {
                     playSfx('nearmiss');
                 }
             }
-            if(o.y > window.innerHeight + 20){ obstaclePool.release(o); }
+            if(o.y > VIEW_H + 20){ obstaclePool.release(o); }
         } else {
             o.x-=runSpeed*dt;
             if(!player.invincible&&player.x<o.x+o.width&&player.x+player.width>o.x&&player.y<o.y+o.height&&player.y+player.height>o.y){
@@ -835,7 +898,7 @@ function update(dt) {
     bgParticles.forEach(p=>{
         p.x+=p.vx*phase.speed*dt-(player.isSwapping?6*dt:0);
         if(p.vx<p.baseVx) p.vx+=0.3*dt;
-        if(p.x<0){p.x=window.innerWidth; p.y=Math.random()*window.innerHeight; p.vx=p.baseVx;}
+        if(p.x<0){p.x=VIEW_W; p.y=Math.random()*VIEW_H; p.vx=p.baseVx;}
     });
 }
 
@@ -849,7 +912,7 @@ function updateScoreDisplay() {
 }
 
 function draw() {
-    const W=window.innerWidth, H=window.innerHeight;
+    const W=VIEW_W, H=VIEW_H;
     ctx.clearRect(0,0,W,H);
     const phase=RUN_PHASES[phaseIndex];
     const visuals=getRunVisuals();
@@ -910,23 +973,23 @@ function draw() {
             ctx.fillStyle = 'rgba(255,200,200,0.7)';
             ctx.fillRect(o.x, o.y + 3, o.width, Math.max(o.height - 6, 2));
         } else if (CURRENT_MODE === 'TOPDOWN') {
-            ctx.shadowColor = visuals.obstacle; ctx.shadowBlur = 10;
+            // Layered-alpha glow ≈ shadowBlur at a fraction of the GPU cost
             ctx.fillStyle = visuals.obstacle;
             ctx.globalAlpha = 0.3;
             ctx.fillRect(o.x - 4, o.y - 4, o.width + 8, o.height + 8);
             ctx.globalAlpha = 0.88;
             ctx.fillRect(o.x, o.y, o.width, o.height);
-            ctx.shadowBlur = 0;
             ctx.fillStyle = 'rgba(255,255,255,0.45)';
             ctx.globalAlpha = 0.65;
             ctx.fillRect(o.x + 5, o.y + 5, Math.max(3, o.width * 0.14), Math.max(4, o.height - 10));
             ctx.globalAlpha = 1;
         } else {
+            // Layered-alpha glow ≈ shadowBlur at a fraction of the GPU cost
             ctx.fillStyle=visuals.obstacle;
-            ctx.shadowColor=visuals.obstacle;
-            ctx.shadowBlur=12;
+            ctx.globalAlpha=0.22;
+            ctx.fillRect(o.x-5,o.y-5,o.width+10,o.height+10);
+            ctx.globalAlpha=1;
             ctx.fillRect(o.x,o.y,o.width,o.height);
-            ctx.shadowBlur=0;
             ctx.fillStyle='rgba(255,255,255,0.4)';
             ctx.fillRect(o.x+4,o.y+4,Math.max(2,o.width-8),3);
         }
@@ -952,10 +1015,7 @@ function draw() {
         ctx.font='700 14px Orbitron, sans-serif';
         ctx.textAlign='center';
         ctx.fillStyle=item.color;
-        ctx.shadowColor=item.color;
-        ctx.shadowBlur=10;
         ctx.fillText(item.text,item.x,item.y);
-        ctx.shadowBlur=0;
     });
     ctx.globalAlpha=1;
 
@@ -1117,13 +1177,34 @@ function gameOver() {
     saveSessionDeathCount(sessionDeathCount);
     const now=Date.now();
     const runDuration=now-runStartedAt;
-    if (runDuration>18000 && sessionDeathCount>=3 && sessionDeathCount%3===0 && now-lastInterstitialAt>=90000) {
-        lastInterstitialAt=now;
+    // Interstitial engine — every gate must pass, so an ad is only ever a
+    // reward for a real session, never a punishment for struggling:
+    //   1. Only runs ≥ MIN_RUN_MS count toward the cadence (rapid short
+    //      deaths never push the player toward an interstitial).
+    //   2. ≥ DEATHS qualifying deaths since the last ad.
+    //   3. ≥ COOLDOWN_MS since the last ad — this is also the launch grace,
+    //      because lastInterstitialAt starts at page load.
+    //   4. Natural break only: called from gameOver() after DELAY_MS, and the
+    //      timer re-checks the run wasn't restarted/quit/left meanwhile.
+    //   5. Never for no-ads users (double gate: here and in showInterstitial).
+    if (runDuration >= INTERSTITIAL_POLICY.MIN_RUN_MS) deathsSinceInterstitial++;
+    const cadenceOk = deathsSinceInterstitial >= INTERSTITIAL_POLICY.DEATHS;
+    const cooldownOk = (now - lastInterstitialAt) >= INTERSTITIAL_POLICY.COOLDOWN_MS;
+    if (cadenceOk && cooldownOk) {
+        lastInterstitialAt = now;
+        deathsSinceInterstitial = 0;
         const endedRunId=activeRunId;
         interstitialTimer=setTimeout(() => {
             interstitialTimer=null;
-            if(GAME_STATE===STATE.GAMEOVER&&activeRunId===endedRunId) FlutterBridge.showInterstitial();
-        }, 900);
+            // Never stack an interstitial on top of an in-flight rewarded
+            // revive: skip if the player has already tapped REVIVE (their
+            // rewarded ad is loading/playing) or a revive is awaiting its
+            // post-ad callback.
+            if(GAME_STATE===STATE.GAMEOVER && activeRunId===endedRunId && !RemoveAds.active()
+               && reviveRequestRunId===null && !window._pendingRevive) {
+                FlutterBridge.showInterstitial();
+            }
+        }, INTERSTITIAL_POLICY.DELAY_MS);
     }
 }
 
@@ -1239,13 +1320,16 @@ window.addEventListener('keydown', e=>{
         e.preventDefault();
         if(e.repeat) return;
         if(GAME_STATE===STATE.GAMEOVER) startGame();
-        else handleInput(window.innerHeight/2);
+        else handleInput((CEILING+FLOOR)/2); // arena center, viewport-independent
     }
     if(e.key==='Escape') pauseGame();
 });
-window.addEventListener('touchstart', e=>{ 
+window.addEventListener('touchstart', e=>{
     if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
-        if (CURRENT_MODE === 'TOPDOWN' && e.cancelable) e.preventDefault();
+        // All modes: swallow the tap so the browser never synthesizes a
+        // follow-up mouse event (double-input guard) and never starts a
+        // scroll/zoom gesture from gameplay touches.
+        if (e.cancelable) e.preventDefault();
         handleInput(e.touches[0].clientY);
     }
 }, {passive:false});
@@ -1259,10 +1343,10 @@ window.addEventListener('mousemove', e=>{
         handleInput(e.clientY);
     }
 });
-window.addEventListener('touchmove', e=>{ 
-    if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+window.addEventListener('touchmove', e=>{
+    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
         if (e.cancelable) e.preventDefault();
-        handleInput(e.touches[0].clientY);
+        if (CURRENT_MODE === 'TOPDOWN') handleInput(e.touches[0].clientY);
     }
 }, {passive:false});
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
@@ -1310,11 +1394,27 @@ document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
     if(GAME_STATE===STATE.PAUSED) showScreen('pause-screen');
 });
 
+// Remove Ads (APK only): ask Flutter to run the native IAP flow. On success
+// Flutter calls window.setNoAds(true), which flips the entitlement, hides
+// every interstitial path and hides this row until uninstall/refund.
+document.getElementById('remove-ads-btn')?.addEventListener('click', ()=>{
+    if (window.AdChannel) {
+        window.AdChannel.postMessage('purchaseRemoveAds');
+        showAdToast('Opening Google Play Billing…');
+    } else {
+        showAdToast('Remove Ads is available in the Android app.');
+    }
+});
+
 // Revive button
 document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
     const btn=document.getElementById('revive-btn');
     const requestRunId=activeRunId;
+    // Player chose the rewarded path — kill any pending auto interstitial so
+    // the two full-screen ads can never overlap.
+    cancelPendingInterstitial();
     reviveRequestRunId=requestRunId;
+    window._pendingRevive=false; // clear any orphaned flag from a prior attempt
     btn.disabled=true; btn.textContent='⏳ LOADING...';
     try { 
         await FlutterBridge.showRewarded();
@@ -1344,7 +1444,11 @@ function applyApkMode() {
         document.querySelectorAll('.apk-only').forEach(el=>el.remove());
     }
 }
-window.addEventListener('load',()=>{ applyApkMode(); setTimeout(applyApkMode,800); });
+window.addEventListener('load',()=>{
+    applyApkMode();
+    RemoveAds.syncUI();
+    setTimeout(()=>{ applyApkMode(); RemoveAds.syncUI(); },800);
+});
 
 function shareToWhatsApp() {
     const t='\uD83D\uDD25 I scored '+score+' on CUBE RUN! \uD83D\uDE08 Beat me: https://turfin-logic.github.io/CubeRun/';
@@ -1419,487 +1523,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// EVENT MANAGER — Cube Run Live-Ops Event System
-// Fetches events_config.json from GitHub Pages, caches to localStorage,
-// evaluates active events by UTC date, applies themes and score multipliers.
-// ═══════════════════════════════════════════════════════════════════════════════
-const EventManager = (function() {
-    const CONFIG_URL = 'https://turfin-logic.github.io/CubeRun/events_config.json';
-    const CACHE_KEY = 'cr_events_config';
-    const CACHE_TS_KEY = 'cr_events_ts';
-    const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-
-    let _config = null;
-    let _activeEvent = null;
-    let _testDate = null; // Set via EventManager.setTestDate('2026-12-25') for QA
-
-    // ── Utilities ──────────────────────────────────────────────────────────────
-
-    function _now() {
-        return _testDate ? new Date(_testDate) : new Date();
-    }
-
-    function _isWeekend(date) {
-        const d = date || _now();
-        const day = d.getUTCDay();
-        return day === 0 || day === 6; // 0=Sunday, 6=Saturday
-    }
-
-    function _parseUTC(str) {
-        // Handles both "2026-12-25" and "2026-12-25T00:00:00Z"
-        if (!str) return null;
-        return new Date(str.includes('T') ? str : str + 'T00:00:00Z');
-    }
-
-    // ── Config Fetching ────────────────────────────────────────────────────────
-
-    async function _fetchConfig() {
-        // 1. Try to serve from cache if still fresh
-        try {
-            const cachedTs = parseInt(localStorage.getItem(CACHE_TS_KEY) || '0', 10);
-            const ttl = _config && _config.global_settings && _config.global_settings.cache_ttl_minutes
-                ? _config.global_settings.cache_ttl_minutes * 60 * 1000
-                : CACHE_TTL_MS;
-            if (Date.now() - cachedTs < ttl) {
-                const cached = localStorage.getItem(CACHE_KEY);
-                if (cached) {
-                    _config = JSON.parse(cached);
-                    return _config;
-                }
-            }
-        } catch(e) { /* cache unreadable, fall through */ }
-
-        // 2. Try network (first relative path, then remote fallback)
-        const urlsToTry = ['events_config.json?t=' + Date.now(), CONFIG_URL + '?t=' + Date.now()];
-        for (const url of urlsToTry) {
-            try {
-                const res = await fetch(url, { cache: 'no-store' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                _config = data;
-                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-                localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
-                return _config;
-            } catch(fetchErr) {
-                // Try next url
-            }
-        }
-        console.warn('EventManager: network fetch failed, using cached config.');
-
-        // 3. Fall back to stale cache
-        try {
-            const stale = localStorage.getItem(CACHE_KEY);
-            if (stale) { _config = JSON.parse(stale); return _config; }
-        } catch(e) {}
-
-        // 4. No config available — events simply won't run
-        _config = null;
-        return null;
-    }
-
-    // ── Event Evaluation ───────────────────────────────────────────────────────
-
-    function _evaluateActiveEvent(config) {
-        if (!config || !Array.isArray(config.events)) return null;
-        const now = _now();
-
-        // Check dated events (highest priority, first match wins)
-        for (const ev of config.events) {
-            if (!ev.active) continue;
-            const start = _parseUTC(ev.start_utc);
-            const end   = _parseUTC(ev.end_utc);
-            if (!start || !end) continue;
-            if (now >= start && now <= end) {
-                // Handle weekend-only score multipliers
-                if (ev.score_multiplier_on_weekends_only && !_isWeekend(now)) {
-                    return { ...ev, score_multiplier: 1.0 }; // theme applies, no multiplier
-                }
-                return ev;
-            }
-        }
-
-        // Weekend boost (if no themed event active)
-        if (config.weekend_boost && config.weekend_boost.active && _isWeekend(now)) {
-            return config.weekend_boost;
-        }
-
-        return null; // Default — no active event
-    }
-
-    // ── Theme Application ─────────────────────────────────────────────────────
-
-    function _applyTheme(event, config) {
-        const themeId = (event && event.theme) || 'default';
-        const themes = (config && config.themes) || {};
-        const theme = themes[themeId] || themes['default'] || {};
-
-        // Store on window so game loop can read particle/trail colors
-        EventManager._activeEventObj = event;
-        window.CR_EVENT_THEME = {
-            id: themeId,
-            playerColor:    theme.player_color   || '#00f3ff',
-            obstacleColor:  theme.obstacle_color || '#ff003c',
-            bgColor:        theme.bg_color       || '#030005',
-            particleColors: theme.particle_colors || ['#ff003c', '#7000ff'],
-            trailColor:     theme.trail_color    || '#00f3ff',
-            uiAccent:       theme.ui_accent      || '#ff003c',
-            invertColors:   theme.invert_colors  || false,
-            scoreMultiplier: (event && event.score_multiplier) || 1.0
-        };
-
-        // Keep game core neon colors authentic
-        document.documentElement.style.setProperty('--event-accent', '#ff003c');
-    }
-
-    // ── Banner UI ─────────────────────────────────────────────────────────────
-
-    function _updateBanner(event) {
-        const banner = document.getElementById('event-banner');
-        if (!banner) return;
-        if (!event || !event.banner_text) {
-            banner.style.display = 'none';
-            const _tk = document.getElementById('hud-event-ticker');
-            if (_tk) _tk.style.display = 'none';
-            return;
-        }
-        banner.textContent = event.banner_text;
-        banner.style.display = 'block';
-
-        // Also update the in-game HUD event pill (visible during gameplay)
-        const hudPill = document.getElementById('hud-event-pill');
-        const hudIcon = document.getElementById('hud-event-pill-icon');
-        const hudTimer = document.getElementById('hud-event-pill-timer');
-        if (hudPill) {
-            hudPill.style.display = 'flex';
-            if (hudIcon) hudIcon.textContent = (event.theme === 'halloween' ? '💀' : '⚡');
-            if (hudTimer && event.end_utc) {
-                const end = new Date(event.end_utc).getTime();
-                const diff = Math.max(0, end - Date.now());
-                const d = Math.floor(diff / 86400000);
-                const h = Math.floor((diff % 86400000) / 3600000);
-                hudTimer.textContent = d + 'D.' + h + 'H';
-            }
-            hudPill.onclick = () => {
-                if (window.EventPopup && window.EventPopup.showEventPopup) {
-                    if (GAME_STATE === STATE.PLAYING) pauseGame();
-                    window.EventPopup.showEventPopup(event);
-                }
-            };
-        }
-        banner.style.background = 'rgba(255, 0, 60, 0.12)';
-        banner.style.color = '#fff';
-        banner.style.border = '1px solid ' + (event.banner_color || '#ff003c');
-        banner.style.borderRadius = '20px';
-        banner.style.padding = '6px 14px';
-        banner.style.fontSize = '0.72rem';
-        banner.style.fontFamily = "Orbitron, monospace";
-        banner.style.letterSpacing = '1px';
-        banner.style.textAlign = 'center';
-        banner.style.cursor = 'pointer';
-        banner.style.pointerEvents = 'auto';
-        banner.style.boxShadow = '0 0 10px rgba(255, 0, 60, 0.3)';
-        banner.onclick = () => {
-            if (window.EventPopup && window.EventPopup.showEventPopup) {
-                window.EventPopup.showEventPopup(event);
-            }
-        };
-    }
-
-    // ── Public API ─────────────────────────────────────────────────────────────
-
-    async function init() {
-        try {
-            const config = await _fetchConfig();
-            if (!config) {
-                console.log('EventManager: no config available, using defaults.');
-                window.CR_EVENT_THEME = null;
-                return;
-            }
-            _activeEvent = _evaluateActiveEvent(config);
-            _applyTheme(_activeEvent, config);
-            _updateBanner(_activeEvent);
-            // Reinit canvas sprites so gameplay reflects the active event theme
-            if (typeof initSprites === 'function') initSprites();
-
-
-            if (_activeEvent) {
-                console.log('EventManager: active event =>', _activeEvent.id,
-                    '| theme:', _activeEvent.theme,
-                    '| score x' + window.CR_EVENT_THEME.scoreMultiplier);
-            } else {
-                console.log('EventManager: no active event (default theme).');
-            }
-        } catch(e) {
-            console.warn('EventManager: init error', e);
-            window.CR_EVENT_THEME = null;
-        }
-    }
-
-    function getScoreMultiplier() {
-        return (window.CR_EVENT_THEME && window.CR_EVENT_THEME.scoreMultiplier) || 1.0;
-    }
-
-    function getActiveEventId() {
-        return _activeEvent ? _activeEvent.id : null;
-    }
-
-    function getTheme() {
-        return window.CR_EVENT_THEME || null;
-    }
-
-    // Test mode: EventManager.setTestDate('2026-12-25') to simulate future events
-    function setTestDate(dateStr) {
-        _testDate = dateStr ? new Date(dateStr) : null;
-        console.log('EventManager: test date set to', _testDate || 'REAL TIME');
-        // Re-evaluate with new date
-        if (_config) {
-            _activeEvent = _evaluateActiveEvent(_config);
-            _applyTheme(_activeEvent, _config);
-            _updateBanner(_activeEvent);
-        }
-    }
-
-    function getActiveEvent() {
-        return _activeEvent || null;
-    }
-
-    // Find next upcoming event
-    function getNextEvent() {
-        if (!_config || !Array.isArray(_config.events)) return null;
-        const now = _now();
-        let nearest = null;
-        let nearestStart = Infinity;
-        for (const ev of _config.events) {
-            if (!ev.active) continue;
-            const start = _parseUTC(ev.start_utc);
-            if (!start) continue;
-            if (start > now && start.getTime() < nearestStart) {
-                nearest = ev;
-                nearestStart = start.getTime();
-            }
-        }
-        return nearest;
-    }
-
-    function getAllEvents() {
-        return (_config && Array.isArray(_config.events)) ? _config.events.filter(e => e.active) : [];
-    }
-
-    return { init, getScoreMultiplier, getActiveEventId, getActiveEvent, getNextEvent, getAllEvents, getTheme, setTestDate };
-})();
-
-window.EventManager = EventManager;
-
-// Wire score multiplier into the existing score update
-// The existing updateScoreDisplay/score increment logic stays intact.
-// CR_EVENT_THEME.scoreMultiplier is read at the point of score addition.
-// See: function addScore(points) in game loop integration below.
 function addScore(points) {
     score += Math.round(points * RUN_PHASES[phaseIndex].scoreMultiplier);
     updateScoreDisplay();
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// EVENT POPUP SYSTEM — Alien Invasion RPG-style popups
-// Shows event announcement on game open, event ended recap, and side pills.
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const EventPopup = (function() {
-    const SEEN_KEY = 'cr_event_popup_seen';     // sessionStorage: current event seen
-    const ENDED_KEY = 'cr_event_ended_seen';    // localStorage: last ended event id
-    const BEST_KEY = 'cr_event_best_';          // localStorage: best score per event
-    let _countdownInterval = null;
-    let _pillInterval = null;
-
-    // ── Emoji map for event themes ──────────────────────────────────────────
-    const THEME_EMOJI = {
-        halloween: '💀', diwali: '✨', christmas: '🎄', newyear: '🎆',
-        lunar: '🧧', valentine: '💜', holi: '🌈', eid: '🌙',
-        glitch: '⚡', summer: '☀️', tricolor: '🇮🇳', anniversary: '🏆',
-        default: '🎮'
-    };
-
-    const THEME_SUBTITLE = {
-        halloween: 'HAS STRUCK!', diwali: 'IS HERE!', christmas: 'HAS ARRIVED!',
-        newyear: 'HAS BEGUN!', lunar: 'IS HERE!', valentine: 'IS IN THE AIR!',
-        holi: 'EXPLODES!', eid: 'IS HERE!', glitch: 'ACTIVATED!',
-        summer: 'HAS ARRIVED!', tricolor: 'IS HERE!', anniversary: 'CELEBRATION!',
-        default: 'IS LIVE!'
-    };
-
-    // ── Time formatting ─────────────────────────────────────────────────────
-    function _formatCountdown(ms) {
-        if (ms <= 0) return 'ENDED';
-        const s = Math.floor(ms / 1000);
-        const d = Math.floor(s / 86400);
-        const h = Math.floor((s % 86400) / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        if (d > 0) return d + 'D ' + h + 'H ' + m + 'M';
-        if (h > 0) return h + 'H ' + m + 'M';
-        return m + 'M ' + (s % 60) + 'S';
-    }
-
-    function _parseUTC(str) {
-        if (!str) return null;
-        return new Date(str.includes('T') ? str : str + 'T00:00:00Z');
-    }
-
-    // ── Show Event Announcement Popup ────────────────────────────────────────
-    function showEventPopup(event) {
-        if (!event || !event.name) return;
-
-        const themeId = event.theme || 'default';
-        const emoji = THEME_EMOJI[themeId] || THEME_EMOJI.default;
-        const subtitle = THEME_SUBTITLE[themeId] || THEME_SUBTITLE.default;
-        const accent = event.banner_color || '#ff003c';
-
-        // Set popup content
-        const iconEl = document.getElementById('event-popup-icon');
-        const titleEl = document.getElementById('event-popup-title');
-        const subtitleEl = document.getElementById('event-popup-subtitle');
-        const mulEl = document.getElementById('event-popup-multiplier');
-        const cdEl = document.getElementById('event-popup-countdown');
-
-        if (iconEl) iconEl.textContent = emoji;
-        if (titleEl) {
-            titleEl.textContent = event.name.toUpperCase();
-            titleEl.setAttribute('data-text', event.name.toUpperCase());
-        }
-        if (subtitleEl) subtitleEl.textContent = subtitle;
-        if (mulEl) {
-            const mul = event.score_multiplier || 1.0;
-            mulEl.textContent = mul > 1 ? '×' + mul.toFixed(1) : 'ACTIVE';
-            mulEl.style.color = accent;
-            mulEl.style.textShadow = '0 0 20px ' + accent;
-        }
-
-        // Set accent color on popup
-        document.documentElement.style.setProperty('--event-accent', accent);
-
-        // Live countdown
-        if (_countdownInterval) clearInterval(_countdownInterval);
-        const endDate = _parseUTC(event.end_utc);
-        function updateCountdown() {
-            if (!endDate || !cdEl) return;
-            const remaining = endDate.getTime() - Date.now();
-            cdEl.textContent = _formatCountdown(remaining);
-            if (remaining <= 0) {
-                clearInterval(_countdownInterval);
-                cdEl.textContent = 'ENDED';
-            }
-        }
-        updateCountdown();
-        _countdownInterval = setInterval(updateCountdown, 1000);
-
-        // Show popup
-        const sidePills = document.getElementById('event-side-pills');
-        if (sidePills) sidePills.style.opacity = '0';
-        showScreen('event-popup');
-
-        // Mark as seen this session
-        try { sessionStorage.setItem(SEEN_KEY, event.id); } catch(e) {}
-    }
-
-    // ── Show Event Ended Recap ───────────────────────────────────────────────
-    function showEventEnded(event) {
-        if (!event || !event.name) return;
-
-        const nameEl = document.getElementById('event-ended-name');
-        const bestEl = document.getElementById('event-ended-best');
-        const nextEl = document.getElementById('event-ended-next');
-
-        if (nameEl) {
-            nameEl.textContent = event.name.toUpperCase();
-            nameEl.setAttribute('data-text', event.name.toUpperCase());
-        }
-
-        // Best score during event
-        const bestKey = BEST_KEY + event.id;
-        const best = localStorage.getItem(bestKey) || '0';
-        if (bestEl) bestEl.textContent = best;
-
-        // Next event teaser
-        const nextEvent = EventManager.getNextEvent ? EventManager.getNextEvent() : null;
-        if (nextEl) {
-            if (nextEvent) {
-                const nextStart = _parseUTC(nextEvent.start_utc);
-                const daysUntil = nextStart ? Math.ceil((nextStart.getTime() - Date.now()) / 86400000) : 0;
-                nextEl.textContent = 'Next: ' + nextEvent.name + ' in ' + daysUntil + ' days';
-            } else {
-                nextEl.textContent = 'More events coming soon...';
-            }
-        }
-
-        const sidePills = document.getElementById('event-side-pills');
-        if (sidePills) sidePills.style.opacity = '0';
-        showScreen('event-ended-popup');
-        try { localStorage.setItem(ENDED_KEY, event.id); } catch(e) {}
-    }
-
-    // ── Build Floating Side Pills (Disabled - keep clean menu) ─────────────
-    function buildSidePills() {
-        return;
-    }
-
-    // ── Save event best score ────────────────────────────────────────────────
-    function trackEventScore(eventId, score) {
-        if (!eventId) return;
-        const key = BEST_KEY + eventId;
-        const prev = parseInt(localStorage.getItem(key) || '0', 10);
-        if (score > prev) {
-            localStorage.setItem(key, String(score));
-        }
-    }
-
-    // ── Main init (call after EventManager.init) ────────────────────────────
-    function init() {
-        const activeEvent = EventManager.getActiveEvent ? EventManager.getActiveEvent() : null;
-        const seenId = sessionStorage.getItem(SEEN_KEY);
-        const lastEndedId = localStorage.getItem(ENDED_KEY);
-        const lastSeenActive = localStorage.getItem('cr_last_active_event');
-
-        // Check if a previously active event has ended (show recap)
-        if (lastSeenActive && (!activeEvent || activeEvent.id !== lastSeenActive)) {
-            // The previously active event ended
-            if (lastEndedId !== lastSeenActive) {
-                // We haven't shown the ended popup for this event yet
-                const allEvents = EventManager.getAllEvents ? EventManager.getAllEvents() : [];
-                const endedEvent = allEvents.find(e => e.id === lastSeenActive);
-                if (endedEvent) {
-                    setTimeout(() => showEventEnded(endedEvent), 800);
-                }
-            }
-        }
-
-        // Show active event popup if not seen this session
-        if (activeEvent && activeEvent.id !== 'weekend_boost' && seenId !== activeEvent.id) {
-            setTimeout(() => showEventPopup(activeEvent), 500);
-        }
-
-        // Remember current active event
-        if (activeEvent && activeEvent.id !== 'weekend_boost') {
-            localStorage.setItem('cr_last_active_event', activeEvent.id);
-        }
-
-        // Build side pills
-        setTimeout(() => buildSidePills(), 300);
-
-        // Wire up continue buttons
-        document.getElementById('event-popup-continue')?.addEventListener('click', () => {
-            hideScreen('event-popup');
-            if (_countdownInterval) clearInterval(_countdownInterval);
-            const sidePills = document.getElementById('event-side-pills');
-            if (sidePills && GAME_STATE === STATE.MENU) sidePills.style.opacity = '1';
-        });
-        document.getElementById('event-ended-continue')?.addEventListener('click', () => {
-            hideScreen('event-ended-popup');
-            const sidePills = document.getElementById('event-side-pills');
-            if (sidePills && GAME_STATE === STATE.MENU) sidePills.style.opacity = '1';
-        });
-    }
-
-    return { init, showEventPopup, showEventEnded, buildSidePills, trackEventScore };
-})();
-
-window.EventPopup = EventPopup;
