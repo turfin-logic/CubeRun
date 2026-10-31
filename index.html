@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=21">
+    <link rel="stylesheet" href="style.css?v=22">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="manifest.json">
@@ -90,6 +90,17 @@
                     </button>
                 </div>
 
+                <!-- Google Play Games profile pill (filled ONLY with real
+                     native data via window.onPlayGamesProfile; stays hidden
+                     on web / signed-out — never fabricated). -->
+                <div id="gpg-profile" style="display:none;">
+                    <div id="gpg-profile-avatar">👤</div>
+                    <div id="gpg-profile-text">
+                        <div id="gpg-profile-name"></div>
+                        <div id="gpg-profile-level"></div>
+                    </div>
+                </div>
+
                 <!-- Center Hero Area -->
                 <div class="menu-hero-area">
                     <div class="unified-logo">
@@ -118,6 +129,10 @@
 
                 <!-- Bottom Dock for Secondary Actions -->
                 <div class="menu-bottom-dock">
+                    <button id="menu-achievements-btn" class="dock-btn dock-achievements" type="button" aria-label="View achievements">
+                        <span class="dock-btn-icon">🏆</span>
+                        <span class="dock-btn-label">Awards</span>
+                    </button>
                     <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="dock-btn dock-mangaverse">
                         <span class="dock-btn-icon">🎮</span>
                         <span class="dock-btn-label">Mangaverse</span>
@@ -204,12 +219,29 @@
                 </div>
             </div>
 
+            <!-- Achievements Screen (Statistics + Awards, real local data;
+                 Play Games sync status reflects the genuine native state). -->
+            <div id="achievements-screen" class="screen ach-screen">
+                <h2 class="cyber-text ach-title">ACHIEVEMENTS</h2>
+                <div class="ach-subheader">STATISTICS</div>
+                <div class="ach-stats">
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-highest-combo">0</span><span class="ach-stat-label">HIGHEST COMBO</span></div>
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-best-score">0</span><span class="ach-stat-label">BEST SCORE</span></div>
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-rounds">0</span><span class="ach-stat-label">ROUNDS</span></div>
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-login-days">0</span><span class="ach-stat-label">LOGIN DAYS</span></div>
+                </div>
+                <div class="ach-subheader">AWARDS</div>
+                <div id="awards-grid" class="awards-grid"><!-- 9 medals rendered by game.js --></div>
+                <div id="gpg-sync-status" class="gpg-sync-status" role="status"></div>
+                <button class="cyber-btn" id="achievements-back-btn">BACK</button>
+            </div>
+
             <!-- Ad Toast -->
             <div id="ad-toast" class="ad-toast"></div>
 
         </div><!-- end ui-layer -->
     </div><!-- end game-container -->
 
-    <script src="game.js?v=26"></script>
+    <script src="game.js?v=27"></script>
 </body>
 </html>

@@ -1741,3 +1741,198 @@ button:focus-visible {
     .menu-bottom-dock { padding-top: 4px; }
     .dock-btn { min-height: 40px; padding: 6px 10px; }
 }
+
+/* ─── GOOGLE PLAY GAMES PROFILE PILL (real data only) ─────────────────── */
+#gpg-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px auto 2px;
+    padding: 8px 18px 8px 10px;
+    background: linear-gradient(100deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    max-width: 92%;
+}
+#gpg-profile-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 0, 60, 0.18);
+    border: 1px solid rgba(255, 0, 60, 0.55);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex: 0 0 auto;
+}
+#gpg-profile-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 46vw;
+}
+#gpg-profile-level {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.7rem;
+    color: #ffd76a;
+    letter-spacing: 1.5px;
+}
+
+/* ─── ACHIEVEMENTS SCREEN ─────────────────────────────────────────────── */
+#achievements-screen {
+    justify-content: flex-start;
+    padding: 18px 14px 20px;
+    overflow-y: auto;
+    gap: 6px;
+}
+#achievements-screen .ach-title { font-size: 1.6rem; margin-bottom: 2px; }
+.ach-subheader {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    color: #8f8f9a;
+    margin: 10px 0 6px;
+    width: 100%;
+    max-width: 420px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 4px;
+}
+.ach-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    max-width: 420px;
+}
+.ach-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 6px;
+    border: 1px solid rgba(255, 0, 60, 0.35);
+    border-radius: 12px;
+    background: rgba(255, 0, 60, 0.05);
+}
+.ach-stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 1.35rem;
+    color: #ffd76a;
+    text-shadow: 0 0 12px rgba(255, 215, 106, 0.35);
+    line-height: 1.1;
+}
+.ach-stat-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 1.6px;
+    color: rgba(240, 240, 240, 0.75);
+}
+.awards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 8px;
+    width: 100%;
+    max-width: 420px;
+}
+.award {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+.award-medal {
+    position: relative;
+    width: 58px; height: 58px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(160deg, #ffe08a 0%, #f0b429 45%, #8a5a00 100%);
+    clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+    filter: drop-shadow(0 0 8px rgba(255, 200, 0, 0.35));
+}
+.award-medal::before {
+    /* inner darker circle like the reference medals */
+    content: '';
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #b57b12, #7a4e05 75%);
+}
+.award-medal > * { position: relative; z-index: 1; }
+.award.unlocked .award-medal { filter: drop-shadow(0 0 10px rgba(255, 200, 0, 0.55)); }
+.award.locked .award-medal {
+    background: linear-gradient(160deg, #6a6a72 0%, #4a4a52 45%, #26262c 100%);
+    filter: grayscale(1) brightness(0.75);
+}
+.award.locked .award-medal::before {
+    background: radial-gradient(circle at 35% 30%, #3c3c44, #232329 75%);
+}
+.award-dot {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #ff2d55;
+    border: 2px solid #fff;
+    z-index: 2;
+}
+.award-lock {
+    position: absolute;
+    bottom: 3px; right: 3px;
+    font-size: 13px;
+    z-index: 2;
+    filter: none;
+}
+.award-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.4px;
+    color: var(--text-main);
+    text-align: center;
+    line-height: 1.1;
+}
+.award.locked .award-name { color: rgba(240, 240, 240, 0.45); }
+.award-progress {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.62rem;
+    color: rgba(240, 240, 240, 0.55);
+}
+.award.unlocked .award-progress { color: #ffd76a; }
+.award-desc {
+    display: none; /* title tooltip carries the description; keeps grid tight */
+}
+.gpg-sync-status {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    color: #71717c;
+    margin: 12px 0 6px;
+    text-align: center;
+}
+.gpg-sync-status.actionable {
+    color: #ff7a9c;
+    cursor: pointer;
+    text-decoration: underline dotted;
+}
+#achievements-screen .cyber-btn { font-size: 1rem; padding: 10px 30px; margin-top: 4px; }
+
+/* Remove Ads purchase button states (price / busy / unavailable) */
+#remove-ads-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    animation: none;
+}
+
+@media (max-width: 600px) {
+    .ach-stats { gap: 6px; }
+    .ach-stat-value { font-size: 1.15rem; }
+    .award-medal { width: 52px; height: 52px; font-size: 21px; }
+    .awards-grid { gap: 10px 6px; }
+}

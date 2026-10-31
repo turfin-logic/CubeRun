@@ -18,7 +18,8 @@ const INTERSTITIAL_POLICY = {
     MIN_RUN_MS: 10000,   // runs shorter than this never count toward cadence and never trigger
     DEATHS: 3,           // …AND at least this many qualifying deaths since the last ad
     COOLDOWN_MS: 75000,  // …AND at least this long since the last ad (also the launch grace)
-    DELAY_MS: 900        // let the game-over screen settle first
+    DELAY_MS: 900,       // let the game-over screen settle first
+    RETRY_REARM_MS: 20000 // after a skipped attempt (no ad ready), earliest retry window
 };
 let lastInterstitialAt = Date.now(); // launch grace period before the first ad
 let deathsSinceInterstitial = 0;
@@ -505,17 +506,401 @@ window.setNoAds = (verified) => {
 };
 window.getNoAds = () => RemoveAds.active();
 
+// ─── ACHIEVEMENTS & LIFETIME STATS ─────────────────────────────────────────
+// No achievement system existed in Cube Run before this block (verified
+// against full git history). These nine awards reuse the category names from
+// the design reference and derive every unlock condition from REAL game
+// mechanics. Progress is always COMPUTED from lifetime stats (never stored
+// separately), so it can never drift, be double-awarded or be faked.
+//
+// Google Play Games sync is delta-based and offline-first: local progress is
+// authoritative, and signed-in deltas are pushed via the GameChannel bridge.
+// Achievements still work fully offline / on web (Play sync simply skipped).
+const ACHIEVEMENTS = [
+    { key:'perseverance',  icon:'📅', name:'Perseverance',     goal:10,    desc:'Complete 10 runs in one day',
+      progress:s=>Math.min(10, s.roundsToday) },
+    { key:'adventurer',    icon:'🧭', name:'Adventurer',       goal:3,     desc:'Play all 3 game modes',
+      progress:s=>Math.min(3, s.modesPlayed.length) },
+    { key:'scorechampion', icon:'🎯', name:'Score Champion',   goal:12,    desc:'Set 12 new personal bests',
+      progress:s=>Math.min(12, s.newRecords) },
+    { key:'invincible',    icon:'🛡', name:'Invincible Legend', goal:5,   desc:'Finish 5 runs of 60s or more',
+      progress:s=>Math.min(5, s.longRuns) },
+    { key:'blockmaster',   icon:'🧱', name:'Block Master',     goal:500,   desc:'Dodge 500 obstacles in total',
+      progress:s=>Math.min(500, s.obstaclesPassed) },
+    { key:'opportunist',   icon:'⚡', name:'Opportunist',      goal:25,    desc:'Earn 25 CLOSE CALL bonuses',
+      progress:s=>Math.min(25, s.closeCalls) },
+    { key:'jewelrytycoon', icon:'💎', name:'Jewelry Tycoon',   goal:10000, desc:'Bank 10,000 total points',
+      progress:s=>Math.min(10000, s.totalScore) },
+    { key:'unwavering',    icon:'💜', name:'Unwavering',       goal:5,     desc:'Revive 5 times with CLUTCH REVIVE',
+      progress:s=>Math.min(5, s.revives) },
+    { key:'mastercleaner', icon:'🧹', name:'Master Cleaner',   goal:100,   desc:'Jump 100 laser beams in LASER mode',
+      progress:s=>Math.min(100, s.lasersPassed) }
+];
+
+// Per-run counters (combo = obstacles dodged in one run, preserved across
+// revives because the run continues; reset only on a fresh start).
+let runObstaclesPassed = 0, runCloseCalls = 0, runLasersPassed = 0;
+
+const Stats = {
+    KEY: 'ndStats',
+    DEFAULT: () => ({
+        v: 1, roundsTotal: 0, roundsToday: 0, today: '', successfulPlays: 0,
+        modesPlayed: [], newRecords: 0, longRuns: 0,
+        obstaclesPassed: 0, closeCalls: 0, lasersPassed: 0,
+        totalScore: 0, revives: 0, highestCombo: 0, bestScore: 0,
+        loginDaysCount: 0, seenDays: []
+    }),
+    data: null,
+    load() {
+        let d = null;
+        try {
+            const raw = localStorage.getItem(this.KEY);
+            if (raw) d = JSON.parse(atob(raw));
+        } catch (e) { d = null; }
+        this.data = Object.assign(this.DEFAULT(), d || {});
+        if (!Array.isArray(this.data.modesPlayed)) this.data.modesPlayed = [];
+        if (!Array.isArray(this.data.seenDays)) this.data.seenDays = [];
+        this._rollDay();
+        this._touchLoginDay();
+        return this.data;
+    },
+    save() {
+        try { localStorage.setItem(this.KEY, btoa(JSON.stringify(this.data))); } catch (e) {}
+    },
+    todayStr() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    },
+    _rollDay() {
+        const today = this.todayStr();
+        if (this.data.today !== today) { this.data.today = today; this.data.roundsToday = 0; }
+    },
+    _touchLoginDay() {
+        this._rollDay();
+        const today = this.todayStr();
+        if (!this.data.seenDays.includes(today)) {
+            this.data.seenDays.push(today);
+            if (this.data.seenDays.length > 400) this.data.seenDays = this.data.seenDays.slice(-400);
+            this.data.loginDaysCount++;
+            this.save();
+        }
+    }
+};
+Stats.load();
+
+const Achievements = {
+    STATE_KEY: 'ndAchState',
+    state: { unlocked: {}, seen: {} },
+    load() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(this.STATE_KEY) || '{}');
+            this.state = { unlocked: parsed.unlocked || {}, seen: parsed.seen || {} };
+        } catch (e) { this.state = { unlocked: {}, seen: {} }; }
+    },
+    save() { try { localStorage.setItem(this.STATE_KEY, JSON.stringify(this.state)); } catch (e) {} },
+    isUnlocked(key) { return this.state.unlocked[key] !== undefined; },
+    // Display progress takes the max of local derivation and what Play Games
+    // last reported (reinstall case: server may be ahead of local storage).
+    displayProgress(a) {
+        const local = a.progress(Stats.data);
+        const server = GPGSync.serverSteps[a.key] || 0;
+        return Math.max(local, Math.min(server, a.goal));
+    },
+    // Called at gameOver / revive / mode-select. Increments only when the
+    // underlying stat genuinely changed and unlocks exactly once per award.
+    evaluate() {
+        let changed = false;
+        ACHIEVEMENTS.forEach(a => {
+            if (this.isUnlocked(a.key)) return;
+            if (a.progress(Stats.data) >= a.goal) {
+                this.state.unlocked[a.key] = Date.now();
+                changed = true;
+                GPGSync.markDirty(a.key);
+                showAdToast('🏆 Achievement unlocked: ' + a.name);
+                vibrate([40, 60, 40]);
+            } else if (a.progress(Stats.data) > (GPGSync.sync[a.key] ? GPGSync.sync[a.key].steps : 0)) {
+                GPGSync.markDirty(a.key);
+            }
+        });
+        if (changed) { this.save(); this.renderScreen(); }
+        GPGSync.flush('evaluate');
+    },
+    openScreen() {
+        this.renderScreen();
+        hideAllScreens();
+        showScreen('achievements-screen');
+        // Viewing the list clears the "new" notification dots.
+        ACHIEVEMENTS.forEach(a => { this.state.seen[a.key] = true; });
+        this.save();
+        this.renderScreen();
+        GPGSync.flush('openScreen');
+        if (GPGSync.enabled && !GPGSync.signedIn && window.GameChannel) {
+            window.GameChannel.postMessage('gpgSignIn');
+        }
+    },
+    renderScreen() {
+        try {
+            const combo = document.getElementById('stat-highest-combo');
+            if (combo) combo.textContent = Stats.data.highestCombo;
+            const best = document.getElementById('stat-best-score');
+            if (best) best.textContent = Stats.data.bestScore;
+            const rounds = document.getElementById('stat-rounds');
+            if (rounds) rounds.textContent = Stats.data.roundsTotal;
+            const days = document.getElementById('stat-login-days');
+            if (days) days.textContent = Stats.data.loginDaysCount;
+            const grid = document.getElementById('awards-grid');
+            if (grid) {
+                grid.innerHTML = '';
+                ACHIEVEMENTS.forEach(a => {
+                    const unlocked = this.isUnlocked(a.key);
+                    // Unlocked awards always display goal/goal (they may have
+                    // been adopted from Play Games where local steps lag).
+                    const value = unlocked ? a.goal : this.displayProgress(a);
+                    const cell = document.createElement('div');
+                    cell.className = 'award ' + (unlocked ? 'unlocked' : 'locked');
+                    cell.title = a.desc;
+                    const medal = document.createElement('div');
+                    medal.className = 'award-medal';
+                    medal.textContent = a.icon;
+                    if (unlocked && !this.state.seen[a.key]) {
+                        const dot = document.createElement('span');
+                        dot.className = 'award-dot';
+                        medal.appendChild(dot);
+                    }
+                    if (!unlocked) {
+                        const lock = document.createElement('span');
+                        lock.className = 'award-lock';
+                        medal.appendChild(lock);
+                    }
+                    const name = document.createElement('div');
+                    name.className = 'award-name';
+                    name.textContent = a.name;
+                    const prog = document.createElement('div');
+                    prog.className = 'award-progress';
+                    prog.textContent = value + '/' + a.goal;
+                    const desc = document.createElement('div');
+                    desc.className = 'award-desc';
+                    desc.textContent = a.desc;
+                    cell.appendChild(medal);
+                    cell.appendChild(name);
+                    cell.appendChild(prog);
+                    cell.appendChild(desc);
+                    grid.appendChild(cell);
+                });
+            }
+            GPGSync.updateStatusUI();
+        } catch (e) { console.warn('[CubeRun] achievements render failed', e); }
+    }
+};
+Achievements.load();
+
+// Google Play Games sync — the JS side owns WHAT happened; native owns HOW it
+// reaches Play. Deltas only (never absolute re-increments), with optimistic
+// in-flight tracking and rollback+retry on failure, so repeated callbacks can
+// never double-award progress.
+const GPGSync = {
+    SYNC_KEY: 'ndAchSync',
+    enabled: false,      // native enables after Play Console config exists
+    ids: {},             // achievement key -> Play Console achievement ID
+    signedIn: false,
+    sync: {},            // key -> { steps, unlocked } confirmed by Play
+    serverSteps: {},     // key -> steps last reported by Play (display max)
+    dirty: {},
+    _inflight: {},
+    _timer: null,
+    load() {
+        try { this.sync = JSON.parse(localStorage.getItem(this.SYNC_KEY) || '{}'); }
+        catch (e) { this.sync = {}; }
+    },
+    save() { try { localStorage.setItem(this.SYNC_KEY, JSON.stringify(this.sync)); } catch (e) {} },
+    configure(cfg) {
+        const c = (typeof cfg === 'string') ? JSON.parse(cfg) : (cfg || {});
+        this.enabled = c.enabled === true;
+        this.ids = c.ids || {};
+        this.signedIn = c.signedIn === true;
+        this._ensureTimer();
+        this.updateStatusUI();
+    },
+    onProfile(profile) {
+        this.signedIn = !!profile;
+        if (this.signedIn) this.flush('profile');
+        this._ensureTimer();
+        this.updateStatusUI();
+    },
+    markDirty(key) { this.dirty[key] = true; },
+    currentProgress(key) {
+        const a = ACHIEVEMENTS.find(x => x.key === key);
+        return a ? a.progress(Stats.data) : 0;
+    },
+    flush() {
+        if (!this.enabled || !this.signedIn || !window.GameChannel) return;
+        Object.keys(this.dirty).forEach(key => {
+            const id = this.ids[key];
+            if (!id) { delete this.dirty[key]; return; }
+            const rec = this.sync[key] || (this.sync[key] = { steps: 0, unlocked: false });
+            const target = Math.max(0, this.currentProgress(key));
+            const wantUnlock = Achievements.isUnlocked(key);
+            const delta = target - rec.steps;
+            const needUnlock = wantUnlock && !rec.unlocked;
+            if (delta > 0) window.GameChannel.postMessage(JSON.stringify({ type: 'gpgIncrement', id, key, amount: delta }));
+            if (needUnlock) window.GameChannel.postMessage(JSON.stringify({ type: 'gpgUnlock', id, key }));
+            if (delta > 0 || needUnlock) this._inflight[key] = { steps: target, unlocked: wantUnlock, at: Date.now() };
+            delete this.dirty[key];
+        });
+        this.save();
+    },
+    onResult(key, ok) {
+        const fl = this._inflight[key];
+        if (!fl) return;
+        delete this._inflight[key];
+        if (ok) {
+            const rec = this.sync[key] || (this.sync[key] = { steps: 0, unlocked: false });
+            rec.steps = Math.max(rec.steps, fl.steps);
+            rec.unlocked = rec.unlocked || fl.unlocked;
+            this.save();
+        } else {
+            this.dirty[key] = true; // network/Console hiccup — retried on next flush
+        }
+    },
+    // Native sends the authoritative Play-side state after sign-in. Server
+    // steps become the baseline (reinstall never re-increments old progress)
+    // and server unlocks are adopted locally.
+    onServerState(list) {
+        try {
+            const arr = (typeof list === 'string') ? JSON.parse(list) : (list || []);
+            const byId = {};
+            Object.keys(this.ids).forEach(k => { byId[this.ids[k]] = k; });
+            arr.forEach(item => {
+                const key = byId[item.id];
+                if (!key) return;
+                const steps = Number(item.steps) || 0;
+                this.serverSteps[key] = steps;
+                const rec = this.sync[key] || (this.sync[key] = { steps: 0, unlocked: false });
+                if (steps > rec.steps) rec.steps = steps;
+                if (item.unlocked && !Achievements.isUnlocked(key)) {
+                    Achievements.state.unlocked[key] = Date.now();
+                    Achievements.save();
+                }
+                if (item.unlocked) rec.unlocked = true;
+                this.dirty[key] = true; // push any local delta above baseline
+            });
+            this.save();
+            Achievements.renderScreen();
+            this.flush('serverState');
+        } catch (e) { console.warn('[CubeRun] GPG state parse failed', e); }
+    },
+    _ensureTimer() {
+        if (this._timer) return;
+        this._timer = setInterval(() => {
+            // Re-arm stale in-flight ops (bridge died mid-flight, app slept...).
+            Object.keys(this._inflight).forEach(k => {
+                if (Date.now() - this._inflight[k].at > 20000) {
+                    this.dirty[k] = true;
+                    delete this._inflight[k];
+                }
+            });
+            if (this.enabled && this.signedIn && Object.keys(this.dirty).length > 0) this.flush('timer');
+        }, 30000);
+    },
+    updateStatusUI() {
+        const el = document.getElementById('gpg-sync-status');
+        if (!el) return;
+        if (!this.enabled) {
+            el.textContent = 'Play Games sync: not configured';
+            el.classList.remove('actionable');
+        } else if (!this.signedIn) {
+            el.textContent = 'Tap to connect Google Play Games';
+            el.classList.add('actionable');
+        } else {
+            el.textContent = '✔ Synced with Google Play Games';
+            el.classList.remove('actionable');
+        }
+    }
+};
+GPGSync.load();
+Achievements.renderScreen();
+
+// ─── NATIVE → JS HOOKS (Play Games + Billing UI) ───────────────────────────
+// Every hook below is only ever filled with REAL data from native. Nothing
+// here fabricates profiles, levels or purchases.
+window.__initPlayGames = (cfg) => { GPGSync.configure(cfg); };
+window.onPlayGamesProfile = (profile) => {
+    let p = profile;
+    if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { p = null; } }
+    const pill = document.getElementById('gpg-profile');
+    if (!pill) { GPGSync.onProfile(p); return; }
+    if (p && p.name) {
+        document.getElementById('gpg-profile-name').textContent = 'Hey there, ' + p.name;
+        document.getElementById('gpg-profile-level').textContent =
+            (p.level && Number(p.level) > 0) ? ('Level ' + p.level) : '';
+        pill.style.display = 'flex';
+    } else {
+        pill.style.display = 'none';
+    }
+    GPGSync.onProfile(p);
+};
+window.onGpgSyncResult = (key, ok) => GPGSync.onResult(key, ok === true || ok === 'true');
+window.onGpgAchievementsLoaded = (list) => GPGSync.onServerState(list);
+window.onNativeReady = () => { Achievements.renderScreen(); GPGSync.flush('nativeReady'); };
+window.getAchievementsState = () => JSON.stringify({
+    stats: { highestCombo: Stats.data.highestCombo, bestScore: Stats.data.bestScore },
+    unlocked: Achievements.state.unlocked
+});
+
+// Purchase UI states driven by native Billing (price/busy/result feedback).
+const RemoveAdsUi = {
+    price: null,
+    busy: false,
+    available: null,
+    apply() {
+        const btn = document.getElementById('remove-ads-btn');
+        if (!btn) return;
+        if (this.busy) { btn.disabled = true; btn.textContent = 'PROCESSING…'; return; }
+        if (this.available === false) { btn.disabled = true; btn.textContent = 'UNAVAILABLE'; return; }
+        btn.disabled = false;
+        btn.textContent = this.price || 'UPGRADE';
+    }
+};
+window.setRemoveAdsPrice = (label) => {
+    RemoveAdsUi.price = label || null;
+    RemoveAdsUi.available = !!label;
+    RemoveAdsUi.apply();
+};
+window.setRemoveAdsUnavailable = () => { RemoveAdsUi.available = false; RemoveAdsUi.apply(); };
+window.setPurchaseBusy = (busy) => {
+    RemoveAdsUi.busy = busy === true || busy === 'true';
+    RemoveAdsUi.apply();
+};
+window.onPurchaseResult = (status, detail) => {
+    switch (String(status)) {
+        case 'success': break; // celebration toast comes from the setNoAds transition
+        case 'pending': showAdToast('Purchase pending — Remove Ads activates once it completes.'); break;
+        case 'canceled': showAdToast('Purchase canceled.'); break;
+        case 'unavailable': showAdToast('Remove Ads is not available right now.'); break;
+        default: showAdToast('Purchase failed' + (detail ? ': ' + detail : ' — try again later.'));
+    }
+};
+
 const FlutterBridge = {
     isFlutter() { return typeof window.AdChannel !== 'undefined'; },
     _adStartTime: 0,
     _waitingForReward: false,
     showInterstitial() {
         if (RemoveAds.active()) return; // no-ads entitlement: hard stop
-        if(this.isFlutter()) window.AdChannel.postMessage('showInterstitial');
-        else {
+        if(this.isFlutter()) {
+            window.AdChannel.postMessage('showInterstitial');
+            // Native replies window.onInterstitialShown(true|false) — cadence
+            // counters only reset when an ad REALLY showed. Safety net in
+            // case the reply never arrives (webview mid-reload, etc.).
+            if (interstitialResultTimer !== null) clearTimeout(interstitialResultTimer);
+            interstitialResultTimer = setTimeout(() => onInterstitialShown(false), 4000);
+        } else {
             loadGameDistributionSdk()
-                .then(sdk => sdk.showAd())
-                .catch(error => console.warn('[CubeRun] Interstitial ad unavailable:', error));
+                .then(sdk => { sdk.showAd(); onInterstitialShown(true); })
+                .catch(error => {
+                    console.warn('[CubeRun] Interstitial ad unavailable:', error);
+                    onInterstitialShown(false);
+                });
         }
     },
     showRewarded() {
@@ -588,6 +973,26 @@ const FlutterBridge = {
     }
 };
 window.FlutterBridge = FlutterBridge;
+
+// Native → JS interstitial outcome. shown=true confirms the fullscreen ad
+// actually appeared (resets the cadence counters). shown=false means no-fill /
+// not ready / suppressed — the attempt is skipped gracefully and a short
+// re-arm window replaces the full cooldown so the next qualifying round can
+// retry without ad-spam. Without this feedback the counters used to reset
+// even when no ad was actually shown.
+let interstitialResultTimer = null;
+window.onInterstitialShown = (shown) => {
+    if (interstitialResultTimer !== null) {
+        clearTimeout(interstitialResultTimer);
+        interstitialResultTimer = null;
+    }
+    if (shown === true || shown === 'true') {
+        lastInterstitialAt = Date.now();
+        deathsSinceInterstitial = 0;
+    } else {
+        lastInterstitialAt = Date.now() - INTERSTITIAL_POLICY.COOLDOWN_MS + INTERSTITIAL_POLICY.RETRY_REARM_MS;
+    }
+};
 
 // Visibility listener - audio management only.
 // Reward is ONLY granted by native AdMob onUserEarnedReward via FlutterBridge.
@@ -849,8 +1254,10 @@ function update(dt) {
             if(!o.passed && o.y > player.y + player.height){
                 o.passed = true;
                 addScore(50); playSfx('score');
+                runLasersPassed++;
                 if(player.z>=15&&player.z<=21) {
                     addScore(50);
+                    runCloseCalls++;
                     addFloatingText('+50 CLOSE CALL!', player.x + player.width / 2, player.y - player.z - 8, phaseVisuals.obstacle);
                     playSfx('nearmiss');
                 }
@@ -870,13 +1277,14 @@ function update(dt) {
                         : 0;
                 if(gap>0&&gap<=6){
                     addScore(50);
+                    runCloseCalls++;
                     addFloatingText('+50 CLOSE CALL!', player.x + player.width / 2, player.y - 8, phaseVisuals.obstacle);
                     playSfx('nearmiss');
                     canvas.classList.add('flash-white');
                     setTimeout(()=>canvas.classList.remove('flash-white'),200);
                 }
             }
-            if(o.x+o.width<0){ obstaclePool.release(o); addScore(10); }
+            if(o.x+o.width<0){ obstaclePool.release(o); addScore(10); runObstaclesPassed++; }
         }
     }
 
@@ -1104,6 +1512,10 @@ function cancelPendingInterstitial() {
         clearTimeout(interstitialTimer);
         interstitialTimer=null;
     }
+    if(interstitialResultTimer!==null) {
+        clearTimeout(interstitialResultTimer);
+        interstitialResultTimer=null;
+    }
 }
 
 function cancelReviveCountdown() {
@@ -1160,6 +1572,24 @@ function gameOver() {
     document.getElementById('highScore').textContent=bestScore;
     document.getElementById('new-record-badge').style.display=isNew?'block':'none';
 
+    // ── Lifetime stats (single write point; derived from this real run) ──
+    const runDuration = Date.now() - runStartedAt;
+    Stats._rollDay();
+    const s = Stats.data;
+    s.roundsTotal++;
+    s.roundsToday++;
+    if (runDuration >= INTERSTITIAL_POLICY.MIN_RUN_MS) s.successfulPlays++;
+    if (runDuration >= 60000) s.longRuns++;
+    if (isNew) s.newRecords++;
+    s.totalScore += score;
+    s.obstaclesPassed += runObstaclesPassed;
+    s.closeCalls += runCloseCalls;
+    s.lasersPassed += runLasersPassed;
+    if (runObstaclesPassed > s.highestCombo) s.highestCombo = runObstaclesPassed;
+    if (score > s.bestScore) s.bestScore = score;
+    Stats.save();
+    Achievements.evaluate('gameOver');
+
     hideHUD();
     showScreen('game-over-screen');
 
@@ -1176,7 +1606,6 @@ function gameOver() {
     sessionDeathCount++;
     saveSessionDeathCount(sessionDeathCount);
     const now=Date.now();
-    const runDuration=now-runStartedAt;
     // Interstitial engine — every gate must pass, so an ad is only ever a
     // reward for a real session, never a punishment for struggling:
     //   1. Only runs ≥ MIN_RUN_MS count toward the cadence (rapid short
@@ -1187,12 +1616,13 @@ function gameOver() {
     //   4. Natural break only: called from gameOver() after DELAY_MS, and the
     //      timer re-checks the run wasn't restarted/quit/left meanwhile.
     //   5. Never for no-ads users (double gate: here and in showInterstitial).
+    //   6. Counters reset ONLY when native confirms the ad actually showed
+    //      (window.onInterstitialShown) — a no-fill skip is retried after
+    //      RETRY_REARM_MS instead of silently consuming the cadence.
     if (runDuration >= INTERSTITIAL_POLICY.MIN_RUN_MS) deathsSinceInterstitial++;
     const cadenceOk = deathsSinceInterstitial >= INTERSTITIAL_POLICY.DEATHS;
     const cooldownOk = (now - lastInterstitialAt) >= INTERSTITIAL_POLICY.COOLDOWN_MS;
     if (cadenceOk && cooldownOk) {
-        lastInterstitialAt = now;
-        deathsSinceInterstitial = 0;
         const endedRunId=activeRunId;
         interstitialTimer=setTimeout(() => {
             interstitialTimer=null;
@@ -1238,6 +1668,10 @@ function revivePlayer() {
             countdownEl.remove();
             reviveCountdownElement=null;
             GAME_STATE=STATE.PLAYING;
+            // A real revive happened (rewarded ad completed + countdown ran).
+            Stats.data.revives++;
+            Stats.save();
+            Achievements.evaluate('revive');
             player.y=FLOOR-player.height; player.gravityDir=1; player.isSwapping=false;
             player.invincible=true; setTimeout(()=>player.invincible=false,2000);
             obstaclePool.releaseAll();
@@ -1265,6 +1699,7 @@ function resetGame() {
     canvas.classList.remove('aberration');
     patternQueue=[]; patternTimer=72; patternIndex=0; classicLane='top'; floatTexts=[];
     window._freeRevives = 0;
+    runObstaclesPassed=0; runCloseCalls=0; runLasersPassed=0;
     obstaclePool.releaseAll(); particlePool.releaseAll();
     initBgParticles();
     updateScoreDisplay();
@@ -1281,6 +1716,11 @@ function startGame() {
     getAudio(); // unlock AudioContext on user gesture
     const modeSelect = document.getElementById('mode-select');
     if (modeSelect) CURRENT_MODE = modeSelect.value;
+    if (!Stats.data.modesPlayed.includes(CURRENT_MODE)) {
+        Stats.data.modesPlayed.push(CURRENT_MODE);
+        Stats.save();
+        Achievements.evaluate('mode');
+    }
 
     resetGame();
     hideAllScreens(); showHUD();
@@ -1398,11 +1838,26 @@ document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
 // Flutter calls window.setNoAds(true), which flips the entitlement, hides
 // every interstitial path and hides this row until uninstall/refund.
 document.getElementById('remove-ads-btn')?.addEventListener('click', ()=>{
+    if (RemoveAdsUi.busy || RemoveAdsUi.available === false) return;
     if (window.AdChannel) {
         window.AdChannel.postMessage('purchaseRemoveAds');
         showAdToast('Opening Google Play Billing…');
     } else {
         showAdToast('Remove Ads is available in the Android app.');
+    }
+});
+
+// Achievements screen (menu Awards button + back)
+document.getElementById('menu-achievements-btn')?.addEventListener('click', ()=>{
+    Achievements.openScreen();
+});
+document.getElementById('achievements-back-btn')?.addEventListener('click', ()=>{
+    hideScreen('achievements-screen');
+    showScreen('start-screen');
+});
+document.getElementById('gpg-sync-status')?.addEventListener('click', ()=>{
+    if (GPGSync.enabled && !GPGSync.signedIn && window.GameChannel) {
+        window.GameChannel.postMessage('gpgSignIn');
     }
 });
 
