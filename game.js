@@ -610,14 +610,20 @@ const Achievements = {
     // underlying stat genuinely changed and unlocks exactly once per award.
     evaluate() {
         let changed = false;
+        this._toasted = this._toasted || {};
         ACHIEVEMENTS.forEach(a => {
             if (this.isUnlocked(a.key)) return;
             if (a.progress(Stats.data) >= a.goal) {
                 this.state.unlocked[a.key] = Date.now();
                 changed = true;
                 GPGSync.markDirty(a.key);
-                showAdToast('🏆 Achievement unlocked: ' + a.name);
-                vibrate([40, 60, 40]);
+                // Belt-and-braces: even if unlock state is ever lost
+                // (storage hiccup), the toast must never repeat.
+                if (!this._toasted[a.key]) {
+                    this._toasted[a.key] = true;
+                    showAdToast('🏆 Achievement unlocked: ' + a.name);
+                    vibrate([40, 60, 40]);
+                }
             } else if (a.progress(Stats.data) > (GPGSync.sync[a.key] ? GPGSync.sync[a.key].steps : 0)) {
                 GPGSync.markDirty(a.key);
             }
@@ -737,14 +743,23 @@ const GPGSync = {
         Object.keys(this.dirty).forEach(key => {
             const id = this.ids[key];
             if (!id) { delete this.dirty[key]; return; }
+            // Per-key retry cap: a permanently failing sync (bad id, revoked
+            // consent…) must never loop forever re-calling the native SDK.
+            this._fails = this._fails || {};
+            if ((this._fails[key] || 0) >= 5) { delete this.dirty[key]; return; }
             const rec = this.sync[key] || (this.sync[key] = { steps: 0, unlocked: false });
             const target = Math.max(0, this.currentProgress(key));
             const wantUnlock = Achievements.isUnlocked(key);
             const delta = target - rec.steps;
-            const needUnlock = wantUnlock && !rec.unlocked;
-            if (delta > 0) window.GameChannel.postMessage(JSON.stringify({ type: 'gpgIncrement', id, key, amount: delta }));
-            if (needUnlock) window.GameChannel.postMessage(JSON.stringify({ type: 'gpgUnlock', id, key }));
-            if (delta > 0 || needUnlock) this._inflight[key] = { steps: target, unlocked: wantUnlock, at: Date.now() };
+            if (wantUnlock) {
+                // Unlock supersedes increment (Play ignores increments on an
+                // unlocked achievement — sending both only invites errors).
+                window.GameChannel.postMessage(JSON.stringify({ type: 'gpgUnlock', id, key }));
+                this._inflight[key] = { steps: target, unlocked: true, at: Date.now() };
+            } else if (delta > 0) {
+                window.GameChannel.postMessage(JSON.stringify({ type: 'gpgIncrement', id, key, amount: delta }));
+                this._inflight[key] = { steps: target, unlocked: false, at: Date.now() };
+            }
             delete this.dirty[key];
         });
         this.save();
@@ -753,18 +768,24 @@ const GPGSync = {
         const fl = this._inflight[key];
         if (!fl) return;
         delete this._inflight[key];
+        this._fails = this._fails || {};
         if (ok) {
+            this._fails[key] = 0;
             const rec = this.sync[key] || (this.sync[key] = { steps: 0, unlocked: false });
             rec.steps = Math.max(rec.steps, fl.steps);
             rec.unlocked = rec.unlocked || fl.unlocked;
             this.save();
         } else {
-            this.dirty[key] = true; // network/Console hiccup — retried on next flush
+            this._fails[key] = (this._fails[key] || 0) + 1;
+            // Re-arm only under the cap; the in-flight watchdog also re-arms.
+            if (this._fails[key] < 5) this.dirty[key] = true;
         }
     },
     // Native sends the authoritative Play-side state after sign-in. Server
     // steps become the baseline (reinstall never re-increments old progress)
-    // and server unlocks are adopted locally.
+    // and server unlocks are adopted locally. Only genuine deltas are marked
+    // dirty — blanket re-dirtying made every profile refresh re-issue
+    // unlock/increment calls to the SDK.
     onServerState(list) {
         try {
             const arr = (typeof list === 'string') ? JSON.parse(list) : (list || []);
@@ -776,13 +797,14 @@ const GPGSync = {
                 const steps = Number(item.steps) || 0;
                 this.serverSteps[key] = steps;
                 const rec = this.sync[key] || (this.sync[key] = { steps: 0, unlocked: false });
-                if (steps > rec.steps) rec.steps = steps;
-                if (item.unlocked && !Achievements.isUnlocked(key)) {
-                    Achievements.state.unlocked[key] = Date.now();
-                    Achievements.save();
+                if (steps > rec.steps) { rec.steps = steps; this.dirty[key] = true; }
+                if (item.unlocked) {
+                    if (!Achievements.isUnlocked(key)) {
+                        Achievements.state.unlocked[key] = Date.now();
+                        Achievements.save();
+                    }
+                    if (!rec.unlocked) { rec.unlocked = true; this.dirty[key] = true; }
                 }
-                if (item.unlocked) rec.unlocked = true;
-                this.dirty[key] = true; // push any local delta above baseline
             });
             this.save();
             Achievements.renderScreen();
