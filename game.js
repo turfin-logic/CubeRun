@@ -891,9 +891,24 @@ window.setRemoveAdsPrice = (label) => {
 window.setRemoveAdsUnavailable = () => { RemoveAdsUi.available = false; RemoveAdsUi.apply(); };
 window.setPurchaseBusy = (busy) => {
     RemoveAdsUi.busy = busy === true || busy === 'true';
+    // Safety net: a lost terminal event (webview race, OS kill…) must never
+    // lock the button forever — auto-release after 90s.
+    clearTimeout(RemoveAdsUi._busyTid);
+    if (RemoveAdsUi.busy) {
+        RemoveAdsUi._busyTid = setTimeout(() => {
+            if (!RemoveAdsUi.busy) return;
+            RemoveAdsUi.busy = false;
+            RemoveAdsUi.apply();
+            showAdToast('Purchase did not complete — try again.');
+        }, 90000);
+    }
     RemoveAdsUi.apply();
 };
 window.onPurchaseResult = (status, detail) => {
+    // Any terminal result releases the button immediately.
+    RemoveAdsUi.busy = false;
+    clearTimeout(RemoveAdsUi._busyTid);
+    RemoveAdsUi.apply();
     switch (String(status)) {
         case 'success': break; // celebration toast comes from the setNoAds transition
         case 'pending': showAdToast('Purchase pending — Remove Ads activates once it completes.'); break;
@@ -1704,6 +1719,10 @@ function revivePlayer() {
     }, 1000);
 }
 window.revivePlayer=revivePlayer;
+// Android back-button support: Dart asks the game state before deciding to
+// pause (in-game) or exit (menus).
+window.getGameState = () => GAME_STATE;
+window.pauseGame = pauseGame;
 
 function resetGame() {
     score=0; frameCount=0; baseSpeed=7;
