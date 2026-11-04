@@ -1,0 +1,40 @@
+name: Web QA — autonomous game test
+
+# Autonomous QA: boots the LIVE game in a headless browser, plays a real
+# round, verifies achievements UI + stats + game-over flow, and fails on
+# crashes. Runs on every push to main and once daily (nightly watchdog).
+on:
+  push:
+    branches: [main]
+    paths: ["game.js", "index.html", "style.css", "sw.js", "qa/**", ".github/workflows/web-qa.yml"]
+  schedule:
+    - cron: "30 3 * * *"   # daily 09:00 IST
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright
+        run: |
+          npm i playwright --no-save
+          npx playwright install chromium --with-deps
+
+      - name: Run E2E QA
+        run: node qa/e2e_check.mjs
+        env:
+          QA_URL: https://turfin-logic.github.io/CubeRun/
+
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-screenshot
+          path: qa_screenshot.png
+          if-no-files-found: ignore
