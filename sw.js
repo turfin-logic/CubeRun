@@ -7,7 +7,7 @@ const ASSETS_TO_CACHE = [
     './terms.html',
     './privacy.html',
     './style.css?v=23',
-    './game.js?v=29',
+    './game.js?v=30',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',

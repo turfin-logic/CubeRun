@@ -1724,6 +1724,47 @@ window.revivePlayer=revivePlayer;
 window.getGameState = () => GAME_STATE;
 window.pauseGame = pauseGame;
 
+// ─── IN-APP UPDATE POPUP (wrapper-driven) ─────────────────────────────────
+// Native wrapper fetches version.json, compares with installed version and
+// calls window.showUpdatePopup({mandatory, notes, playUrl}) when an update
+// is available. Neon-styled, dismissible unless mandatory.
+window.showUpdatePopup = function (data) {
+    if (!data || document.getElementById('update-popup')) return;
+    const mandatory = data.mandatory === true;
+    const overlay = document.createElement('div');
+    overlay.id = 'update-popup';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(3,0,5,0.92);'
+        + 'display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);';
+    overlay.innerHTML =
+        '<div style="width:min(88vw,360px);background:#0c0208;border:2px solid var(--neon-pink, #ff003c);'
+        + 'border-radius:16px;padding:22px 20px;text-align:center;box-shadow:0 0 30px rgba(255,0,60,0.35);'
+        + 'font-family:Rajdhani,sans-serif;">'
+        + '<div style="font-size:34px;line-height:1;">🚀</div>'
+        + '<h2 style="font-family:Orbitron,sans-serif;font-size:1.25rem;color:#fff;margin:10px 0 4px;'
+        + 'text-transform:uppercase;letter-spacing:2px;">' + (mandatory ? 'UPDATE REQUIRED' : 'UPDATE AVAILABLE') + '</h2>'
+        + '<p style="color:#c9c9d4;font-size:0.95rem;margin:8px 0 16px;white-space:pre-line;">' + (data.notes || 'New version available!') + '</p>'
+        + '<button id="update-go" style="width:100%;padding:13px;border:none;border-radius:10px;'
+        + 'background:linear-gradient(90deg,#ff003c,#7000ff);color:#fff;font-family:Orbitron,sans-serif;'
+        + 'font-weight:900;font-size:1rem;letter-spacing:2px;cursor:pointer;">UPDATE NOW</button>'
+        + (mandatory ? '' : '<button id="update-later" style="width:100%;margin-top:10px;padding:10px;'
+            + 'background:transparent;border:1px solid #444;border-radius:10px;color:#888;'
+            + 'font-family:Rajdhani,sans-serif;font-weight:700;cursor:pointer;">MAYBE LATER</button>')
+        + '</div>';
+    document.body.appendChild(overlay);
+
+    const go = document.getElementById('update-go');
+    if (go) go.addEventListener('click', () => { window.location.href = data.playUrl; });
+    const later = document.getElementById('update-later');
+    if (later) later.addEventListener('click', () => {
+        try { localStorage.setItem('updatePopupDismissed', String(Date.now())); } catch (e) { }
+        overlay.remove();
+    });
+    if (mandatory) {
+        // Mandatory popups reappear on every launch until updated.
+        try { localStorage.removeItem('updatePopupDismissed'); } catch (e) { }
+    }
+};
+
 function resetGame() {
     score=0; frameCount=0; baseSpeed=7;
     player.x=100; player.y=FLOOR-player.height;
