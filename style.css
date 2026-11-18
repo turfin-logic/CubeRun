@@ -1971,3 +1971,29 @@ button:focus-visible {
 }
 .legal-links a:active { color: var(--neon-pink); }
 .legal-links span { color: rgba(240, 240, 240, 0.3); }
+
+/* ─── 2x SCORE button (game-over, Voodoo-style rewarded offer) ─────── */
+#double-score-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border: 2px solid #ffd76a;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #ffd76a, #ff9f1c);
+    color: #000;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-shadow: none;
+    box-shadow: 0 0 14px rgba(255, 215, 106, 0.35);
+}
+#double-score-btn:hover { transform: scale(1.03); }
+#double-score-btn:active { transform: scale(0.97); }
+#double-score-btn:disabled { opacity: 0.6; cursor: wait; }
+#double-score-btn.double-done {
+    background: linear-gradient(90deg, #00ff66, #00c853);
+    border-color: #00ff66;
+    box-shadow: 0 0 14px rgba(0, 255, 102, 0.4);
+}

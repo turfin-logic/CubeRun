@@ -16,8 +16,8 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // after the game-over screen has settled (natural break, AdMob-policy safe).
 const INTERSTITIAL_POLICY = {
     MIN_RUN_MS: 10000,   // runs shorter than this never count toward cadence and never trigger
-    DEATHS: 3,           // …AND at least this many qualifying deaths since the last ad
-    COOLDOWN_MS: 75000,  // …AND at least this long since the last ad (also the launch grace)
+    DEATHS: 4,           // …AND at least this many qualifying deaths since the last ad (softened — rewarded-centric transition)
+    COOLDOWN_MS: 90000,  // …AND at least this long since the last ad (softened from 75s)
     DELAY_MS: 900,       // let the game-over screen settle first
     RETRY_REARM_MS: 20000 // after a skipped attempt (no ad ready), earliest retry window
 };
@@ -1640,6 +1640,25 @@ function gameOver() {
         reviveBtn.disabled = false;
     }
 
+    // 2x SCORE offer (Voodoo playbook #1) — rewarded, once per game-over
+    const doubleBtn = document.getElementById('double-score-btn');
+    if (doubleBtn) {
+        const doubleAvailable = score >= 50;
+        doubleBtn.style.display = doubleAvailable ? 'block' : 'none';
+        doubleBtn.disabled = !doubleAvailable;
+        doubleBtn.textContent = '\uD83C\uDFAC 2x SCORE';
+    }
+
+    // In-app review prompt (after 3+ rounds, once per install, good moment)
+    if (score >= 50 && Stats.data.roundsTotal >= 3) {
+        try {
+            if (!localStorage.getItem('crReviewAsked')) {
+                localStorage.setItem('crReviewAsked', '1');
+                if (window.GameChannel) window.GameChannel.postMessage('requestReview');
+            }
+        } catch (e) { }
+    }
+
     sessionDeathCount++;
     saveSessionDeathCount(sessionDeathCount);
     const now=Date.now();
@@ -1941,6 +1960,50 @@ document.getElementById('gpg-sync-status')?.addEventListener('click', ()=>{
     if (GPGSync.enabled && !GPGSync.signedIn && window.GameChannel) {
         window.GameChannel.postMessage('gpgSignIn');
     }
+});
+
+// 2x SCORE button (rewarded) — doubles the final score, once per game-over
+document.getElementById('double-score-btn')?.addEventListener('click', async ()=>{
+    const btn = document.getElementById('double-score-btn');
+    const requestRunId = activeRunId;
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.textContent = '\u23F3 LOADING...';
+    cancelPendingInterstitial();
+    const reviveBtn = document.getElementById('revive-btn');
+    if (reviveBtn) reviveBtn.disabled = true;
+    try {
+        await FlutterBridge.showRewarded();
+        if (requestRunId === activeRunId && GAME_STATE === STATE.GAMEOVER) {
+            score = score * 2;
+            updateScoreDisplay();
+            SaveData.updateHighScore(score);
+            document.getElementById('finalScore').textContent = score;
+            bestScore = SaveData.load().highScore;
+            document.getElementById('highScore').textContent = bestScore;
+            Stats.data.totalScore += score;
+            Stats.data.bestScore = Math.max(Stats.data.bestScore, score);
+            Stats.save();
+            Achievements.evaluate();
+            btn.textContent = '\u2728 SCORE DOUBLED!';
+            btn.classList.add('double-done');
+            vibrate([60, 60, 60]);
+            showAdToast('Score doubled! \uD83C\uDF89 ' + score);
+        } else {
+            btn.textContent = '\uD83C\uDFAC 2x SCORE';
+            btn.disabled = false;
+        }
+    } catch (e) {
+        btn.textContent = '\u274C TRY AGAIN';
+        showAdToast('Ad unavailable \u2014 try again in a moment.');
+        setTimeout(() => {
+            if (requestRunId === activeRunId && GAME_STATE === STATE.GAMEOVER) {
+                btn.textContent = '\uD83C\uDFAC 2x SCORE';
+                btn.disabled = false;
+            }
+        }, 2000);
+    }
+    if (reviveBtn) reviveBtn.disabled = false;
 });
 
 // Revive button
