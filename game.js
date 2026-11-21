@@ -43,6 +43,13 @@ let sessionDeathCount = loadSessionDeathCount();
 let activeRunId = 0, interstitialTimer = null, reviveCountdownInterval = null, reviveCountdownElement = null;
 let reviveRequestRunId = null;
 let lastTopDownHapticAt = 0, lastTopDownHapticY = 0;
+// Touch responsiveness: buffer one mid-air tap and a short lock that swallows
+// the tail of a tap-to-restart gesture (pointerdown -> touchstart -> mousedown
+// all belong to the same physical tap on Android).
+let pendingFlip = false;
+let inputLockUntil = 0;
+let lastTouchAt = 0;
+function inputLocked(){ return performance.now()<inputLockUntil; }
 let patternQueue = [], patternTimer = 72, patternIndex = 0, classicLane = 'top';
 let floatTexts = [];
 const RUN_PHASES = [
@@ -1237,10 +1244,12 @@ function update(dt) {
             if(player.gravityDir===1&&player.y>=FLOOR-player.height){
                 player.y=FLOOR-player.height; player.isSwapping=false;
                 player.squashX=1.2; player.squashY=0.8; player.squashFrames=5;
+                consumePendingFlip();
             }
             if(player.gravityDir===-1&&player.y<=CEILING){
                 player.y=CEILING; player.isSwapping=false;
                 player.squashX=1.2; player.squashY=0.8; player.squashFrames=5;
+                consumePendingFlip();
             }
         }
     }
@@ -1521,13 +1530,25 @@ function draw() {
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
 function swapGravity() {
     if(GAME_STATE!==STATE.PLAYING) return;
-    if(!player.isSwapping){
-        player.gravityDir*=-1; player.isSwapping=true;
-        bgParticles.forEach(p=>p.vx-=10);
-        const ex=player.x+player.width/2, ey=player.y+(player.gravityDir===1?0:player.height);
-        for(let i=0;i<20;i++) particlePool.acquire(ex,ey);
-        playSfx('jump'); vibrate([30]);
+    if(player.isSwapping){
+        // Mid-air taps used to be swallowed while the cube travelled between
+        // rails (~0.7s), which reads as "touch not responding" on fast
+        // tappers. Buffer exactly one tap and fire it the moment the cube
+        // lands (same input-buffer pattern as Geometry Dash).
+        pendingFlip=true;
+        return;
     }
+    player.gravityDir*=-1; player.isSwapping=true;
+    bgParticles.forEach(p=>p.vx-=10);
+    const ex=player.x+player.width/2, ey=player.y+(player.gravityDir===1?0:player.height);
+    for(let i=0;i<20;i++) particlePool.acquire(ex,ey);
+    playSfx('jump'); vibrate([30]);
+}
+
+function consumePendingFlip() {
+    if(!pendingFlip) return;
+    pendingFlip=false;
+    swapGravity();
 }
 
 function pauseGame() {
@@ -1728,7 +1749,7 @@ function revivePlayer() {
             Stats.data.revives++;
             Stats.save();
             Achievements.evaluate('revive');
-            player.y=FLOOR-player.height; player.gravityDir=1; player.isSwapping=false;
+            player.y=FLOOR-player.height; player.gravityDir=1; player.isSwapping=false; pendingFlip=false;
             player.invincible=true; setTimeout(()=>player.invincible=false,2000);
             obstaclePool.releaseAll();
             document.getElementById('revive-btn').style.display='none';
@@ -1789,6 +1810,7 @@ function resetGame() {
     player.x=100; player.y=FLOOR-player.height;
     player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
     player.z=0; player.zVelocity=0; player.targetY=undefined;
+    pendingFlip=false;
     if (CURRENT_MODE === 'TOPDOWN') {
         player.y=(CEILING+FLOOR-player.height)/2;
         player.targetY=player.y+player.height/2;
@@ -1866,7 +1888,8 @@ window.addEventListener('keydown', e=>{
     if(e.key==='Escape') pauseGame();
 });
 window.addEventListener('touchstart', e=>{
-    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+    lastTouchAt=performance.now();
+    if(GAME_STATE===STATE.PLAYING&&!inputLocked()&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
         // All modes: swallow the tap so the browser never synthesizes a
         // follow-up mouse event (double-input guard) and never starts a
         // scroll/zoom gesture from gameplay touches.
@@ -1874,18 +1897,21 @@ window.addEventListener('touchstart', e=>{
         handleInput(e.touches[0].clientY);
     }
 }, {passive:false});
-window.addEventListener('mousedown', e=>{ 
-    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+window.addEventListener('mousedown', e=>{
+    // Samsung/Android: when a touchstart is non-cancelable the browser still
+    // synthesizes a mousedown for the same tap -> double input (flip +
+    // unflip). Ignore mouse events that trail a real touch or a restart tap.
+    if(GAME_STATE===STATE.PLAYING&&!inputLocked()&&(performance.now()-lastTouchAt)>500&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
         handleInput(e.clientY);
     }
 });
-window.addEventListener('mousemove', e=>{ 
+window.addEventListener('mousemove', e=>{
     if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && e.buttons === 1 && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
         handleInput(e.clientY);
     }
 });
 window.addEventListener('touchmove', e=>{
-    if(GAME_STATE===STATE.PLAYING&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
+    if(GAME_STATE===STATE.PLAYING&&!inputLocked()&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
         if (e.cancelable) e.preventDefault();
         if (CURRENT_MODE === 'TOPDOWN') handleInput(e.touches[0].clientY);
     }
@@ -1912,6 +1938,12 @@ document.getElementById('tutorial-replay-btn')?.addEventListener('click', () => 
 document.getElementById('restart-btn')?.addEventListener('click', startGame);
 window.addEventListener('pointerdown', e=>{
     if(GAME_STATE===STATE.GAMEOVER&&e.target.closest('#game-over-screen')&&!e.target.closest('button, a')) {
+        // Chrome/Android event order for one tap: pointerdown fires BEFORE
+        // touchstart/mousedown. Without this lock the restart tap's own
+        // tail events land in the now-PLAYING gameplay handlers and flip
+        // gravity (or jump) 1-2 times right at spawn.
+        inputLockUntil=performance.now()+400;
+        pendingFlip=false;
         startGame();
     }
 });

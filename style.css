@@ -241,6 +241,13 @@ p {
     text-shadow: 0 0 5px var(--neon-cyan);
 }
 
+/* Touch responsiveness: kill residual double-tap-zoom delay on Samsung
+   Internet / older Android WebViews for every tappable control. */
+button, .hud-btn, .cyber-btn, .mode-nav-btn, .toggle-btn, .social-btn,
+.hud-event-pill, .mode-carousel {
+    touch-action: manipulation;
+}
+
 /* Cyber Buttons */
 .cyber-btn {
     font-family: 'Orbitron', sans-serif;
