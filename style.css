@@ -2019,3 +2019,43 @@ button:focus-visible {
 #settings-screen #remove-ads-btn {
     flex-shrink: 0;
 }
+
+/* ── Tap-to-start banner (run grace window) ── */
+#run-start-banner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--neon-cyan);
+    border-radius: 6px;
+    padding: 14px 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px var(--neon-cyan);
+    box-shadow: 0 0 18px rgba(0, 243, 255, 0.35);
+    pointer-events: none;
+    animation: runStartPulse 1.4s ease-in-out infinite alternate;
+}
+#run-start-banner.hidden { display: none; }
+@keyframes runStartPulse {
+    from { opacity: 0.65; }
+    to { opacity: 1; }
+}
+
+/* ── Close-calls HUD counter (tester request) ── */
+#closecalls-display {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 0.85em;
+    color: rgba(255, 215, 106, 0.9);
+    vertical-align: middle;
+}
+
+/* ── Settings quick-tap fix: the 0.4s cross-fade made screens overlap ── */
+.screen {
+    transition: opacity 0.15s ease;
+}

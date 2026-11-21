@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=26">
+    <link rel="stylesheet" href="style.css?v=27">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="manifest.json">
@@ -69,6 +69,7 @@
                 <div id="score-display">
                     <span class="hud-score">SCORE <strong id="scoreValue">0</strong></span>
                     <span id="hud-multiplier" class="hud-multiplier" aria-label="Score multiplier">×1.0</span>
+                    <span id="closecalls-display" aria-label="Close calls">🌀 0</span>
                 </div>
                 <div id="hud-buttons">
                     <button id="pause-btn" class="hud-btn" type="button" title="Pause" aria-label="Pause game">
@@ -168,6 +169,10 @@
                     </button>
                 </div>
                 <div class="setting-row">
+                    <label>TOP-DOWN SPEED</label>
+                    <button class="toggle-btn" id="topdown-sens-btn" type="button" aria-label="TOP-DOWN speed">1.0x</button>
+                </div>
+                <div class="setting-row">
                     <label>VIBRATION</label>
                     <button class="toggle-btn" id="vib-toggle" type="button" data-key="vibration">ON</button>
                 </div>
@@ -199,6 +204,7 @@
                 <div class="stats">
                     <p>SCORE <span id="finalScore">0</span></p>
                     <p>BEST <span id="highScore">0</span></p>
+                    <p>CLOSE CALLS <span id="closeCallsStat">0</span></p>
                     <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;">⭐ NEW RECORD!</p>
                 </div>
 
@@ -253,8 +259,9 @@
             <div id="ad-toast" class="ad-toast"></div>
 
         </div><!-- end ui-layer -->
+        <div id="run-start-banner" class="hidden"><span>▶ TAP TO START</span></div>
     </div><!-- end game-container -->
 
-    <script src="game.js?v=33"></script>
+    <script src="game.js?v=34"></script>
 </body>
 </html>

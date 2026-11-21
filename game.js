@@ -148,13 +148,16 @@ if(typeof initSprites === 'function') initSprites();
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SETTINGS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const Settings = {
     sfx: true, music: true, vibration: true,
+    topdownSens: 1.0, // TOP-DOWN easing speed multiplier (tester request)
     load() {
         try { Object.assign(this, JSON.parse(localStorage.getItem('ndSettings') || '{}')); } catch(e){}
         this.syncUI();
     },
-    save() { localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration})); },
+    save() { localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration, topdownSens:this.topdownSens})); },
     toggle(key) { this[key] = !this[key]; this.save(); this.syncUI(); },
     syncUI() {
+        const sensBtn = document.getElementById('topdown-sens-btn');
+        if (sensBtn) sensBtn.textContent = (Number(this.topdownSens) || 1) + 'x';
         ['sfx','music','vibration'].forEach(k => {
             const b = document.querySelector(`[data-key="${k}"]`);
             if (b) {
@@ -174,6 +177,17 @@ const Settings = {
 };
 Settings.load();
 document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click', () => Settings.toggle(b.dataset.key)));
+// TOP-DOWN SPEED: cycles the easing multiplier (tester request — taps felt
+// unresponsive at the default 1.0x). Excluded from the generic toggle path.
+const TOPDOWN_SENS_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
+document.getElementById('topdown-sens-btn')?.addEventListener('click', () => {
+    const cur = Number(Settings.topdownSens) || 1;
+    const i = TOPDOWN_SENS_STEPS.indexOf(cur);
+    Settings.topdownSens = TOPDOWN_SENS_STEPS[(i + 1) % TOPDOWN_SENS_STEPS.length];
+    Settings.save();
+    Settings.syncUI();
+    playSfx('ui');
+});
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SAVE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const SaveData = {
@@ -254,7 +268,7 @@ function playCrash() {
     src.connect(flt); flt.connect(gain); gain.connect(ac.destination); src.start();
 }
 
-function playCreepyMelody() { return;
+function playCreepyMelody() {
     if (!Settings.sfx) return;
     const ac = getAudio(), now = ac.currentTime;
     [{f:783.99,t:0},{f:783.99,t:0.3},{f:622.25,t:0.6}].forEach(n => {
@@ -265,7 +279,10 @@ function playCreepyMelody() { return;
     });
 }
 
-function startDrone() { return;
+function startDrone() {
+    // FIX: the hardcoded `return;` here silenced music entirely — the MUSIC
+    // toggle in settings was a no-op (tester: "music toggle is on but I don't
+    // feel any music"). Ambient drone now actually plays when enabled.
     if (!Settings.music || droneOscs.length > 0) return;
     const ac = getAudio();
     [40,43,60.5].forEach(f => {
@@ -547,6 +564,16 @@ const ACHIEVEMENTS = [
 // Per-run counters (combo = obstacles dodged in one run, preserved across
 // revives because the run continues; reset only on a fresh start).
 let runObstaclesPassed = 0, runCloseCalls = 0, runLasersPassed = 0;
+// Tap-to-start grace: after (re)starting, the cube drifts through an empty
+// arena; obstacles, scoring and difficulty only begin on the first tap
+// (tester request: "tap to actually start" moment).
+let runArmed = false;
+// Quick-retry guard: an interstitial never fires for a run the player
+// started less than 6s ago (rapid-retry rhythm must stay ad-free).
+let lastRetryAt = 0;
+// Slow-mo power-up: spawns occasionally, collecting it halves game speed
+// for 4s (tester idea: a "breathe" moment when the speed gets overwhelming).
+let slowMoUntil = 0, slowMoPickup = null, slowMoSpawnAt = 0;
 
 const Stats = {
     KEY: 'ndStats',
@@ -1095,8 +1122,10 @@ window.rewardUser = () => { if(window.FlutterBridge) window.FlutterBridge.onRewa
 function startGameLoop() {
     function loop(ts) {
         if(GAME_STATE!==STATE.PLAYING) return;
-        const dt=Math.min((ts-lastTime)/16.67,3);
+        let dt=Math.min((ts-lastTime)/16.67,3);
         lastTime=ts;
+        // Slow-mo power-up: the whole world breathes while the orb is active
+        if(performance.now()<slowMoUntil) dt*=0.55;
         update(dt); draw();
         rafId=requestAnimationFrame(loop);
     }
@@ -1202,7 +1231,8 @@ function addFloatingText(text, x, y, color) {
 
 function update(dt) {
     frameCount++;
-    if(frameCount%480===0) baseSpeed=Math.min(baseSpeed+1,22);
+    // Difficulty speed-up waits for the tap-to-start moment
+    if(runArmed && frameCount%480===0) baseSpeed=Math.min(baseSpeed+1,22);
     const nextPhase=currentRunPhase();
     if(nextPhase!==phaseIndex) {
         phaseIndex=nextPhase;
@@ -1216,10 +1246,13 @@ function update(dt) {
 
     // Player movement
     if (CURRENT_MODE === 'TOPDOWN') {
-        // Smoothly move towards targetY if it exists
+        // Smoothly move towards targetY if it exists. The 0.45 easing was so
+        // slow that taps felt unresponsive (tester feedback) — the
+        // TOP-DOWN SPEED setting in settings multiplies the ease rate.
         if (player.targetY !== undefined) {
             const dy = player.targetY - (player.y + player.height/2);
-            player.y += dy * (1 - Math.pow(0.45, dt));
+            const sens = Math.max(0.5, Math.min(2.5, Number(Settings.topdownSens) || 1));
+            player.y += dy * (1 - Math.pow(0.45, dt * sens));
         }
         // Clamp to screen bounds
         if (player.y < CEILING) player.y = CEILING;
@@ -1278,11 +1311,11 @@ function update(dt) {
     }
     if(player.trail.length>12) player.trail.shift();
 
-    // Spawn obstacles
-    if (CURRENT_MODE === 'LASER') {
+    // Spawn obstacles — frozen during the tap-to-start grace window
+    if (runArmed && CURRENT_MODE === 'LASER') {
         const spawnInterval = Math.max(50, 150 - baseSpeed * 5);
         if(frameCount%spawnInterval===0) obstaclePool.acquire();
-    } else {
+    } else if (runArmed) {
         patternTimer -= dt;
         while(patternTimer<=0) {
             if(patternQueue.length===0) patternQueue=getObstaclePattern();
@@ -1293,7 +1326,7 @@ function update(dt) {
     }
 
     // Update obstacles & collisions
-    for(let i=obstaclePool.active.length-1;i>=0;i--) {
+    for(let i=obstaclePool.active.length-1; runArmed && i>=0; i--) {
         const o=obstaclePool.active[i];
         
         if (CURRENT_MODE === 'LASER') {
@@ -1329,6 +1362,8 @@ function update(dt) {
                 if(gap>0&&gap<=6){
                     addScore(50);
                     runCloseCalls++;
+                    const cc=document.getElementById('closecalls-display');
+                    if(cc) cc.textContent='🌀 '+runCloseCalls;
                     addFloatingText('+50 CLOSE CALL!', player.x + player.width / 2, player.y - 8, phaseVisuals.obstacle);
                     playSfx('nearmiss');
                     canvas.classList.add('flash-white');
@@ -1336,6 +1371,25 @@ function update(dt) {
                 }
             }
             if(o.x+o.width<0){ obstaclePool.release(o); addScore(10); runObstaclesPassed++; }
+        }
+    }
+
+    // Slow-mo pickup (tester idea): a glowing orb drifts in occasionally;
+    // collecting it halves the game speed for 4s — a breathing moment.
+    if(runArmed && CURRENT_MODE!=='TOPDOWN'){
+        if(!slowMoPickup && performance.now()>slowMoSpawnAt){
+            slowMoPickup={ x: VIEW_W + 40, y: CEILING + Math.random()*(FLOOR-CEILING-120) + 60 };
+        }
+        if(slowMoPickup){
+            slowMoPickup.x -= runSpeed * 0.8 * dt;
+            if(slowMoPickup.x < -40){ slowMoPickup=null; slowMoSpawnAt=performance.now()+18000; }
+            else if(!player.invincible && Math.hypot(slowMoPickup.x-(player.x+15), slowMoPickup.y-(player.y+15)) < 36){
+                slowMoUntil=performance.now()+4000;
+                addFloatingText('SLOW-MO!', player.x+15, player.y-24, '#4DABF7');
+                playSfx('nearmiss');
+                slowMoPickup=null;
+                slowMoSpawnAt=performance.now()+24000;
+            }
         }
     }
 
@@ -1418,6 +1472,34 @@ function draw() {
         if (!p.sprite) p.sprite = Math.random()>0.5 ? SPRITES.bgDot1 : SPRITES.bgDot2;
         if (p.sprite) ctx.drawImage(p.sprite,Math.floor(p.x-2),Math.floor(p.y-2));
     });
+
+    // Slow-mo pickup orb — glowing cyan clock, pulses to stand out
+    if (slowMoPickup) {
+        const pulse = 1 + Math.sin(frameCount * 0.12) * 0.12;
+        ctx.save();
+        ctx.translate(slowMoPickup.x, slowMoPickup.y);
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = '#4DABF7';
+        ctx.beginPath();
+        ctx.arc(0, 0, 26 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#4DABF7';
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Clock hands
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(0, -8);
+        ctx.moveTo(0, 0); ctx.lineTo(6, 2);
+        ctx.stroke();
+        ctx.restore();
+    }
 
     // Obstacles
     obstaclePool.active.forEach(o=>{
@@ -1634,6 +1716,8 @@ function gameOver() {
     bestScore=SaveData.load().highScore;
     document.getElementById('highScore').textContent=bestScore;
     document.getElementById('new-record-badge').style.display=isNew?'block':'none';
+    const ccStat=document.getElementById('closeCallsStat');
+    if(ccStat) ccStat.textContent=runCloseCalls;
 
     // ── Lifetime stats (single write point; derived from this real run) ──
     const runDuration = Date.now() - runStartedAt;
@@ -1712,8 +1796,12 @@ function gameOver() {
             // revive: skip if the player has already tapped REVIVE (their
             // rewarded ad is loading/playing) or a revive is awaiting its
             // post-ad callback.
+            // Quick-retry guard (tester request): a run started less than
+            // 6s ago means the player is in a rapid-retry rhythm — never
+            // pop a fullscreen ad into that flow.
             if(GAME_STATE===STATE.GAMEOVER && activeRunId===endedRunId && !RemoveAds.active()
-               && reviveRequestRunId===null && !window._pendingRevive) {
+               && reviveRequestRunId===null && !window._pendingRevive
+               && (Date.now() - lastRetryAt) >= 6000) {
                 FlutterBridge.showInterstitial();
             }
         }, INTERSTITIAL_POLICY.DELAY_MS);
@@ -1812,6 +1900,7 @@ window.showUpdatePopup = function (data) {
 
 function resetGame() {
     score=0; frameCount=0; baseSpeed=7;
+    slowMoUntil=0; slowMoPickup=null; slowMoSpawnAt=performance.now()+15000;
     player.x=100; player.y=FLOOR-player.height;
     player.gravityDir=1; player.isSwapping=false; player.invincible=false; player.trail=[];
     player.z=0; player.zVelocity=0; player.targetY=undefined;
@@ -1854,6 +1943,11 @@ function startGame() {
     hideAllScreens(); showHUD();
     GAME_STATE=STATE.PLAYING;
     runStartedAt=Date.now();
+    // Tap-to-start grace: the cube drifts through an empty arena; spawning,
+    // scoring and difficulty wait for the player's first tap (tester request).
+    runArmed=false;
+    lastRetryAt=Date.now();
+    document.getElementById('run-start-banner')?.classList.remove('hidden');
     cancelAnimationFrame(rafId);
     startDrone();
     startGameLoop();
@@ -1862,6 +1956,12 @@ function startGame() {
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
 function handleInput(yPos) {
     if (GAME_STATE !== STATE.PLAYING) return;
+    // First tap of the grace window actually starts the run: obstacles,
+    // scoring and difficulty come alive from here on (tester request).
+    if(!runArmed){
+        runArmed=true;
+        document.getElementById('run-start-banner')?.classList.add('hidden');
+    }
     if (CURRENT_MODE === 'TOPDOWN') {
         const halfHeight=player.height/2;
         const targetY=Math.max(CEILING+halfHeight,Math.min(FLOOR-halfHeight,yPos));
