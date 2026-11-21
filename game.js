@@ -999,6 +999,11 @@ const FlutterBridge = {
     },
     onRewardGranted() {
         clearTimeout(window._rewardTimeout);
+        // Ad-on-ad guard: ANY rewarded grant (revive or 2x) re-arms the
+        // interstitial cooldown so a fullscreen ad never trails a rewarded
+        // one within its cooldown window.
+        cancelPendingInterstitial();
+        lastInterstitialAt = Date.now();
         if(window._onRewardGranted) {
             const cb = window._onRewardGranted;
             window._onRewardGranted = null; window._onRewardFailed = null;
@@ -1937,7 +1942,10 @@ document.getElementById('tutorial-replay-btn')?.addEventListener('click', () => 
 });
 document.getElementById('restart-btn')?.addEventListener('click', startGame);
 window.addEventListener('pointerdown', e=>{
-    if(GAME_STATE===STATE.GAMEOVER&&e.target.closest('#game-over-screen')&&!e.target.closest('button, a')) {
+    // Tester feedback: "tapping anywhere outside the overlay does nothing"
+    // was annoying. On GAMEOVER the whole screen is the death screen, so
+    // ANY tap (outside a real button/link) restarts.
+    if(GAME_STATE===STATE.GAMEOVER&&!e.target.closest('button, a')) {
         // Chrome/Android event order for one tap: pointerdown fires BEFORE
         // touchstart/mousedown. Without this lock the restart tap's own
         // tail events land in the now-PLAYING gameplay handlers and flip
@@ -2017,6 +2025,11 @@ document.getElementById('double-score-btn')?.addEventListener('click', async ()=
             Stats.data.bestScore = Math.max(Stats.data.bestScore, score);
             Stats.save();
             Achievements.evaluate();
+            // Ad-on-ad guard: the player JUST watched a rewarded ad — any
+            // interstitial queued behind this death is canceled and the
+            // cooldown re-armed, so two full-screen ads can never stack.
+            cancelPendingInterstitial();
+            lastInterstitialAt = Date.now();
             btn.textContent = '\u2728 SCORE DOUBLED!';
             btn.classList.add('double-done');
             vibrate([60, 60, 60]);
@@ -2099,12 +2112,14 @@ const MODES = [
         value: 'CLASSIC',
         label: 'CLASSIC (GRAVITY FLIP)',
         hint: 'TAP OR SPACEBAR TO FLIP GRAVITY',
+        touchHint: 'TAP TO FLIP GRAVITY',
         help: 'Tap or press Space to flip gravity and dodge obstacles.'
     },
     {
         value: 'LASER',
         label: 'LASER (JUMP OVER BEAMS)',
         hint: 'TAP OR SPACEBAR TO JUMP',
+        touchHint: 'TAP TO JUMP',
         help: 'Tap or press Space to jump over the incoming laser beams.'
     },
     {
@@ -2125,7 +2140,12 @@ function updateModeCarousel() {
         modeDisplay.setAttribute('aria-label', `Selected mode: ${mode.label}`);
         modeInput.value = mode.value;
         const hint = document.getElementById('hero-hint');
-        if (hint) hint.textContent = mode.hint;
+        if (hint) {
+            // Tester feedback: "TAP OR SPACEBAR" is untrue on a phone —
+            // drop the desktop half of the hint on touch devices.
+            const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.IS_APK;
+            hint.textContent = (isTouch && mode.touchHint) ? mode.touchHint : mode.hint;
+        }
         const tutorialTitle = document.getElementById('tutorial-mode-title');
         if (tutorialTitle) tutorialTitle.textContent = mode.label;
         const tutorialHelp = document.getElementById('tutorial-mode-help');

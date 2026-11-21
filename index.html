@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=25">
+    <link rel="stylesheet" href="style.css?v=26">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="manifest.json">
@@ -123,7 +123,7 @@
                         <span class="hero-play-glow"></span>
                         <span class="hero-play-text">START DRIFT</span>
                     </button>
-                    <p id="hero-hint" class="hero-hint">TAP OR SPACEBAR TO FLIP GRAVITY</p>
+                    <p id="hero-hint" class="hero-hint desktop-only-hint">TAP OR SPACEBAR TO FLIP GRAVITY</p>
                     <button id="tutorial-replay-btn" class="menu-help-btn" type="button">HOW TO PLAY</button>
                 </div>
 
@@ -203,9 +203,13 @@
                 </div>
 
                 <div id="game-over-actions">
-                    <button id="restart-btn" class="retry-btn" type="button">TAP TO RETRY</button>
-                    <button id="double-score-btn" class="double-btn" type="button" style="display:none;">🎬 2x SCORE</button>
+                    <!-- Order: rewarded offers FIRST, RETRY LAST — the tester
+                         kept hitting 2x by accident because it sat exactly on
+                         his natural retry tap. Retry is now the bottom-most
+                         big target. -->
                     <button id="revive-btn" class="revive-btn" type="button" style="display:none;">⚡ REVIVE</button>
+                    <button id="double-score-btn" class="double-btn" type="button" style="display:none;">🎬 2x SCORE</button>
+                    <button id="restart-btn" class="retry-btn" type="button">TAP TO RETRY</button>
                 </div>
                 <p class="retry-hint">OR PRESS SPACE</p>
                 <div class="game-over-dock" aria-label="More games">
@@ -251,6 +255,6 @@
         </div><!-- end ui-layer -->
     </div><!-- end game-container -->
 
-    <script src="game.js?v=32"></script>
+    <script src="game.js?v=33"></script>
 </body>
 </html>
