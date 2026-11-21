@@ -1182,7 +1182,13 @@ function getObstaclePattern() {
                     { y: lane(0.72), width: 44, height: 58, delay: interval }
                 ];
             case 2: {
-                const gap = Math.round(player.height * 1.5);
+                // Tester: the squeeze gap became unreadable at high speed —
+                // you couldn't tell if it was passable before it killed you.
+                // Widen the gap as the run accelerates: tight early, always
+                // passable late. baseSpeed 7 -> 22 maps gap 1.5x -> 3.3x
+                // player height.
+                const speedT = Math.min(1, Math.max(0, (baseSpeed - 7) / 15));
+                const gap = Math.round(player.height * (1.5 + speedT * 1.8));
                 const blockHeight = Math.max(24, (FLOOR - CEILING - gap) / 2);
                 return [
                     { y: CEILING, width: 62, height: blockHeight, pairY: CEILING + blockHeight + gap, pairHeight: blockHeight, delay: interval }
@@ -1679,6 +1685,7 @@ function quitToMenu() {
     cancelPendingInterstitial();
     cancelReviveCountdown();
     window._pendingRevive=false;
+    if (window.AdChannel) { try { window.AdChannel.postMessage('showBanner'); } catch(e){} }
     reviveRequestRunId=null;
     cancelAnimationFrame(rafId);
     stopDrone();
@@ -1694,6 +1701,10 @@ function createExplosion(x,y) { for(let i=0;i<25;i++) particlePool.acquire(x,y);
 function gameOver() {
     GAME_STATE=STATE.GAMEOVER;
     cancelAnimationFrame(rafId);
+    // Gameplay over — hand the bottom banner back to the wrapper so menus
+    // keep monetizing while play stays clean (tester: banner during runs
+    // feels like too much).
+    if (window.AdChannel) { try { window.AdChannel.postMessage('showBanner'); } catch(e){} }
     createExplosion(player.x+15,player.y+15);
     playCrash(); vibrate([100,50,100]);
     shakeFrames=4;
