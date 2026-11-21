@@ -4,6 +4,13 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// i18n helper — prefers the device language via i18n.js, falls back to the
+// embedded English text if the dictionary (or the whole file) is unavailable.
+// Bare `t` is shadowed by locals elsewhere in this file, hence `tt`.
+function tt(key, fallback, vars) {
+    return (typeof I18n !== 'undefined' && I18n.t) ? I18n.t(key, vars, fallback) : fallback;
+}
+
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ STATE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
 let GAME_STATE = STATE.MENU;
@@ -167,7 +174,7 @@ const Settings = {
                     icon.src = enabled ? b.dataset.iconOn : b.dataset.iconOff;
                     b.setAttribute('aria-label', `${b.dataset.label}: ${enabled ? 'on' : 'off'}`);
                 } else {
-                    b.textContent = enabled ? 'ON' : 'OFF';
+                    b.textContent = enabled ? tt('ui.on', 'ON') : tt('ui.off', 'OFF');
                 }
                 b.setAttribute('aria-pressed', String(enabled));
                 b.classList.toggle('active', enabled);
@@ -525,7 +532,7 @@ window.setNoAds = (verified) => {
     const wasActive = RemoveAds.active();
     const nowActive = RemoveAds.set(verified === true);
     // Only toast on a real transition, so silent launch-time restores don't nag.
-    if (nowActive && !wasActive) showAdToast('Ads removed — thank you for supporting Cube Run! \uD83D\uDC9C');
+    if (nowActive && !wasActive) showAdToast(tt('toast.ads_removed', 'Ads removed — thank you for supporting Cube Run! 💜'));
     return nowActive;
 };
 window.getNoAds = () => RemoveAds.active();
@@ -655,7 +662,7 @@ const Achievements = {
                 // (storage hiccup), the toast must never repeat.
                 if (!this._toasted[a.key]) {
                     this._toasted[a.key] = true;
-                    showAdToast('🏆 Achievement unlocked: ' + a.name);
+                    showAdToast(tt('toast.ach_unlocked', '🏆 Achievement unlocked: {n}', { n: (tt('ach.' + a.key, a.name + '|' + a.desc).split('|'))[0] }));
                     vibrate([40, 60, 40]);
                 }
             } else if (a.progress(Stats.data) > (GPGSync.sync[a.key] ? GPGSync.sync[a.key].steps : 0)) {
@@ -696,9 +703,12 @@ const Achievements = {
                     // Unlocked awards always display goal/goal (they may have
                     // been adopted from Play Games where local steps lag).
                     const value = unlocked ? a.goal : this.displayProgress(a);
+                    const localized = tt('ach.' + a.key, a.name + '|' + a.desc).split('|');
+                    const locName = localized[0] || a.name;
+                    const locDesc = localized[1] || a.desc;
                     const cell = document.createElement('div');
                     cell.className = 'award ' + (unlocked ? 'unlocked' : 'locked');
-                    cell.title = a.desc;
+                    cell.title = locDesc;
                     const medal = document.createElement('div');
                     medal.className = 'award-medal';
                     medal.textContent = a.icon;
@@ -714,13 +724,13 @@ const Achievements = {
                     }
                     const name = document.createElement('div');
                     name.className = 'award-name';
-                    name.textContent = a.name;
+                    name.textContent = locName;
                     const prog = document.createElement('div');
                     prog.className = 'award-progress';
                     prog.textContent = value + '/' + a.goal;
                     const desc = document.createElement('div');
                     desc.className = 'award-desc';
-                    desc.textContent = a.desc;
+                    desc.textContent = locDesc;
                     cell.appendChild(medal);
                     cell.appendChild(name);
                     cell.appendChild(prog);
@@ -862,13 +872,13 @@ const GPGSync = {
         const el = document.getElementById('gpg-sync-status');
         if (!el) return;
         if (!this.enabled) {
-            el.textContent = 'Play Games sync: not configured';
+            el.textContent = tt('gpg.not_configured', 'Play Games sync: not configured');
             el.classList.remove('actionable');
         } else if (!this.signedIn) {
-            el.textContent = 'Tap to connect Google Play Games';
+            el.textContent = tt('gpg.tap_connect', 'Tap to connect Google Play Games');
             el.classList.add('actionable');
         } else {
-            el.textContent = '✔ Synced with Google Play Games';
+            el.textContent = tt('gpg.synced', '✔ Synced with Google Play Games');
             el.classList.remove('actionable');
         }
     }
@@ -886,9 +896,9 @@ window.onPlayGamesProfile = (profile) => {
     const pill = document.getElementById('gpg-profile');
     if (!pill) { GPGSync.onProfile(p); return; }
     if (p && p.name) {
-        document.getElementById('gpg-profile-name').textContent = 'Hey there, ' + p.name;
+        document.getElementById('gpg-profile-name').textContent = tt('gpg.hey', 'Hey there, {n}', { n: p.name });
         document.getElementById('gpg-profile-level').textContent =
-            (p.level && Number(p.level) > 0) ? ('Level ' + p.level) : '';
+            (p.level && Number(p.level) > 0) ? tt('gpg.level', 'Level {n}', { n: p.level }) : '';
         pill.style.display = 'flex';
     } else {
         pill.style.display = 'none';
@@ -911,10 +921,10 @@ const RemoveAdsUi = {
     apply() {
         const btn = document.getElementById('remove-ads-btn');
         if (!btn) return;
-        if (this.busy) { btn.disabled = true; btn.textContent = 'PROCESSING…'; return; }
-        if (this.available === false) { btn.disabled = true; btn.textContent = 'UNAVAILABLE'; return; }
+        if (this.busy) { btn.disabled = true; btn.textContent = tt('bill.processing', 'PROCESSING…'); return; }
+        if (this.available === false) { btn.disabled = true; btn.textContent = tt('bill.unavailable', 'UNAVAILABLE'); return; }
         btn.disabled = false;
-        btn.textContent = this.price || 'UPGRADE';
+        btn.textContent = this.price || tt('ui.upgrade', 'UPGRADE');
     }
 };
 window.setRemoveAdsPrice = (label) => {
@@ -933,7 +943,7 @@ window.setPurchaseBusy = (busy) => {
             if (!RemoveAdsUi.busy) return;
             RemoveAdsUi.busy = false;
             RemoveAdsUi.apply();
-            showAdToast('Purchase did not complete — try again.');
+            showAdToast(tt('toast.purchase_failed', 'Purchase did not complete — try again.'));
         }, 90000);
     }
     RemoveAdsUi.apply();
@@ -945,10 +955,12 @@ window.onPurchaseResult = (status, detail) => {
     RemoveAdsUi.apply();
     switch (String(status)) {
         case 'success': break; // celebration toast comes from the setNoAds transition
-        case 'pending': showAdToast('Purchase pending — Remove Ads activates once it completes.'); break;
-        case 'canceled': showAdToast('Purchase canceled.'); break;
-        case 'unavailable': showAdToast('Remove Ads is not available right now.'); break;
-        default: showAdToast('Purchase failed' + (detail ? ': ' + detail : ' — try again later.'));
+        case 'pending': showAdToast(tt('toast.purchase_pending', 'Purchase pending — Remove Ads activates once it completes.')); break;
+        case 'canceled': showAdToast(tt('toast.purchase_canceled', 'Purchase canceled.')); break;
+        case 'unavailable': showAdToast(tt('toast.purchase_unavailable', 'Remove Ads is not available right now.')); break;
+        default: showAdToast(detail
+            ? tt('toast.purchase_fail_det', 'Purchase failed: {d} — try again later.', { d: detail })
+            : tt('toast.purchase_fail', 'Purchase failed — try again later.'));
     }
 };
 
@@ -1104,7 +1116,7 @@ window.onAdClose = () => {
         // Ad closed with no reward and no pending callbacks — reset the
         // button so the player isn't stuck.
         const btn = document.getElementById('revive-btn');
-        if (btn) { btn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)'; btn.disabled = false; }
+        if (btn) { btn.textContent = tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)'); btn.disabled = false; }
     }, 0);
 };
 
@@ -1612,7 +1624,7 @@ function draw() {
         ctx.textAlign='center';
         ctx.shadowColor=visuals.grid;
         ctx.shadowBlur=18;
-        ctx.fillText(phase.title,W/2,H*0.34);
+        ctx.fillText(tt('phase.' + (phaseIndex + 1), phase.title),W/2,H*0.34);
         ctx.shadowBlur=0;
         ctx.globalAlpha=1;
     }
@@ -1757,7 +1769,7 @@ function gameOver() {
     reviveBtn.style.display=reviveAvailable?'block':'none';
     reviveBtn.classList.toggle('clutch-revive',reviveAvailable);
     if (reviveAvailable) {
-        reviveBtn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)';
+        reviveBtn.textContent = tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)');
         reviveBtn.disabled = false;
     }
 
@@ -1767,7 +1779,7 @@ function gameOver() {
         const doubleAvailable = score >= 50;
         doubleBtn.style.display = doubleAvailable ? 'block' : 'none';
         doubleBtn.disabled = !doubleAvailable;
-        doubleBtn.textContent = '\uD83C\uDFAC 2x SCORE';
+        doubleBtn.textContent = tt('ui.double_score', '\uD83C\uDFAC 2x SCORE');
     }
 
     // In-app review prompt (after 3+ rounds, once per install, good moment)
@@ -2093,9 +2105,9 @@ document.getElementById('remove-ads-btn')?.addEventListener('click', ()=>{
     if (RemoveAdsUi.busy || RemoveAdsUi.available === false) return;
     if (window.AdChannel) {
         window.AdChannel.postMessage('purchaseRemoveAds');
-        showAdToast('Opening Google Play Billing…');
+        showAdToast(tt('toast.opening_billing', 'Opening Google Play Billing…'));
     } else {
-        showAdToast('Remove Ads is available in the Android app.');
+        showAdToast(tt('toast.noads_app_only', 'Remove Ads is available in the Android app.'));
     }
 });
 
@@ -2144,17 +2156,17 @@ document.getElementById('double-score-btn')?.addEventListener('click', async ()=
             btn.textContent = '\u2728 SCORE DOUBLED!';
             btn.classList.add('double-done');
             vibrate([60, 60, 60]);
-            showAdToast('Score doubled! \uD83C\uDF89 ' + score);
+            showAdToast(tt('toast.score_doubled', 'Score doubled! \uD83C\uDF89 {n}', { n: score }));
         } else {
-            btn.textContent = '\uD83C\uDFAC 2x SCORE';
+            btn.textContent = tt('ui.double_score', '\uD83C\uDFAC 2x SCORE');
             btn.disabled = false;
         }
     } catch (e) {
         btn.textContent = '\u274C TRY AGAIN';
-        showAdToast('Ad unavailable \u2014 try again in a moment.');
+        showAdToast(tt('toast.ad_unavailable', 'Ad unavailable \u2014 try again in a moment.'));
         setTimeout(() => {
             if (requestRunId === activeRunId && GAME_STATE === STATE.GAMEOVER) {
-                btn.textContent = '\uD83C\uDFAC 2x SCORE';
+                btn.textContent = tt('ui.double_score', '\uD83C\uDFAC 2x SCORE');
                 btn.disabled = false;
             }
         }, 2000);
@@ -2182,10 +2194,10 @@ document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
         if(requestRunId!==activeRunId||GAME_STATE!==STATE.GAMEOVER) return;
         reviveRequestRunId=null;
         btn.textContent = '❌ TRY AGAIN LATER';
-        showAdToast('Ad unavailable — tap REVIVE again in a moment.');
+        showAdToast(tt('toast.ad_unavailable_revive', 'Ad unavailable — tap REVIVE again in a moment.'));
         setTimeout(() => {
             if(requestRunId!==activeRunId||GAME_STATE!==STATE.GAMEOVER) return;
-            btn.textContent = '\u26A1 CLUTCH REVIVE (WATCH AD)';
+            btn.textContent = tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)');
             btn.disabled = false;
         }, 2000);
     }
@@ -2247,20 +2259,25 @@ function updateModeCarousel() {
     const modeInput = document.getElementById('mode-select');
     if (modeDisplay && modeInput) {
         const mode = MODES[currentModeIndex];
-        modeDisplay.textContent = mode.label;
-        modeDisplay.setAttribute('aria-label', `Selected mode: ${mode.label}`);
+        const mkey = 'mode.' + mode.value.toLowerCase();
+        const locLabel = tt(mkey + '.label', mode.label);
+        const locHint = tt(mkey + '.hint', mode.hint);
+        const locTouch = tt(mkey + '.touch', mode.touchHint);
+        const locHelp = tt(mkey + '.help', mode.help);
+        modeDisplay.textContent = locLabel;
+        modeDisplay.setAttribute('aria-label', `Selected mode: ${locLabel}`);
         modeInput.value = mode.value;
         const hint = document.getElementById('hero-hint');
         if (hint) {
             // Tester feedback: "TAP OR SPACEBAR" is untrue on a phone —
             // drop the desktop half of the hint on touch devices.
             const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.IS_APK;
-            hint.textContent = (isTouch && mode.touchHint) ? mode.touchHint : mode.hint;
+            hint.textContent = (isTouch && mode.touchHint) ? locTouch : locHint;
         }
         const tutorialTitle = document.getElementById('tutorial-mode-title');
-        if (tutorialTitle) tutorialTitle.textContent = mode.label;
+        if (tutorialTitle) tutorialTitle.textContent = locLabel;
         const tutorialHelp = document.getElementById('tutorial-mode-help');
-        if (tutorialHelp) tutorialHelp.textContent = mode.help;
+        if (tutorialHelp) tutorialHelp.textContent = locHelp;
         const startButton = document.getElementById('start-btn');
         if (startButton) startButton.setAttribute('aria-label', `Start ${mode.value.toLowerCase()} mode`);
     }

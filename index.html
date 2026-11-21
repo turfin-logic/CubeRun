@@ -67,7 +67,7 @@
             <!-- HUD (visible during gameplay) -->
             <div id="hud">
                 <div id="score-display">
-                    <span class="hud-score">SCORE <strong id="scoreValue">0</strong></span>
+                    <span class="hud-score"><span data-i18n="ui.score">SCORE</span> <strong id="scoreValue">0</strong></span>
                     <span id="hud-multiplier" class="hud-multiplier" aria-label="Score multiplier">×1.0</span>
                     <span id="closecalls-display" aria-label="Close calls">🌀 0</span>
                 </div>
@@ -85,7 +85,7 @@
             <div id="start-screen" class="screen clean-menu active">
                 <!-- Top Header Bar -->
                 <div class="menu-top-bar">
-                    <div class="menu-tagline">DODGE • FLIP • SURVIVE</div>
+                    <div class="menu-tagline" data-i18n="ui.tagline">DODGE • FLIP • SURVIVE</div>
                     <button id="menu-settings-btn" class="menu-icon-btn" type="button" title="Settings" aria-label="Open settings">
                         <img src="assets/ui/vector/ic_system_gear-ring.svg" alt="">
                     </button>
@@ -122,17 +122,17 @@
                     <!-- Hero Play Button -->
                     <button id="start-btn" class="hero-play-btn">
                         <span class="hero-play-glow"></span>
-                        <span class="hero-play-text">START DRIFT</span>
+                        <span class="hero-play-text" data-i18n="ui.start_drift">START DRIFT</span>
                     </button>
                     <p id="hero-hint" class="hero-hint desktop-only-hint">TAP OR SPACEBAR TO FLIP GRAVITY</p>
-                    <button id="tutorial-replay-btn" class="menu-help-btn" type="button">HOW TO PLAY</button>
+                    <button id="tutorial-replay-btn" class="menu-help-btn" type="button" data-i18n="ui.how_to_play">HOW TO PLAY</button>
                 </div>
 
                 <!-- Bottom Dock for Secondary Actions -->
                 <div class="menu-bottom-dock">
                     <button id="menu-achievements-btn" class="dock-btn dock-achievements" type="button" aria-label="View achievements">
                         <span class="dock-btn-icon">🏆</span>
-                        <span class="dock-btn-label">Awards</span>
+                        <span class="dock-btn-label" data-i18n="ui.awards">Awards</span>
                     </button>
                     <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="dock-btn dock-mangaverse">
                         <span class="dock-btn-icon">🎮</span>
@@ -147,33 +147,33 @@
 
             <!-- Pause Screen -->
             <div id="pause-screen" class="screen">
-                <h2 class="cyber-text">PAUSED</h2>
-                <button class="cyber-btn" id="resume-btn">▶ RESUME</button>
-                <button class="cyber-btn" id="settings-from-pause-btn">SETTINGS</button>
-                <button class="cyber-btn" id="quit-btn" style="border-color: #555; color: #888;">QUIT TO MENU</button>
+                <h2 class="cyber-text" data-i18n="ui.paused">PAUSED</h2>
+                <button class="cyber-btn" id="resume-btn" data-i18n="ui.resume">▶ RESUME</button>
+                <button class="cyber-btn" id="settings-from-pause-btn" data-i18n="ui.settings">SETTINGS</button>
+                <button class="cyber-btn" id="quit-btn" style="border-color: #555; color: #888;" data-i18n="ui.quit_menu">QUIT TO MENU</button>
             </div>
 
             <!-- Settings Screen -->
             <div id="settings-screen" class="screen">
-                <h2 class="cyber-text">SETTINGS</h2>
+                <h2 class="cyber-text" data-i18n="ui.settings_title">SETTINGS</h2>
                 <div class="setting-row">
-                    <label>SOUND FX</label>
+                    <label data-i18n="ui.sfx">SOUND FX</label>
                     <button class="toggle-btn icon-toggle" id="sfx-toggle" type="button" data-key="sfx" data-label="Sound FX" data-icon-on="assets/ui/vector/ic_media_volume-on_01.svg" data-icon-off="assets/ui/vector/ic_media_volume-off_01.svg" aria-label="Sound FX: on" aria-pressed="true">
                         <img src="assets/ui/vector/ic_media_volume-on_01.svg" alt="">
                     </button>
                 </div>
                 <div class="setting-row">
-                    <label>MUSIC</label>
+                    <label data-i18n="ui.music">MUSIC</label>
                     <button class="toggle-btn icon-toggle" id="music-toggle" type="button" data-key="music" data-label="Music" data-icon-on="assets/ui/vector/ic_media_volume-on_01.svg" data-icon-off="assets/ui/vector/ic_media_volume-off_01.svg" aria-label="Music: on" aria-pressed="true">
                         <img src="assets/ui/vector/ic_media_volume-on_01.svg" alt="">
                     </button>
                 </div>
                 <div class="setting-row">
-                    <label>TOP-DOWN SPEED</label>
+                    <label data-i18n="ui.td_speed">TOP-DOWN SPEED</label>
                     <button class="toggle-btn" id="topdown-sens-btn" type="button" aria-label="TOP-DOWN speed">1.0x</button>
                 </div>
                 <div class="setting-row">
-                    <label>VIBRATION</label>
+                    <label data-i18n="ui.vibration">VIBRATION</label>
                     <button class="toggle-btn" id="vib-toggle" type="button" data-key="vibration">ON</button>
                 </div>
                 <!-- APK only (game.js shows it when AdChannel is present and
@@ -182,16 +182,16 @@
                      window.setNoAds(true). -->
                 <div class="setting-row" id="remove-ads-row" style="display:none;">
                     <div class="remove-ads-label-wrap">
-                        <label>REMOVE ADS</label>
-                        <span class="remove-ads-subtext">ONE-TIME • LIFETIME • NO SUBSCRIPTION</span>
+                        <label data-i18n="ui.remove_ads">REMOVE ADS</label>
+                        <span class="remove-ads-subtext" data-i18n="ui.remove_ads_sub">ONE-TIME • LIFETIME • NO SUBSCRIPTION</span>
                     </div>
-                    <button class="cyber-btn" id="remove-ads-btn" type="button" style="background: var(--neon-pink); color: #000;">UPGRADE</button>
+                    <button class="cyber-btn" id="remove-ads-btn" type="button" style="background: var(--neon-pink); color: #000;" data-i18n="ui.upgrade">UPGRADE</button>
                 </div>
-                <button class="cyber-btn" id="settings-back-btn" style="margin-top:20px;">BACK</button>
+                <button class="cyber-btn" id="settings-back-btn" style="margin-top:20px;" data-i18n="ui.back">BACK</button>
                 <div class="legal-links">
-                    <a href="privacy.html" rel="noopener">PRIVACY</a>
+                    <a href="privacy.html" rel="noopener" data-i18n="ui.privacy">PRIVACY</a>
                     <span>•</span>
-                    <a href="terms.html" rel="noopener">TERMS</a>
+                    <a href="terms.html" rel="noopener" data-i18n="ui.terms">TERMS</a>
                 </div>
             </div>
 
@@ -200,12 +200,12 @@
                 <button id="menu-btn-icon" type="button" aria-label="Return to main menu" title="Main menu" style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); border: 2px solid var(--neon-pink); border-radius: 50%; color: var(--neon-pink); cursor: pointer; z-index: 9999; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--neon-pink);">
                     <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 </button>
-                <h2>RUN OVER</h2>
+                <h2 data-i18n="ui.run_over">RUN OVER</h2>
                 <div class="stats">
-                    <p>SCORE <span id="finalScore">0</span></p>
-                    <p>BEST <span id="highScore">0</span></p>
-                    <p>CLOSE CALLS <span id="closeCallsStat">0</span></p>
-                    <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;">⭐ NEW RECORD!</p>
+                    <p><span data-i18n="ui.score">SCORE</span> <span id="finalScore">0</span></p>
+                    <p><span data-i18n="ui.best">BEST</span> <span id="highScore">0</span></p>
+                    <p><span data-i18n="ui.close_calls">CLOSE CALLS</span> <span id="closeCallsStat">0</span></p>
+                    <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;" data-i18n="ui.new_record">⭐ NEW RECORD!</p>
                 </div>
 
                 <div id="game-over-actions">
@@ -213,11 +213,11 @@
                          kept hitting 2x by accident because it sat exactly on
                          his natural retry tap. Retry is now the bottom-most
                          big target. -->
-                    <button id="revive-btn" class="revive-btn" type="button" style="display:none;">⚡ REVIVE</button>
-                    <button id="double-score-btn" class="double-btn" type="button" style="display:none;">🎬 2x SCORE</button>
-                    <button id="restart-btn" class="retry-btn" type="button">TAP TO RETRY</button>
+                    <button id="revive-btn" class="revive-btn" type="button" style="display:none;" data-i18n="ui.revive">⚡ REVIVE</button>
+                    <button id="double-score-btn" class="double-btn" type="button" style="display:none;" data-i18n="ui.double_score">🎬 2x SCORE</button>
+                    <button id="restart-btn" class="retry-btn" type="button" data-i18n="ui.tap_to_retry">TAP TO RETRY</button>
                 </div>
-                <p class="retry-hint">OR PRESS SPACE</p>
+                <p class="retry-hint" data-i18n="ui.or_press_space">OR PRESS SPACE</p>
                 <div class="game-over-dock" aria-label="More games">
                     <a class="game-over-link apk-only" href="https://play.google.com/store/apps/details?id=com.neondrift.bosslevel" target="_blank" rel="noopener noreferrer" aria-label="Get on Google Play">▶</a>
                 </div>
@@ -225,43 +225,44 @@
 
             <!-- Tutorial Screen -->
             <div id="tutorial-screen" class="screen">
-                <h2 class="glitch" data-text="SYSTEM TUTORIAL">SYSTEM TUTORIAL</h2>
+                <h2 class="glitch" data-text="SYSTEM TUTORIAL" data-i18n="ui.tutorial_title">SYSTEM TUTORIAL</h2>
                 <div class="tutorial-card">
-                    <p class="tutorial-kicker">YOUR MODE</p>
+                    <p class="tutorial-kicker" data-i18n="ui.your_mode">YOUR MODE</p>
                     <h3 id="tutorial-mode-title">CLASSIC (GRAVITY FLIP)</h3>
                     <p id="tutorial-mode-help">Tap or press Space to flip gravity and dodge obstacles.</p>
-                    <p class="tutorial-tip">Tip: pause any time with the pause button or Esc.</p>
+                    <p class="tutorial-tip" data-i18n="ui.tip">Tip: pause any time with the pause button or Esc.</p>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                    <button id="tutorial-got-it-btn" class="cyber-btn" style="background: var(--neon-pink); color: black;">GOT IT</button>
-                    <button id="tutorial-skip-btn" class="cyber-btn" style="background: transparent; color: #888; border-color: #555;">SKIP</button>
+                    <button id="tutorial-got-it-btn" class="cyber-btn" style="background: var(--neon-pink); color: black;" data-i18n="ui.got_it">GOT IT</button>
+                    <button id="tutorial-skip-btn" class="cyber-btn" style="background: transparent; color: #888; border-color: #555;" data-i18n="ui.skip">SKIP</button>
                 </div>
             </div>
 
             <!-- Achievements Screen (Statistics + Awards, real local data;
                  Play Games sync status reflects the genuine native state). -->
             <div id="achievements-screen" class="screen ach-screen">
-                <h2 class="cyber-text ach-title">ACHIEVEMENTS</h2>
-                <div class="ach-subheader">STATISTICS</div>
+                <h2 class="cyber-text ach-title" data-i18n="ui.achievements">ACHIEVEMENTS</h2>
+                <div class="ach-subheader" data-i18n="ui.statistics">STATISTICS</div>
                 <div class="ach-stats">
-                    <div class="ach-stat"><span class="ach-stat-value" id="stat-highest-combo">0</span><span class="ach-stat-label">HIGHEST COMBO</span></div>
-                    <div class="ach-stat"><span class="ach-stat-value" id="stat-best-score">0</span><span class="ach-stat-label">BEST SCORE</span></div>
-                    <div class="ach-stat"><span class="ach-stat-value" id="stat-rounds">0</span><span class="ach-stat-label">ROUNDS</span></div>
-                    <div class="ach-stat"><span class="ach-stat-value" id="stat-login-days">0</span><span class="ach-stat-label">LOGIN DAYS</span></div>
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-highest-combo">0</span><span class="ach-stat-label" data-i18n="ui.highest_combo">HIGHEST COMBO</span></div>
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-best-score">0</span><span class="ach-stat-label" data-i18n="ui.best_score">BEST SCORE</span></div>
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-rounds">0</span><span class="ach-stat-label" data-i18n="ui.rounds">ROUNDS</span></div>
+                    <div class="ach-stat"><span class="ach-stat-value" id="stat-login-days">0</span><span class="ach-stat-label" data-i18n="ui.login_days">LOGIN DAYS</span></div>
                 </div>
-                <div class="ach-subheader">AWARDS</div>
+                <div class="ach-subheader" data-i18n="ui.awards_hdr">AWARDS</div>
                 <div id="awards-grid" class="awards-grid"><!-- 9 medals rendered by game.js --></div>
                 <div id="gpg-sync-status" class="gpg-sync-status" role="status"></div>
-                <button class="cyber-btn" id="achievements-back-btn">BACK</button>
+                <button class="cyber-btn" id="achievements-back-btn" data-i18n="ui.back">BACK</button>
             </div>
 
             <!-- Ad Toast -->
             <div id="ad-toast" class="ad-toast"></div>
 
         </div><!-- end ui-layer -->
-        <div id="run-start-banner" class="hidden"><span>▶ TAP TO START</span></div>
+        <div id="run-start-banner" class="hidden"><span data-i18n="ui.tap_to_start">▶ TAP TO START</span></div>
     </div><!-- end game-container -->
 
-    <script src="game.js?v=35"></script>
+    <script src="i18n.js?v=36"></script>
+    <script src="game.js?v=36"></script>
 </body>
 </html>
