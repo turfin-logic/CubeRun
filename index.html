@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=27">
+    <link rel="stylesheet" href="style.css?v=28">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="manifest.json">
@@ -202,11 +202,11 @@
                 </button>
                 <h2 data-i18n="ui.run_over">RUN OVER</h2>
                 <div class="stats">
-                    <p><span data-i18n="ui.score">SCORE</span> <span id="finalScore">0</span></p>
-                    <p><span data-i18n="ui.best">BEST</span> <span id="highScore">0</span></p>
-                    <p><span data-i18n="ui.close_calls">CLOSE CALLS</span> <span id="closeCallsStat">0</span></p>
-                    <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;" data-i18n="ui.new_record">⭐ NEW RECORD!</p>
+                    <div class="stat"><span class="stat-value" id="finalScore">0</span><span class="stat-label" data-i18n="ui.score">SCORE</span></div>
+                    <div class="stat"><span class="stat-value" id="highScore">0</span><span class="stat-label" data-i18n="ui.best">BEST</span></div>
+                    <div class="stat"><span class="stat-value" id="closeCallsStat">0</span><span class="stat-label" data-i18n="ui.close_calls">CLOSE CALLS</span></div>
                 </div>
+                <p id="new-record-badge" style="display:none; color: #FFD700; font-size: 1.1rem;" data-i18n="ui.new_record">⭐ NEW RECORD!</p>
 
                 <div id="game-over-actions">
                     <!-- Order: rewarded offers FIRST, RETRY LAST — the tester
@@ -262,7 +262,7 @@
         <div id="run-start-banner" class="hidden"><span data-i18n="ui.tap_to_start">▶ TAP TO START</span></div>
     </div><!-- end game-container -->
 
-    <script src="i18n.js?v=36"></script>
-    <script src="game.js?v=36"></script>
+    <script src="i18n.js?v=37"></script>
+    <script src="game.js?v=37"></script>
 </body>
 </html>

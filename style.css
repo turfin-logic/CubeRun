@@ -1467,7 +1467,15 @@ button:focus-visible {
 }
 
 .dock-mangaverse { border-color: rgba(112, 0, 255, 0.32); }
-.dock-playstore { border-color: rgba(0, 243, 255, 0.28); }
+.dock-playstore { border-color: rgba(0, 243, 255, 0.28); flex: 1.25; }
+
+/* Dock labels never wrap onto two lines ("Google Play" used to break);
+   slightly smaller + tighter so all three stay on one line at phone width. */
+.dock-btn-label {
+    white-space: nowrap;
+    font-size: 0.62rem;
+    letter-spacing: 0.5px;
+}
 
 #pause-screen,
 #settings-screen,
@@ -1588,15 +1596,40 @@ button:focus-visible {
 
 #game-over-screen .stats {
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border: 1px solid rgba(0, 243, 255, 0.14);
     border-radius: 16px;
     background: rgba(0, 243, 255, 0.035);
+    display: flex;
+    justify-content: center;
+    gap: 10px;
 }
 
-#game-over-screen .stats p {
-    font-size: 0.95rem;
-    letter-spacing: 0.08em;
+/* Each stat: big value on top, small label underneath — labels never wrap
+   mid-word, so the row reads as three clean columns on every screen width. */
+#game-over-screen .stat {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+#game-over-screen .stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 8px rgba(0, 243, 255, 0.45);
+    font-variant-numeric: tabular-nums;
+}
+
+#game-over-screen .stat-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    color: rgba(225, 228, 240, 0.62);
+    white-space: nowrap;
+    text-align: center;
 }
 
 .screen#game-over-screen {
@@ -1605,24 +1638,7 @@ button:focus-visible {
 }
 
 #game-over-screen .stats {
-    display: flex;
-    justify-content: center;
-    gap: 22px;
     padding: 12px 14px;
-}
-
-#game-over-screen .stats p {
-    margin: 0;
-    color: rgba(225, 228, 240, 0.74);
-    font-size: 0.78rem;
-}
-
-#game-over-screen .stats p span {
-    display: block;
-    margin-top: 4px;
-    color: #fff;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.3rem;
 }
 
 #game-over-screen #new-record-badge {
@@ -1695,6 +1711,13 @@ button:focus-visible {
     font-family: 'Space Mono', monospace;
     font-size: 0.58rem;
     letter-spacing: 0.13em;
+}
+
+/* Keyboard-only hints are meaningless on touch devices — hide them (Play
+   review lesson: "OR PRESS SPACE" lines are untrue on a phone). The hero
+   hint stays: game.js swaps its text to the touch variant. */
+body.touch-device .retry-hint {
+    display: none;
 }
 
 .game-over-dock {
@@ -2038,6 +2061,8 @@ button:focus-visible {
     text-shadow: 0 0 10px var(--neon-cyan);
     box-shadow: 0 0 18px rgba(0, 243, 255, 0.35);
     pointer-events: none;
+    text-align: center;
+    white-space: nowrap;
     animation: runStartPulse 1.4s ease-in-out infinite alternate;
 }
 #run-start-banner.hidden { display: none; }

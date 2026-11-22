@@ -11,6 +11,13 @@ function tt(key, fallback, vars) {
     return (typeof I18n !== 'undefined' && I18n.t) ? I18n.t(key, vars, fallback) : fallback;
 }
 
+// Touch devices never see keyboard hints (Play review lesson: "TAP OR
+// SPACEBAR"/"OR PRESS SPACE" is untrue on a phone). CSS hides .retry-hint
+// and .desktop-only-hint under body.touch-device.
+if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.IS_APK) {
+    document.body.classList.add('touch-device');
+}
+
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ STATE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const STATE = { MENU:'MENU', PLAYING:'PLAYING', PAUSED:'PAUSED', GAMEOVER:'GAMEOVER' };
 let GAME_STATE = STATE.MENU;
@@ -1660,12 +1667,16 @@ function pauseGame() {
     if(GAME_STATE!==STATE.PLAYING) return;
     GAME_STATE=STATE.PAUSED;
     cancelAnimationFrame(rafId);
+    // The grace banner must never float over the pause/settings panels;
+    // resume brings it back while the run is still waiting for its first tap.
+    document.getElementById('run-start-banner')?.classList.add('hidden');
     showScreen('pause-screen');
 }
 
 function resumeGame() {
     if(GAME_STATE!==STATE.PAUSED) return;
     hideScreen('pause-screen');
+    if(!runArmed) document.getElementById('run-start-banner')?.classList.remove('hidden');
     GAME_STATE=STATE.PLAYING;
     startGameLoop();
 }
@@ -1703,6 +1714,9 @@ function quitToMenu() {
     stopDrone();
     GAME_STATE=STATE.MENU;
     hideAllScreens(); hideHUD();
+    // The tap-to-start banner must never leak onto the menu: quitting while
+    // it waited for the first tap left it overlapping the mode selector.
+    document.getElementById('run-start-banner')?.classList.add('hidden');
     canvas.classList.remove('aberration');
     document.getElementById('game-container').classList.remove('glitch-shake', 'game-over-flash');
     showScreen('start-screen');
@@ -1713,6 +1727,9 @@ function createExplosion(x,y) { for(let i=0;i<25;i++) particlePool.acquire(x,y);
 function gameOver() {
     GAME_STATE=STATE.GAMEOVER;
     cancelAnimationFrame(rafId);
+    // Safety: the tap-to-start banner can never be up at death, but if a
+    // future path skips the arm tap this keeps it off the death screen.
+    document.getElementById('run-start-banner')?.classList.add('hidden');
     // Gameplay over — hand the bottom banner back to the wrapper so menus
     // keep monetizing while play stays clean (tester: banner during runs
     // feels like too much).
@@ -1878,6 +1895,10 @@ window.revivePlayer=revivePlayer;
 // Android back-button support: Dart asks the game state before deciding to
 // pause (in-game) or exit (menus).
 window.getGameState = () => GAME_STATE;
+// Timestamp (ms epoch) of the last fullscreen JS-side ad (interstitial), 0 if
+// none this session. The native wrapper reads it before an app-open ad so two
+// fullscreen ads can never fire back-to-back on a warm resume.
+window.getLastInterstitialAtMs = () => lastInterstitialAt || 0;
 window.pauseGame = pauseGame;
 
 // ─── IN-APP UPDATE POPUP (wrapper-driven) ─────────────────────────────────
@@ -2090,12 +2111,18 @@ document.getElementById('settings-btn')?.addEventListener('click', ()=>{
     showScreen('settings-screen');
 });
 document.getElementById('menu-settings-btn')?.addEventListener('click', ()=>{
+    // hideAllScreens: the start screen stayed active behind the panel and its
+    // content ghosted through the dim layer (menu title / START DRIFT text).
+    hideAllScreens();
+    // Belt-and-braces: the grace banner never floats over settings.
+    document.getElementById('run-start-banner')?.classList.add('hidden');
     showScreen('settings-screen');
 });
 document.getElementById('settings-from-pause-btn')?.addEventListener('click', ()=>showScreen('settings-screen'));
 document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
     hideScreen('settings-screen');
     if(GAME_STATE===STATE.PAUSED) showScreen('pause-screen');
+    else showScreen('start-screen');
 });
 
 // Remove Ads (APK only): ask Flutter to run the native IAP flow. On success
@@ -2260,10 +2287,15 @@ function updateModeCarousel() {
     if (modeDisplay && modeInput) {
         const mode = MODES[currentModeIndex];
         const mkey = 'mode.' + mode.value.toLowerCase();
+        const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.IS_APK;
         const locLabel = tt(mkey + '.label', mode.label);
         const locHint = tt(mkey + '.hint', mode.hint);
         const locTouch = tt(mkey + '.touch', mode.touchHint);
-        const locHelp = tt(mkey + '.help', mode.help);
+        // Keyboard mentions are untrue on touch — the tutorial help gets its
+        // touch variant when one exists for the language.
+        const locHelp = isTouchDevice
+            ? tt(mkey + '.touchhelp', tt(mkey + '.help', mode.help))
+            : tt(mkey + '.help', mode.help);
         modeDisplay.textContent = locLabel;
         modeDisplay.setAttribute('aria-label', `Selected mode: ${locLabel}`);
         modeInput.value = mode.value;
@@ -2271,8 +2303,7 @@ function updateModeCarousel() {
         if (hint) {
             // Tester feedback: "TAP OR SPACEBAR" is untrue on a phone —
             // drop the desktop half of the hint on touch devices.
-            const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.IS_APK;
-            hint.textContent = (isTouch && mode.touchHint) ? locTouch : locHint;
+            hint.textContent = (isTouchDevice && mode.touchHint) ? locTouch : locHint;
         }
         const tutorialTitle = document.getElementById('tutorial-mode-title');
         if (tutorialTitle) tutorialTitle.textContent = locLabel;
