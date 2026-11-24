@@ -1,6 +1,6 @@
 {
-  "latestVersion": "1.2.13",
+  "latestVersion": "1.2.14",
   "minVersion": "1.2.6",
-  "notes": "\ud83d\udd25 NAYA UPDATE: Full 3-mode selector, Play Games avatar sync, instant audio, balanced top-down squeeze!",
+  "notes": "\ud83d\udd25 v1.2.14: Native haptics, Play Games avatar sync, Top-down 2.2x gap, instant audio & back button support!",
   "playUrl": "https://play.google.com/store/apps/details?id=com.neondrift.bosslevel"
 }
