@@ -24,6 +24,11 @@ let GAME_STATE = STATE.MENU;
 let CURRENT_MODE = 'CLASSIC';
 let score = 0, frameCount = 0, baseSpeed = 7, rafId = null, lastTime = 0;
 let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlashUntil = 0;
+// When the death screen appeared - gates the tap-anywhere restart.
+let gameOverAt = 0;
+// Printed at boot so a tester's build is always identifiable in a log.
+const BUILD_TAG = 'v38-spark-qa';
+try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
 // Natural cadence: every 3rd death OR after a 75s gap — whichever comes first.
 // Never shown on runs under 10s, never while Remove Ads is active, and always
@@ -177,6 +182,12 @@ const Settings = {
         if (key === 'vibration' && this.vibration) {
             vibrate([40]);
         }
+        // The MUSIC toggle used to apply only at the next run start, so flipping
+        // it mid-run did nothing either way (tester: "music on but I hear
+        // nothing"). Apply it immediately.
+        if (key === 'music') {
+            if (this.music) startDrone(); else stopDrone();
+        }
     },
     syncUI() {
         const sensBtn = document.getElementById('topdown-sens-btn');
@@ -248,6 +259,19 @@ bestScore = SaveData.load().highScore;
 function showScreen(id) { document.getElementById(id).classList.add('active'); }
 function hideScreen(id) { document.getElementById(id).classList.remove('active'); }
 function hideAllScreens() { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); }
+
+// The menu never showed the player's best score, which is the one number a
+// score-chase runner should lead with. Kept in one place so every path that
+// changes the record (death, revive, quit) can refresh it.
+function refreshMenuBest() {
+    const el = document.getElementById('menu-best-value');
+    if (!el) return;
+    let best = bestScore;
+    if (!best) { try { best = SaveData.load().highScore || 0; } catch (e) { best = 0; } }
+    el.textContent = best;
+    const wrap = document.getElementById('menu-best');
+    if (wrap) wrap.classList.toggle('has-best', best > 0);
+}
 function showHUD() { document.getElementById('hud').classList.add('active'); }
 function hideHUD() { document.getElementById('hud').classList.remove('active'); }
 
@@ -266,7 +290,7 @@ function playSfx(type) {
     const ac = getAudio();
     const osc = ac.createOscillator(), gain = ac.createGain();
     osc.connect(gain); gain.connect(ac.destination);
-    const c = { jump:{f:150,ef:40,d:0.3,w:'sine'}, death:{f:300,ef:60,d:0.5,w:'sawtooth'}, score:{f:880,ef:880,d:0.05,w:'sine'}, nearmiss:{f:800,ef:1200,d:0.3,w:'triangle'} }[type] || {f:440,ef:440,d:0.1,w:'sine'};
+    const c = { jump:{f:150,ef:40,d:0.3,w:'sine'}, death:{f:300,ef:60,d:0.5,w:'sawtooth'}, score:{f:880,ef:880,d:0.05,w:'sine'}, nearmiss:{f:800,ef:1200,d:0.3,w:'triangle'}, ui:{f:620,ef:620,d:0.06,w:'square'} }[type] || {f:440,ef:440,d:0.1,w:'sine'};
     osc.type = c.w;
     osc.frequency.setValueAtTime(c.f, ac.currentTime);
     osc.frequency.exponentialRampToValueAtTime(c.ef, ac.currentTime + c.d);
@@ -1227,10 +1251,11 @@ function getObstaclePattern() {
                 // Tester: the squeeze gap became unreadable at high speed —
                 // you couldn't tell if it was passable before it killed you.
                 // Widen the gap as the run accelerates: tight early, always
-                // passable late. baseSpeed 7 -> 22 maps gap 1.5x -> 3.3x
-                // player height.
+                // passable late. baseSpeed 7 -> 22 maps gap 1.9x -> 3.5x
+                // player height. Raised from 1.5x: two testers rated the
+                // low-speed squeeze as almost impossible.
                 const speedT = Math.min(1, Math.max(0, (baseSpeed - 7) / 15));
-                const gap = Math.round(player.height * (1.5 + speedT * 1.8));
+                const gap = Math.round(player.height * (1.9 + speedT * 1.6));
                 const blockHeight = Math.max(24, (FLOOR - CEILING - gap) / 2);
                 return [
                     { y: CEILING, width: 62, height: blockHeight, pairY: CEILING + blockHeight + gap, pairHeight: blockHeight, delay: interval }
@@ -1749,6 +1774,7 @@ function createExplosion(x,y) { for(let i=0;i<25;i++) particlePool.acquire(x,y);
 
 function gameOver() {
     GAME_STATE=STATE.GAMEOVER;
+    gameOverAt = performance.now();
     cancelAnimationFrame(rafId);
     // Safety: the tap-to-start banner can never be up at death, but if a
     // future path skips the arm tap this keeps it off the death screen.
@@ -1779,6 +1805,7 @@ function gameOver() {
     bestScore=SaveData.load().highScore;
     document.getElementById('highScore').textContent=bestScore;
     document.getElementById('new-record-badge').style.display=isNew?'block':'none';
+    refreshMenuBest();
     const ccStat=document.getElementById('closeCallsStat');
     if(ccStat) ccStat.textContent=runCloseCalls;
 
@@ -2112,7 +2139,11 @@ window.addEventListener('pointerdown', e=>{
     // Tester feedback: "tapping anywhere outside the overlay does nothing"
     // was annoying. On GAMEOVER the whole screen is the death screen, so
     // ANY tap (outside a real button/link) restarts.
-    if(GAME_STATE===STATE.GAMEOVER&&!e.target.closest('button, a')) {
+    // Second tester then reported accidental restarts from exactly that, so a
+    // short guard keeps the tap-anywhere convenience without eating stray
+    // taps taken right after the crash.
+    const settled = performance.now() - gameOverAt > 450;
+    if(GAME_STATE===STATE.GAMEOVER&&settled&&!e.target.closest('button, a')) {
         // Chrome/Android event order for one tap: pointerdown fires BEFORE
         // touchstart/mousedown. Without this lock the restart tap's own
         // tail events land in the now-PLAYING gameplay handlers and flip
@@ -2282,20 +2313,21 @@ document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
 });
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ UTILS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Ad pause goes through pauseGame()/resumeGame() on purpose. Setting
+// GAME_STATE=PAUSED by hand left the arena frozen with no pause screen and no
+// Resume button, so a single dropped SDK resume event deadlocked the session.
+// Now the worst case is the normal pause screen, which the player can dismiss.
 let preAdState = null;
 window.pauseGameForAd  = ()=>{
-    if(GAME_STATE===STATE.PLAYING){
-        preAdState = STATE.PLAYING;
-        GAME_STATE = STATE.PAUSED;
-        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
-    }
+    if(GAME_STATE!==STATE.PLAYING) return;
+    preAdState = STATE.PLAYING;
+    pauseGame();
 };
 window.resumeGameFromAd= ()=>{
-    if(preAdState===STATE.PLAYING){
-        preAdState = null;
-        GAME_STATE = STATE.PLAYING;
-        startGameLoop();
-    }
+    if(preAdState!==STATE.PLAYING) return;
+    preAdState = null;
+    // No-op when the player already resumed by hand from the pause screen.
+    resumeGame();
 };
 
 function applyApkMode() {
@@ -2346,6 +2378,7 @@ const MODES = [
 let currentModeIndex = 0;
 
 function updateModeCarousel() {
+    refreshMenuBest();
     const modeDisplay = document.getElementById('mode-display');
     const modeInput = document.getElementById('mode-select');
     if (modeDisplay && modeInput) {
@@ -2361,6 +2394,8 @@ function updateModeCarousel() {
             ? tt(mkey + '.touchhelp', tt(mkey + '.help', mode.help))
             : tt(mkey + '.help', mode.help);
         modeDisplay.textContent = locLabel;
+        const counter = document.getElementById('mode-counter');
+        if (counter) counter.textContent = (currentModeIndex + 1) + '/' + MODES.length;
         modeDisplay.setAttribute('aria-label', `Selected mode: ${locLabel}`);
         modeInput.value = mode.value;
         const hint = document.getElementById('hero-hint');
