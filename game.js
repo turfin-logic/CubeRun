@@ -1283,7 +1283,7 @@ function getObstaclePattern() {
                     { y: lane(0.24), width: 44, height: 58, delay: topdownInterval }
                 ];
             default:
-                return [{ y: lane(Math.random() * 0.72), width: 48, height: 58, delay: interval }];
+                return [{ y: lane(Math.random() * 0.72), width: 48, height: 58, delay: topdownInterval }];
         }
     }
 

@@ -11,7 +11,6 @@ const ASSETS_TO_CACHE = [
     './style.css?v=30',
     './i18n.js?v=37',
     './game.js?v=39',
-    './game.js?v=38',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
