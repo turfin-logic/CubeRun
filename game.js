@@ -27,7 +27,7 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // When the death screen appeared - gates the tap-anywhere restart.
 let gameOverAt = 0;
 // Printed at boot so a tester's build is always identifiable in a log.
-const BUILD_TAG = 'v40';
+const BUILD_TAG = 'v41';
 try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
 // Natural cadence: every 3rd death OR after a 75s gap — whichever comes first.
@@ -180,7 +180,7 @@ const Settings = {
         this.syncUI();
         playSfx('ui');
         if (key === 'vibration' && this.vibration) {
-            vibrate([40]);
+            vibrate([150, 50, 150]);
         }
         // The MUSIC toggle used to apply only at the next run start, so flipping
         // it mid-run did nothing either way (tester: "music on but I hear
@@ -364,7 +364,7 @@ function vibrate(pattern=[50]) {
         const isArray = Array.isArray(pattern);
         const maxVal = isArray ? Math.max(...pattern) : Number(pattern) || 50;
         const isCrash = isArray && (maxVal >= 90 || pattern.length > 2);
-        const msg = isCrash ? 'vibrate' : (isArray && (pattern.length > 1 || maxVal >= 50) ? 'medium' : 'light');
+        const msg = isCrash ? 'vibrate' : (isArray && (pattern.length > 1 || maxVal >= 40) ? 'heavy' : 'medium');
         window.GameHaptics.postMessage(msg);
         return;
     }
@@ -1917,42 +1917,59 @@ function revivePlayer() {
     if(GAME_STATE!==STATE.GAMEOVER||reviveCountdownInterval!==null) return;
     cancelPendingInterstitial();
     hideScreen('game-over-screen');
+
+    // Clean arena and reset player IMMEDIATELY so the 3s countdown displays a clean stage
+    obstaclePool.releaseAll();
+    player.y = FLOOR - player.height;
+    player.gravityDir = 1;
+    player.isSwapping = false;
+    pendingFlip = false;
+    player.invincible = true;
+    shakeFrames = 0;
+    const gc = document.getElementById('game-container');
+    if (gc) gc.classList.remove('glitch-shake');
+    draw(); // Immediate redraw: removes colliding obstacles and centers revived cube on floor
+
     let count = 3;
     const countdownEl = document.createElement('div');
+    countdownEl.id = 'revive-countdown';
     countdownEl.style.position = 'absolute';
     countdownEl.style.top = '50%';
     countdownEl.style.left = '50%';
     countdownEl.style.transform = 'translate(-50%, -50%)';
-    countdownEl.style.fontSize = '80px';
-    countdownEl.style.fontWeight = 'bold';
-    countdownEl.style.color = '#ff003c';
+    countdownEl.style.fontSize = '88px';
+    countdownEl.style.fontWeight = '900';
+    countdownEl.style.color = '#fff';
     countdownEl.style.zIndex = '9999';
-    countdownEl.style.textShadow = '0 0 20px #ff003c';
-    countdownEl.style.fontFamily = 'monospace';
+    countdownEl.style.textShadow = '0 0 30px #ff003c, 0 0 10px #ff003c';
+    countdownEl.style.fontFamily = "'Archivo Black', 'Orbitron', sans-serif";
+    countdownEl.style.pointerEvents = 'none';
     countdownEl.innerText = count;
-    document.body.appendChild(countdownEl);
-    reviveCountdownElement=countdownEl;
+    (gc || document.body).appendChild(countdownEl);
+    reviveCountdownElement = countdownEl;
+    playSfx('ui');
+    vibrate([60]);
 
     reviveCountdownInterval = setInterval(() => {
         count--;
         if (count > 0) {
             countdownEl.innerText = count;
+            playSfx('ui');
+            vibrate([60]);
         } else {
             clearInterval(reviveCountdownInterval);
-            reviveCountdownInterval=null;
+            reviveCountdownInterval = null;
             countdownEl.remove();
-            reviveCountdownElement=null;
-            GAME_STATE=STATE.PLAYING;
-            // A real revive happened (rewarded ad completed + countdown ran).
+            reviveCountdownElement = null;
+            GAME_STATE = STATE.PLAYING;
             Stats.data.revives++;
             Stats.save();
             Achievements.evaluate('revive');
-            player.y=FLOOR-player.height; player.gravityDir=1; player.isSwapping=false; pendingFlip=false;
-            player.invincible=true; setTimeout(()=>player.invincible=false,2000);
-            obstaclePool.releaseAll();
-            document.getElementById('revive-btn').style.display='none';
-            document.getElementById('game-container').classList.remove('glitch-shake');
-            showHUD(); startGameLoop();
+            setTimeout(() => player.invincible = false, 2000);
+            const rBtn = document.getElementById('revive-btn');
+            if (rBtn) rBtn.style.display = 'none';
+            showHUD();
+            startGameLoop();
         }
     }, 1000);
 }
