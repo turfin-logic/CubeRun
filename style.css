@@ -2435,3 +2435,60 @@ h1.glitch {
 .toggle-btn.icon-toggle:not(.active) img {
     opacity: 0.45;
 }
+
+/* Game-over hierarchy: the three offers used to be three filled buttons of
+   equal weight (gold revive, orange 2x, pink retry) so nothing led the eye.
+   TAP TO RETRY is now the only filled control; the reward offers are outlined,
+   with gold reserved for the revive (the higher-intent action) and a neutral
+   hairline for 2x. */
+#game-over-screen .revive-btn,
+#game-over-screen .revive-btn.clutch-revive {
+    background: transparent !important;
+    border: 1px solid rgba(255, 215, 0, 0.55) !important;
+    border-radius: var(--r-lg);
+    color: #ffd76a !important;
+    box-shadow: none !important;
+    font-family: var(--ui-body);
+    font-weight: 800;
+    font-size: 0.82rem;
+    letter-spacing: 0.8px;
+    animation: none !important;
+}
+#game-over-screen .revive-btn:hover,
+#game-over-screen .revive-btn.clutch-revive:hover {
+    background: rgba(255, 215, 0, 0.10) !important;
+}
+
+#double-score-btn {
+    background: transparent !important;
+    border: 1px solid var(--ui-line-strong) !important;
+    border-radius: var(--r-lg);
+    color: var(--ui-text) !important;
+    box-shadow: none !important;
+    font-family: var(--ui-body);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.8px;
+    text-shadow: none;
+}
+#double-score-btn:hover {
+    transform: none;
+    background: var(--ui-surface-2) !important;
+}
+#double-score-btn.double-done {
+    background: transparent !important;
+    border-color: rgba(0, 255, 102, 0.6) !important;
+    color: #6bffa8 !important;
+    box-shadow: none !important;
+}
+#double-score-btn:disabled {
+    opacity: 0.45;
+}
+
+/* The retry button keeps the filled primary treatment. */
+#game-over-screen .retry-btn {
+    background: var(--neon-pink) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: var(--r-lg);
+}

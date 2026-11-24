@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuberun-v42';
+const CACHE_NAME = 'cuberun-v43';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -8,7 +8,7 @@ const ASSETS_TO_CACHE = [
     './version.json',
     './terms.html',
     './privacy.html',
-    './style.css?v=31',
+    './style.css?v=32',
     './i18n.js?v=37',
     './game.js?v=40',
     './manifest.json',
