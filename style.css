@@ -2167,3 +2167,271 @@ body.touch-device .retry-hint {
     letter-spacing: 0.6px;
     line-height: 1.35;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DESIGN PASS — hierarchy, type and surfaces
+   -----------------------------------------------------------------------
+   Tester feedback: "the UI feels overly AI-generated". The causes were
+   structural, not cosmetic: every control used the same .cyber-btn recipe
+   (identical clip-path, pink border, glow, breathing animation), Orbitron
+   was set on all text, and the accent colour was used as a surface instead
+   of as an accent. This block gives the interface three tiers, one accent,
+   and two radii, without touching markup or the in-canvas art.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+    --ui-surface: rgba(255, 255, 255, 0.035);
+    --ui-surface-2: rgba(255, 255, 255, 0.07);
+    --ui-line: rgba(255, 255, 255, 0.10);
+    --ui-line-strong: rgba(255, 255, 255, 0.22);
+    --ui-text: #f4f3f8;
+    --ui-dim: rgba(244, 243, 248, 0.55);
+    --r-lg: 14px;
+    --r-pill: 999px;
+    --ui-display: 'Archivo Black', 'Orbitron', system-ui, sans-serif;
+    --ui-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Type: Inter everywhere, Archivo Black for things that SHOUT.
+   Orbitron is kept only for the wordmark and the numeric readouts, where it
+   reads as game HUD rather than as decoration. */
+body,
+.screen,
+button,
+input,
+.cyber-btn,
+.setting-row,
+.legal-links,
+.hero-hint,
+.dock-btn-label,
+.menu-best-label {
+    font-family: var(--ui-body);
+}
+
+h1:not(.glitch),
+h2,
+h3,
+.screen h1,
+.screen h2,
+.hero-play-text,
+.retry-btn,
+.revive-btn,
+.double-btn,
+.mode-pill-label,
+.menu-help-btn,
+#double-score-btn {
+    font-family: var(--ui-display);
+    letter-spacing: 0.5px;
+}
+
+/* Numerals use the display face. Orbitron is kept only for the wordmark and
+   for in-canvas HUD text, whose font strings live in game.js. */
+h1.glitch {
+    font-family: 'Orbitron', monospace;
+}
+#menu-best-value,
+.ach-stat-value,
+#finalScore,
+#highScore,
+.score-value {
+    font-family: var(--ui-display);
+    letter-spacing: 1px;
+}
+
+/* No breathing buttons. One accent, used once per screen. */
+.cyber-btn,
+.toggle-btn,
+.hero-play-btn,
+.dock-btn,
+.menu-help-btn,
+.retry-btn,
+.revive-btn,
+.double-btn,
+.hud-btn,
+.menu-icon-btn {
+    animation: none !important;
+}
+
+/* ── Tier 1: primary. Filled, one per screen. ───────────────────────── */
+.hero-play-btn,
+.retry-btn,
+.revive-btn {
+    background: var(--neon-pink);
+    border: none;
+    border-radius: var(--r-lg);
+    color: #fff;
+    font-weight: 400; /* Archivo Black is already heavy */
+    letter-spacing: 2px;
+    box-shadow: 0 8px 24px rgba(255, 0, 60, 0.28);
+    clip-path: none;
+    text-transform: uppercase;
+}
+.hero-play-btn:active,
+.retry-btn:active,
+.revive-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 4px 14px rgba(255, 0, 60, 0.24);
+}
+
+/* ── Tier 2: secondary. Hairline, neutral. The default for .cyber-btn. ─ */
+.cyber-btn,
+.menu-help-btn {
+    background: transparent;
+    border: 1px solid var(--ui-line-strong);
+    border-radius: var(--r-lg);
+    color: var(--ui-text);
+    box-shadow: none;
+    clip-path: none;
+    font-size: 0.82rem;
+    letter-spacing: 2px;
+    padding: 12px 22px;
+    text-transform: uppercase;
+}
+.cyber-btn:hover,
+.menu-help-btn:hover {
+    background: var(--ui-surface-2);
+    border-color: rgba(255, 255, 255, 0.32);
+    box-shadow: none;
+}
+.cyber-btn:active,
+.menu-help-btn:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Tier 3: chips. Toggles, speed, price. Filled, no border. ───────── */
+.toggle-btn {
+    background: var(--ui-surface-2);
+    border: 1px solid transparent;
+    border-radius: var(--r-pill);
+    color: var(--ui-dim);
+    box-shadow: none;
+    font-family: var(--ui-body);
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 1.4px;
+    padding: 8px 18px;
+}
+.toggle-btn.active {
+    background: var(--neon-pink);
+    border-color: transparent;
+    color: #fff;
+}
+
+/* Settings rows: flatter surfaces, less outline noise. */
+#settings-screen .setting-row {
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-line);
+    border-radius: var(--r-lg);
+    box-shadow: none;
+}
+
+/* The mode selector should read as a control, not as a disabled field. */
+.clean-mode-pill {
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-line);
+    box-shadow: none;
+}
+.mode-arrow-btn {
+    color: var(--ui-dim);
+    opacity: 0.9;
+}
+.mode-pill-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.6px;
+    color: var(--ui-text);
+}
+
+/* Dock chips stay quiet until touched. */
+.dock-btn {
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-line);
+    border-radius: var(--r-pill);
+    box-shadow: none;
+}
+.dock-btn-label {
+    font-weight: 600;
+    letter-spacing: 1px;
+    font-size: 0.72rem;
+    color: var(--ui-dim);
+}
+
+/* Headings: weight from the face, not from a glow stack. */
+.screen h1,
+.screen h2 {
+    text-shadow: none;
+    color: var(--ui-text);
+    letter-spacing: 1px;
+}
+
+/* The Remove Ads price is the only filled control on the settings screen,
+   so it stays pink - but as a chip, not as a hero CTA. */
+#settings-screen #remove-ads-btn {
+    background: var(--neon-pink);
+    color: #fff;
+    border-radius: var(--r-pill);
+    font-family: var(--ui-body);
+    font-weight: 800;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    padding: 12px 20px;
+}
+
+/* Icon toggles join the chip tier: filled disc, no pink ring. */
+.toggle-btn.icon-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 12px;
+    background: var(--ui-surface-2);
+    border: 1px solid transparent;
+}
+.toggle-btn.icon-toggle img {
+    width: 22px;
+    height: 22px;
+    filter: none;
+    opacity: 0.6;
+}
+.toggle-btn.icon-toggle.active {
+    background: var(--neon-pink);
+}
+.toggle-btn.icon-toggle.active img {
+    filter: brightness(0) invert(1);
+    opacity: 1;
+}
+.toggle-btn.icon-toggle:not(.active) {
+    background: var(--ui-surface-2);
+    border-color: transparent;
+}
+
+/* Selector: tighter box, louder label, quieter position marker. */
+.clean-mode-pill {
+    padding: 10px 8px;
+    gap: 4px;
+    border-radius: var(--r-lg);
+}
+.mode-pill-label {
+    font-size: 0.88rem;
+    letter-spacing: 0;
+    line-height: 1.15;
+}
+.mode-arrow-btn {
+    width: 30px;
+    min-width: 30px;
+    font-size: 0.8rem;
+}
+.mode-pill-counter {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    color: rgba(0, 240, 255, 0.7);
+    margin: 2px 0 4px;
+}
+
+/* The active icon toggle must read as ON at a glance. */
+.toggle-btn.icon-toggle.active {
+    background: var(--neon-pink) !important;
+    border-color: transparent !important;
+}
+.toggle-btn.icon-toggle:not(.active) img {
+    opacity: 0.45;
+}
