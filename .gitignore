@@ -7,9 +7,9 @@ node_modules/
 *.aab
 
 # Dev/test files
+# NOTE: do NOT ignore *.mjs — qa/e2e_check.mjs is tracked and new test files
+# were being silently swallowed by that rule.
 test*.js
-test*.mjs
-*.mjs
 deployed_game.js
 
 # IDE and OS
