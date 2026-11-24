@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cuberun-v38';
+const CACHE_NAME = 'cuberun-v40';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -8,9 +8,9 @@ const ASSETS_TO_CACHE = [
     './version.json',
     './terms.html',
     './privacy.html',
-    './style.css?v=28',
+    './style.css?v=29',
     './i18n.js?v=37',
-    './game.js?v=37',
+    './game.js?v=38',
     './manifest.json',
     './icon-192.png',
     './icon-512.png',
@@ -58,7 +58,7 @@ self.addEventListener('fetch', event => {
         return;
     }
 
-    if (event.request.url.includes('google') || event.request.url.includes('events_config.json')) {
+    if (event.request.url.includes('google') || event.request.url.includes('events_config.json') || event.request.url.includes('version.json')) {
         event.respondWith(fetch(event.request).catch(() => new Response('{}', { status: 200 }))); // Fail gracefully
         return;
     }
@@ -90,9 +90,11 @@ self.addEventListener('fetch', event => {
         caches.match(event.request).then(cachedResponse => {
             // Stale-While-Revalidate Strategy
             const fetchPromise = fetch(event.request).then(networkResponse => {
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, networkResponse.clone());
-                });
+                if (networkResponse && networkResponse.ok) {
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, networkResponse.clone());
+                    });
+                }
                 return networkResponse;
             }).catch(() => {
                 console.log('SW: Network failed, relying on cache');

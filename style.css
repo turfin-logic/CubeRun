@@ -1772,6 +1772,24 @@ body.touch-device .retry-hint {
     .dock-btn { min-height: 40px; padding: 6px 10px; }
 }
 
+@media (max-width: 400px) {
+    .menu-bottom-dock {
+        gap: 6px;
+        padding-left: 6px;
+        padding-right: 6px;
+        max-width: 100%;
+    }
+    .dock-btn {
+        padding: 8px 5px;
+        font-size: 0.64rem;
+        gap: 4px;
+        min-width: 0;
+    }
+    .dock-btn-label {
+        font-size: 0.62rem;
+    }
+}
+
 /* ─── GOOGLE PLAY GAMES PROFILE PILL (real data only) ─────────────────── */
 #gpg-profile {
     display: flex;

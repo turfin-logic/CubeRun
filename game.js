@@ -168,7 +168,16 @@ const Settings = {
         this.syncUI();
     },
     save() { localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration, topdownSens:this.topdownSens})); },
-    toggle(key) { this[key] = !this[key]; this.save(); this.syncUI(); },
+    toggle(key) {
+        if (!key) return;
+        this[key] = !this[key];
+        this.save();
+        this.syncUI();
+        playSfx('ui');
+        if (key === 'vibration' && this.vibration) {
+            vibrate([40]);
+        }
+    },
     syncUI() {
         const sensBtn = document.getElementById('topdown-sens-btn');
         if (sensBtn) sensBtn.textContent = (Number(this.topdownSens) || 1) + 'x';
@@ -190,7 +199,7 @@ const Settings = {
     }
 };
 Settings.load();
-document.querySelectorAll('.toggle-btn').forEach(b => b.addEventListener('click', () => Settings.toggle(b.dataset.key)));
+document.querySelectorAll('.toggle-btn[data-key]').forEach(b => b.addEventListener('click', () => Settings.toggle(b.dataset.key)));
 // TOP-DOWN SPEED: cycles the easing multiplier (tester request — taps felt
 // unresponsive at the default 1.0x). Excluded from the generic toggle path.
 const TOPDOWN_SENS_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
@@ -201,6 +210,7 @@ document.getElementById('topdown-sens-btn')?.addEventListener('click', () => {
     Settings.save();
     Settings.syncUI();
     playSfx('ui');
+    vibrate([20]);
 });
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SAVE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -327,10 +337,16 @@ function stopDrone() {
 function vibrate(pattern=[50]) {
     if (!Settings.vibration) return;
     if (window.GameHaptics) {
-        window.GameHaptics.postMessage(pattern.length > 1 ? 'medium' : 'light');
+        const isArray = Array.isArray(pattern);
+        const maxVal = isArray ? Math.max(...pattern) : Number(pattern) || 50;
+        const isCrash = isArray && (maxVal >= 90 || pattern.length > 2);
+        const msg = isCrash ? 'vibrate' : (isArray && (pattern.length > 1 || maxVal >= 50) ? 'medium' : 'light');
+        window.GameHaptics.postMessage(msg);
         return;
     }
-    if (navigator.vibrate) navigator.vibrate(pattern);
+    try {
+        if (navigator.vibrate) navigator.vibrate(pattern);
+    } catch(e){}
 }
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ OFF-SCREEN SPRITES (Glow, pre-rendered once) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -1139,8 +1155,15 @@ window.rewardUser = () => { if(window.FlutterBridge) window.FlutterBridge.onRewa
 
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
 function startGameLoop() {
+    if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+    }
     function loop(ts) {
-        if(GAME_STATE!==STATE.PLAYING) return;
+        if(GAME_STATE!==STATE.PLAYING) {
+            rafId = null;
+            return;
+        }
         let dt=Math.min((ts-lastTime)/16.67,3);
         lastTime=ts;
         // Slow-mo power-up: the whole world breathes while the orb is active
@@ -2125,6 +2148,34 @@ document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
     else showScreen('start-screen');
 });
 
+// Native Android back key integration (called by Flutter wrapper)
+window.handleBackKey = function() {
+    const settings = document.getElementById('settings-screen');
+    if (settings && settings.classList.contains('active')) {
+        hideScreen('settings-screen');
+        if (GAME_STATE === STATE.PAUSED) showScreen('pause-screen');
+        else showScreen('start-screen');
+        return true;
+    }
+    const ach = document.getElementById('achievements-screen');
+    if (ach && ach.classList.contains('active')) {
+        hideScreen('achievements-screen');
+        showScreen('start-screen');
+        return true;
+    }
+    const tut = document.getElementById('tutorial-screen');
+    if (tut && tut.classList.contains('active')) {
+        hideScreen('tutorial-screen');
+        showScreen('start-screen');
+        return true;
+    }
+    if (GAME_STATE === STATE.PLAYING) {
+        pauseGame();
+        return true;
+    }
+    return false;
+};
+
 // Remove Ads (APK only): ask Flutter to run the native IAP flow. On success
 // Flutter calls window.setNoAds(true), which flips the entitlement, hides
 // every interstitial path and hides this row until uninstall/refund.
@@ -2231,8 +2282,21 @@ document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
 });
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ UTILS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-window.pauseGameForAd  = ()=>{ if(GAME_STATE===STATE.PLAYING){ cancelAnimationFrame(rafId); }};
-window.resumeGameFromAd= ()=>{ if(GAME_STATE===STATE.PLAYING) startGameLoop(); };
+let preAdState = null;
+window.pauseGameForAd  = ()=>{
+    if(GAME_STATE===STATE.PLAYING){
+        preAdState = STATE.PLAYING;
+        GAME_STATE = STATE.PAUSED;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    }
+};
+window.resumeGameFromAd= ()=>{
+    if(preAdState===STATE.PLAYING){
+        preAdState = null;
+        GAME_STATE = STATE.PLAYING;
+        startGameLoop();
+    }
+};
 
 function applyApkMode() {
     if(window.IS_APK===true) {
