@@ -1252,32 +1252,35 @@ function getObstaclePattern() {
     const interval = Math.max(78, 150 - baseSpeed * 5);
 
     if (CURRENT_MODE === 'TOPDOWN') {
+        // Early breathing room: two testers reported initial 30s spawn rate was too suffocating
+        const earlySpawnMult = (score < 300) ? 1.35 : 1.0;
+        const topdownInterval = Math.round(interval * earlySpawnMult);
         const lane = (fraction) => CEILING + fraction * (FLOOR - CEILING - 58);
         switch (sequence % 4) {
             case 1:
                 return [
-                    { y: lane(0.24), width: 44, height: 58, delay: 36 },
-                    { y: lane(0.72), width: 44, height: 58, delay: interval }
+                    { y: lane(0.24), width: 44, height: 58, delay: Math.round(36 * earlySpawnMult) },
+                    { y: lane(0.72), width: 44, height: 58, delay: topdownInterval }
                 ];
             case 2: {
                 // Tester: the squeeze gap became unreadable at high speed —
                 // you couldn't tell if it was passable before it killed you.
                 // Widen the gap as the run accelerates: tight early, always
                 // passable late. baseSpeed 7 -> 22 maps gap 1.9x -> 3.5x
-                // player height. Raised from 1.5x: two testers rated the
-                // low-speed squeeze as almost impossible.
+                // player height. Added early gap buffer (2.2x -> 3.5x) for first 30s.
                 const speedT = Math.min(1, Math.max(0, (baseSpeed - 7) / 15));
-                const gap = Math.round(player.height * (1.9 + speedT * 1.6));
+                const earlyGapBonus = (score < 300) ? 0.3 : 0.0;
+                const gap = Math.round(player.height * (1.9 + earlyGapBonus + speedT * 1.6));
                 const blockHeight = Math.max(24, (FLOOR - CEILING - gap) / 2);
                 return [
-                    { y: CEILING, width: 62, height: blockHeight, pairY: CEILING + blockHeight + gap, pairHeight: blockHeight, delay: interval }
+                    { y: CEILING, width: 62, height: blockHeight, pairY: CEILING + blockHeight + gap, pairHeight: blockHeight, delay: topdownInterval }
                 ];
             }
             case 3:
                 return [
-                    { y: lane(0.72), width: 44, height: 58, delay: 42 },
-                    { y: lane(0.48), width: 44, height: 58, delay: 42 },
-                    { y: lane(0.24), width: 44, height: 58, delay: interval }
+                    { y: lane(0.72), width: 44, height: 58, delay: Math.round(42 * earlySpawnMult) },
+                    { y: lane(0.48), width: 44, height: 58, delay: Math.round(42 * earlySpawnMult) },
+                    { y: lane(0.24), width: 44, height: 58, delay: topdownInterval }
                 ];
             default:
                 return [{ y: lane(Math.random() * 0.72), width: 48, height: 58, delay: interval }];
