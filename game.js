@@ -946,6 +946,18 @@ window.onPlayGamesProfile = (profile) => {
         document.getElementById('gpg-profile-name').textContent = tt('gpg.hey', 'Hey there, {n}', { n: p.name });
         document.getElementById('gpg-profile-level').textContent =
             (p.level && Number(p.level) > 0) ? tt('gpg.level', 'Level {n}', { n: p.level }) : '';
+        // The avatar was never filled in, so the chip always showed a 👤.
+        // Native sends the Play Games icon as a URI; only http(s) ones can be
+        // loaded in the WebView, content:// ones keep the emoji fallback.
+        const avatar = document.getElementById('gpg-profile-avatar');
+        if (avatar && typeof p.icon === 'string' && /^https?:/i.test(p.icon)) {
+            avatar.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = p.icon;
+            img.alt = '';
+            img.onerror = () => { avatar.textContent = '\uD83D\uDC64'; };
+            avatar.appendChild(img);
+        }
         pill.style.display = 'flex';
     } else {
         pill.style.display = 'none';

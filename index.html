@@ -43,6 +43,14 @@
         // Ad network / fetch unhandledrejections are normal; alerts would block gameplay.
         window.onerror = function(msg, url, line, col, error) {
             console.error('[CubeRun]', msg, 'at', url + ':' + line, error);
+            // Swallowing the default handler keeps the UI clean, but the error
+            // used to disappear completely. Push it to the GTM data layer so
+            // it shows up in reporting instead.
+            try {
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push({event: 'js_error', message: String(msg),
+                    source: String(url || ''), line: line || 0});
+            } catch (e) {}
             return true; // suppress default browser error UI
         };
         window.addEventListener("unhandledrejection", function(e) {
@@ -115,10 +123,10 @@
                     <div class="clean-mode-pill">
                         <button id="mode-prev" class="mode-arrow-btn" type="button" aria-label="Previous game mode" title="Previous game mode">◄</button>
                         <div id="mode-display" class="mode-pill-label" aria-live="polite">CLASSIC (GRAVITY FLIP)</div>
-                        <span id="mode-counter" class="mode-pill-counter" aria-hidden="true">1/3</span>
                         <button id="mode-next" class="mode-arrow-btn" type="button" aria-label="Next game mode" title="Next game mode">►</button>
                         <input type="hidden" id="mode-select" value="CLASSIC">
                     </div>
+                    <div id="mode-counter" class="mode-pill-counter" aria-hidden="true">1 / 3</div>
 
                     <!-- Best score: the one number a score-chase runner should lead with -->
                     <div id="menu-best" class="menu-best">

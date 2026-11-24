@@ -2129,14 +2129,17 @@ body.touch-device .retry-hint {
     letter-spacing: 1px;
     text-shadow: 0 0 12px rgba(255, 215, 106, 0.35);
 }
+/* Sits under the selector, not inside it: inside, it stole width from the
+   mode name and "CLASSIC (GRAVITY FLIP)" truncated on 360px screens. */
 .mode-pill-counter {
+    display: block;
+    text-align: center;
+    margin: -2px 0 6px;
     font-family: 'Orbitron', monospace;
     font-size: 0.55rem;
     font-weight: 700;
-    letter-spacing: 1px;
-    color: rgba(0, 240, 255, 0.6);
-    padding: 0 6px 0 2px;
-    flex: 0 0 auto;
+    letter-spacing: 2.4px;
+    color: rgba(0, 240, 255, 0.55);
 }
 
 /* ─── QA pass: panel opacity + Remove Ads button ──────────────────────────
