@@ -27,16 +27,16 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // When the death screen appeared - gates the tap-anywhere restart.
 let gameOverAt = 0;
 // Printed at boot so a tester's build is always identifiable in a log.
-const BUILD_TAG = 'v41';
+const BUILD_TAG = 'v42';
 try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
-// Natural cadence: every 3rd death OR after a 75s gap — whichever comes first.
-// Never shown on runs under 10s, never while Remove Ads is active, and always
+// Triggers on every 3rd qualifying death OR after a 60s gap — whichever comes first.
+// Never shown on short runs under 5s, never while Remove Ads is active, and always
 // after the game-over screen has settled (natural break, AdMob-policy safe).
 const INTERSTITIAL_POLICY = {
-    MIN_RUN_MS: 10000,   // runs shorter than this never count toward cadence and never trigger
-    DEATHS: 4,           // …AND at least this many qualifying deaths since the last ad (softened — rewarded-centric transition)
-    COOLDOWN_MS: 90000,  // …AND at least this long since the last ad (softened from 75s)
+    MIN_RUN_MS: 5000,    // 5s+ run qualifies (short accidental deaths <5s never count or trigger)
+    DEATHS: 3,           // every 3rd qualifying death, OR
+    COOLDOWN_MS: 60000,  // 60s gap since last ad — whichever comes first
     DELAY_MS: 900,       // let the game-over screen settle first
     RETRY_REARM_MS: 20000 // after a skipped attempt (no ad ready), earliest retry window
 };
@@ -68,6 +68,7 @@ let lastTopDownHapticAt = 0, lastTopDownHapticY = 0;
 let pendingFlip = false;
 let inputLockUntil = 0;
 let lastTouchAt = 0;
+let lastDragGameY = null;
 function inputLocked(){ return performance.now()<inputLockUntil; }
 let patternQueue = [], patternTimer = 72, patternIndex = 0, classicLane = 'top';
 let floatTexts = [];
@@ -165,14 +166,36 @@ if(typeof initSprites === 'function') initSprites();
 
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SETTINGS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Declared BEFORE Settings so Settings.load() never hits TDZ
+const TOPDOWN_SENS_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
+function normalizeTopdownSens(val) {
+    const n = Number(val);
+    if (!Number.isFinite(n) || n <= 0) return 1.0;
+    const clamped = Math.max(0.6, Math.min(2.0, n));
+    let nearest = TOPDOWN_SENS_STEPS[0];
+    let minDiff = Math.abs(clamped - nearest);
+    for (let i = 1; i < TOPDOWN_SENS_STEPS.length; i++) {
+        const diff = Math.abs(clamped - TOPDOWN_SENS_STEPS[i]);
+        if (diff < minDiff) {
+            minDiff = diff;
+            nearest = TOPDOWN_SENS_STEPS[i];
+        }
+    }
+    return nearest;
+}
+
 const Settings = {
     sfx: true, music: true, vibration: true,
-    topdownSens: 1.0, // TOP-DOWN easing speed multiplier (tester request)
+    topdownSens: 1.0, // TOP-DOWN speed multiplier
     load() {
         try { Object.assign(this, JSON.parse(localStorage.getItem('ndSettings') || '{}')); } catch(e){}
+        this.topdownSens = normalizeTopdownSens(this.topdownSens);
         this.syncUI();
     },
-    save() { localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration, topdownSens:this.topdownSens})); },
+    save() {
+        this.topdownSens = normalizeTopdownSens(this.topdownSens);
+        localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration, topdownSens:this.topdownSens}));
+    },
     toggle(key) {
         if (!key) return;
         this[key] = !this[key];
@@ -191,7 +214,7 @@ const Settings = {
     },
     syncUI() {
         const sensBtn = document.getElementById('topdown-sens-btn');
-        if (sensBtn) sensBtn.textContent = (Number(this.topdownSens) || 1) + 'x';
+        if (sensBtn) sensBtn.textContent = normalizeTopdownSens(this.topdownSens).toFixed(1).replace(/\.0$/, '.0') + 'x';
         ['sfx','music','vibration'].forEach(k => {
             const b = document.querySelector(`[data-key="${k}"]`);
             if (b) {
@@ -211,11 +234,9 @@ const Settings = {
 };
 Settings.load();
 document.querySelectorAll('.toggle-btn[data-key]').forEach(b => b.addEventListener('click', () => Settings.toggle(b.dataset.key)));
-// TOP-DOWN SPEED: cycles the easing multiplier (tester request — taps felt
-// unresponsive at the default 1.0x). Excluded from the generic toggle path.
-const TOPDOWN_SENS_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
+// TOP-DOWN SPEED: cycles sensitivity cleanly using nearest-step snap.
 document.getElementById('topdown-sens-btn')?.addEventListener('click', () => {
-    const cur = Number(Settings.topdownSens) || 1;
+    const cur = normalizeTopdownSens(Settings.topdownSens);
     const i = TOPDOWN_SENS_STEPS.indexOf(cur);
     Settings.topdownSens = TOPDOWN_SENS_STEPS[(i + 1) % TOPDOWN_SENS_STEPS.length];
     Settings.save();
@@ -328,14 +349,12 @@ function playCreepyMelody() {
 }
 
 function startDrone() {
-    // FIX: the hardcoded `return;` here silenced music entirely — the MUSIC
-    // toggle in settings was a no-op (tester: "music toggle is on but I don't
-    // feel any music"). Ambient drone now actually plays when enabled.
     if (!Settings.music || droneOscs.length > 0) return;
     const ac = getAudio();
-    [40,43,60.5].forEach(f => {
+    // Audible harmonic chord (A2 / E3 / A3) — mobile speakers cannot reproduce <100Hz sub-bass
+    [110, 164.81, 220].forEach(f => {
         const osc=ac.createOscillator(), gain=ac.createGain();
-        osc.type='sine'; osc.frequency.value=f; gain.gain.value=0.04;
+        osc.type='sine'; osc.frequency.value=f; gain.gain.value=0.055;
         osc.connect(gain); gain.connect(ac.destination); osc.start();
         droneOscs.push({osc,gain});
     });
@@ -1161,21 +1180,22 @@ function consumePendingRevive() {
     if (shouldRevive) revivePlayer();
 }
 
-window.onAdClose = () => {
+window.onAdClose = (earned) => {
     clearTimeout(window._rewardTimeout);
+    if (earned === true || earned === 'true') {
+        if (window._onRewardGranted && window.FlutterBridge) {
+            window.FlutterBridge.onRewardGranted();
+        }
+    }
     if (window._pendingRevive) { consumePendingRevive(); return; }
-    // Race guard: if native fires onRewardGranted() + onAdClose() inside the
-    // SAME JS task, the revive click-handler's `await` continuation (which
-    // sets _pendingRevive) hasn't run yet. A macrotask re-check (not a
-    // microtask — those are FIFO and order-dependent) always runs after that
-    // continuation, so a fully-watched ad never loses its revive.
     setTimeout(() => {
         if (window._pendingRevive) { consumePendingRevive(); return; }
-        if (window._onRewardFailed) { window.FlutterBridge.onRewardFailed(); return; }
-        // Ad closed with no reward and no pending callbacks — reset the
-        // button so the player isn't stuck.
+        if (earned !== true && earned !== 'true' && window._onRewardFailed) {
+            window.FlutterBridge.onRewardFailed();
+            return;
+        }
         const btn = document.getElementById('revive-btn');
-        if (btn) { btn.textContent = tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)'); btn.disabled = false; }
+        if (btn && !window._pendingRevive) { btn.textContent = tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)'); btn.disabled = false; }
     }, 0);
 };
 
@@ -1334,12 +1354,9 @@ function update(dt) {
 
     // Player movement
     if (CURRENT_MODE === 'TOPDOWN') {
-        // Smoothly move towards targetY if it exists. The 0.45 easing was so
-        // slow that taps felt unresponsive (tester feedback) — the
-        // TOP-DOWN SPEED setting in settings multiplies the ease rate.
         if (player.targetY !== undefined) {
             const dy = player.targetY - (player.y + player.height/2);
-            const sens = Math.max(0.5, Math.min(2.5, Number(Settings.topdownSens) || 1));
+            const sens = normalizeTopdownSens(Settings.topdownSens);
             player.y += dy * (1 - Math.pow(0.45, dt * sens));
         }
         // Clamp to screen bounds
@@ -1470,10 +1487,11 @@ function update(dt) {
         }
         if(slowMoPickup){
             slowMoPickup.x -= runSpeed * 0.8 * dt;
+            const playerEffectiveY = player.y - (CURRENT_MODE === 'LASER' ? player.z : 0);
             if(slowMoPickup.x < -40){ slowMoPickup=null; slowMoSpawnAt=performance.now()+18000; }
-            else if(!player.invincible && Math.hypot(slowMoPickup.x-(player.x+15), slowMoPickup.y-(player.y+15)) < 36){
+            else if(!player.invincible && Math.hypot(slowMoPickup.x-(player.x+15), slowMoPickup.y-(playerEffectiveY+15)) < 36){
                 slowMoUntil=performance.now()+4000;
-                addFloatingText('SLOW-MO!', player.x+15, player.y-24, '#4DABF7');
+                addFloatingText('SLOW-MO!', player.x+15, playerEffectiveY-24, '#4DABF7');
                 playSfx('nearmiss');
                 slowMoPickup=null;
                 slowMoSpawnAt=performance.now()+24000;
@@ -1877,39 +1895,25 @@ function gameOver() {
     sessionDeathCount++;
     saveSessionDeathCount(sessionDeathCount);
     const now=Date.now();
-    // Interstitial engine — every gate must pass, so an ad is only ever a
-    // reward for a real session, never a punishment for struggling:
-    //   1. Only runs ≥ MIN_RUN_MS count toward the cadence (rapid short
-    //      deaths never push the player toward an interstitial).
-    //   2. ≥ DEATHS qualifying deaths since the last ad.
-    //   3. ≥ COOLDOWN_MS since the last ad — this is also the launch grace,
-    //      because lastInterstitialAt starts at page load.
-    //   4. Natural break only: called from gameOver() after DELAY_MS, and the
-    //      timer re-checks the run wasn't restarted/quit/left meanwhile.
-    //   5. Never for no-ads users (double gate: here and in showInterstitial).
-    //   6. Counters reset ONLY when native confirms the ad actually showed
-    //      (window.onInterstitialShown) — a no-fill skip is retried after
-    //      RETRY_REARM_MS instead of silently consuming the cadence.
-    if (runDuration >= INTERSTITIAL_POLICY.MIN_RUN_MS) deathsSinceInterstitial++;
-    const cadenceOk = deathsSinceInterstitial >= INTERSTITIAL_POLICY.DEATHS;
-    const cooldownOk = (now - lastInterstitialAt) >= INTERSTITIAL_POLICY.COOLDOWN_MS;
-    if (cadenceOk && cooldownOk) {
-        const endedRunId=activeRunId;
-        interstitialTimer=setTimeout(() => {
-            interstitialTimer=null;
-            // Never stack an interstitial on top of an in-flight rewarded
-            // revive: skip if the player has already tapped REVIVE (their
-            // rewarded ad is loading/playing) or a revive is awaiting its
-            // post-ad callback.
-            // Quick-retry guard (tester request): a run started less than
-            // 6s ago means the player is in a rapid-retry rhythm — never
-            // pop a fullscreen ad into that flow.
-            if(GAME_STATE===STATE.GAMEOVER && activeRunId===endedRunId && !RemoveAds.active()
-               && reviveRequestRunId===null && !window._pendingRevive
-               && (Date.now() - lastRetryAt) >= 6000) {
-                FlutterBridge.showInterstitial();
-            }
-        }, INTERSTITIAL_POLICY.DELAY_MS);
+    // Interstitial engine (OR logic + soft gates):
+    //   1. Runs < MIN_RUN_MS (5s) NEVER count and NEVER trigger an ad.
+    //   2. Every 3rd qualifying death OR after 60s gap — whichever comes first.
+    //   3. Quick-retry guard: 3s lock protects rapid retries.
+    if (runDuration >= INTERSTITIAL_POLICY.MIN_RUN_MS) {
+        deathsSinceInterstitial++;
+        const cadenceOk = deathsSinceInterstitial >= INTERSTITIAL_POLICY.DEATHS;
+        const cooldownOk = (now - lastInterstitialAt) >= INTERSTITIAL_POLICY.COOLDOWN_MS;
+        if (cadenceOk || cooldownOk) {
+            const endedRunId=activeRunId;
+            interstitialTimer=setTimeout(() => {
+                interstitialTimer=null;
+                if(GAME_STATE===STATE.GAMEOVER && activeRunId===endedRunId && !RemoveAds.active()
+                   && reviveRequestRunId===null && !window._pendingRevive
+                   && (Date.now() - lastRetryAt) >= 3000) {
+                    FlutterBridge.showInterstitial();
+                }
+            }, INTERSTITIAL_POLICY.DELAY_MS);
+        }
     }
 }
 
@@ -1918,17 +1922,36 @@ function revivePlayer() {
     cancelPendingInterstitial();
     hideScreen('game-over-screen');
 
-    // Clean arena and reset player IMMEDIATELY so the 3s countdown displays a clean stage
+    // Mode-aware arena and player reset IMMEDIATELY so the 3s countdown shows a clean stage
     obstaclePool.releaseAll();
-    player.y = FLOOR - player.height;
-    player.gravityDir = 1;
-    player.isSwapping = false;
+    player.trail = [];
+    floatTexts = [];
+    slowMoPickup = null;
+    slowMoUntil = 0;
+    patternQueue = [];
+    patternTimer = 60;
     pendingFlip = false;
+    lastDragGameY = null;
     player.invincible = true;
     shakeFrames = 0;
+
+    if (CURRENT_MODE === 'TOPDOWN') {
+        player.y = (CEILING + FLOOR - player.height) / 2;
+        player.targetY = player.y + player.height / 2;
+    } else if (CURRENT_MODE === 'LASER') {
+        player.z = 0;
+        player.zVelocity = 0;
+        player.y = FLOOR - player.height - 60;
+        player.x = VIEW_W / 2 - player.width / 2;
+    } else {
+        player.y = FLOOR - player.height;
+        player.gravityDir = 1;
+        player.isSwapping = false;
+    }
+
     const gc = document.getElementById('game-container');
     if (gc) gc.classList.remove('glitch-shake');
-    draw(); // Immediate redraw: removes colliding obstacles and centers revived cube on floor
+    draw(); // Immediate redraw: clean arena & mode-appropriate cube position
 
     let count = 3;
     const countdownEl = document.createElement('div');
@@ -2012,7 +2035,7 @@ window.showUpdatePopup = function (data) {
     document.body.appendChild(overlay);
 
     const go = document.getElementById('update-go');
-    if (go) go.addEventListener('click', () => { window.location.href = data.playUrl; });
+    if (go) go.addEventListener('click', () => { openExternal(data.playUrl); });
     const later = document.getElementById('update-later');
     if (later) later.addEventListener('click', () => {
         try { localStorage.setItem('updatePopupDismissed', String(Date.now())); } catch (e) { }
@@ -2067,6 +2090,7 @@ function startGame() {
 
     resetGame();
     hideAllScreens(); showHUD();
+    if (window.AdChannel) { try { window.AdChannel.postMessage('hideBanner'); } catch(e){} }
     GAME_STATE=STATE.PLAYING;
     runStartedAt=Date.now();
     // Tap-to-start grace: the cube drifts through an empty arena; spawning,
@@ -2080,7 +2104,13 @@ function startGame() {
 }
 
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
-function handleInput(yPos) {
+function clientYToGame(clientY) {
+    const rect = canvas.getBoundingClientRect();
+    if (!rect || !rect.height) return Number(clientY) || (CEILING + FLOOR) / 2;
+    return ((clientY - rect.top) / rect.height) * VIEW_H;
+}
+
+function handleInput(yPos, isDrag = false) {
     if (GAME_STATE !== STATE.PLAYING) return;
     // First tap of the grace window actually starts the run: obstacles,
     // scoring and difficulty come alive from here on (tester request).
@@ -2090,7 +2120,17 @@ function handleInput(yPos) {
     }
     if (CURRENT_MODE === 'TOPDOWN') {
         const halfHeight=player.height/2;
-        const targetY=Math.max(CEILING+halfHeight,Math.min(FLOOR-halfHeight,yPos));
+        const sens = normalizeTopdownSens(Settings.topdownSens);
+        let nextTarget;
+        if (isDrag && lastDragGameY !== null) {
+            const deltaY = yPos - lastDragGameY;
+            const baseTarget = player.targetY !== undefined ? player.targetY : (player.y + halfHeight);
+            nextTarget = baseTarget + deltaY * sens;
+        } else {
+            nextTarget = yPos;
+        }
+        lastDragGameY = yPos;
+        const targetY=Math.max(CEILING+halfHeight,Math.min(FLOOR-halfHeight,nextTarget));
         player.targetY=targetY;
         const now=performance.now();
         if (Math.abs(targetY-lastTopDownHapticY)>=player.height && now-lastTopDownHapticAt>=160) {
@@ -2113,8 +2153,13 @@ window.addEventListener('keydown', e=>{
     if(e.code==='Space'){
         e.preventDefault();
         if(e.repeat) return;
-        if(GAME_STATE===STATE.GAMEOVER) startGame();
-        else handleInput((CEILING+FLOOR)/2); // arena center, viewport-independent
+        if(GAME_STATE===STATE.GAMEOVER) {
+            if (performance.now() - gameOverAt <= 450) return;
+            inputLockUntil = performance.now() + 400;
+            pendingFlip = false;
+            startGame();
+        }
+        else handleInput((CEILING+FLOOR)/2, false); // arena center, viewport-independent
     }
     if(e.key==='Escape') pauseGame();
 });
@@ -2125,7 +2170,7 @@ window.addEventListener('touchstart', e=>{
         // follow-up mouse event (double-input guard) and never starts a
         // scroll/zoom gesture from gameplay touches.
         if (e.cancelable) e.preventDefault();
-        handleInput(e.touches[0].clientY);
+        handleInput(clientYToGame(e.touches[0].clientY), false);
     }
 }, {passive:false});
 window.addEventListener('mousedown', e=>{
@@ -2133,20 +2178,23 @@ window.addEventListener('mousedown', e=>{
     // synthesizes a mousedown for the same tap -> double input (flip +
     // unflip). Ignore mouse events that trail a real touch or a restart tap.
     if(GAME_STATE===STATE.PLAYING&&!inputLocked()&&(performance.now()-lastTouchAt)>500&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
-        handleInput(e.clientY);
+        handleInput(clientYToGame(e.clientY), false);
     }
 });
 window.addEventListener('mousemove', e=>{
     if(GAME_STATE===STATE.PLAYING && CURRENT_MODE === 'TOPDOWN' && e.buttons === 1 && !e.target.closest('button')&&!e.target.closest('.hud-btn')) {
-        handleInput(e.clientY);
+        handleInput(clientYToGame(e.clientY), true);
     }
 });
 window.addEventListener('touchmove', e=>{
     if(GAME_STATE===STATE.PLAYING&&!inputLocked()&&!e.target.closest('button')&&!e.target.closest('.hud-btn')) {
         if (e.cancelable) e.preventDefault();
-        if (CURRENT_MODE === 'TOPDOWN') handleInput(e.touches[0].clientY);
+        if (CURRENT_MODE === 'TOPDOWN') handleInput(clientYToGame(e.touches[0].clientY), true);
     }
 }, {passive:false});
+window.addEventListener('touchend', ()=>{ lastDragGameY = null; });
+window.addEventListener('touchcancel', ()=>{ lastDragGameY = null; });
+window.addEventListener('mouseup', ()=>{ lastDragGameY = null; });
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
 document.getElementById('start-btn')?.addEventListener('click', () => {
     startGame();
@@ -2373,15 +2421,31 @@ window.addEventListener('load',()=>{
     setTimeout(()=>{ applyApkMode(); RemoveAds.syncUI(); },800);
 });
 
+function openExternal(url) {
+    if (!url) return;
+    if (window.GameChannel) {
+        try { window.GameChannel.postMessage('openUrl:' + url); return; } catch(e){}
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+window.openExternal = openExternal;
+
+document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-open-url]');
+    if (!el) return;
+    e.preventDefault();
+    openExternal(el.getAttribute('data-open-url'));
+});
+
 function shareToWhatsApp() {
     const t='\uD83D\uDD25 I scored '+score+' on CUBE RUN! \uD83D\uDE08 Beat me: https://turfin-logic.github.io/CubeRun/';
-    window.location.href='https://api.whatsapp.com/send?text='+encodeURIComponent(t);
+    openExternal('https://api.whatsapp.com/send?text='+encodeURIComponent(t));
 }
 function shareToTelegram() {
-    window.location.href='https://t.me/share/url?url='+encodeURIComponent('https://turfin-logic.github.io/CubeRun/')+'&text='+encodeURIComponent('\uD83D\uDD25 I scored '+score+' on CUBE RUN!');
+    openExternal('https://t.me/share/url?url='+encodeURIComponent('https://turfin-logic.github.io/CubeRun/')+'&text='+encodeURIComponent('\uD83D\uDD25 I scored '+score+' on CUBE RUN!'));
 }
 function downloadApk() {
-    window.location.href='https://neon-drift-game-tau.vercel.app/neon-drift-boss.apk?v='+Date.now();
+    openExternal('https://neon-drift-game-tau.vercel.app/neon-drift-boss.apk?v='+Date.now());
 }
 
 // Custom Carousel Mode UI Logic

@@ -149,11 +149,11 @@
                         <span class="dock-btn-icon">🏆</span>
                         <span class="dock-btn-label" data-i18n="ui.awards">Awards</span>
                     </button>
-                    <button onclick="window.open('https://play.google.com/store/apps/details?id=com.mangaverse.app', '_blank')" class="dock-btn dock-mangaverse">
+                    <button data-open-url="https://play.google.com/store/apps/details?id=com.mangaverse.app" class="dock-btn dock-mangaverse" type="button">
                         <span class="dock-btn-icon">🎮</span>
                         <span class="dock-btn-label">Mangaverse</span>
                     </button>
-                    <button onclick="window.open('https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', '_blank')" class="dock-btn dock-playstore apk-only">
+                    <button data-open-url="https://play.google.com/store/apps/details?id=com.neondrift.bosslevel" class="dock-btn dock-playstore apk-only" type="button">
                         <span class="dock-btn-icon">📲</span>
                         <span class="dock-btn-label">Google Play</span>
                     </button>
@@ -234,7 +234,7 @@
                 </div>
                 <p class="retry-hint" data-i18n="ui.or_press_space">OR PRESS SPACE</p>
                 <div class="game-over-dock" aria-label="More games">
-                    <a class="game-over-link apk-only" href="https://play.google.com/store/apps/details?id=com.neondrift.bosslevel" target="_blank" rel="noopener noreferrer" aria-label="Get on Google Play">▶</a>
+                    <a class="game-over-link apk-only" href="https://play.google.com/store/apps/details?id=com.neondrift.bosslevel" data-open-url="https://play.google.com/store/apps/details?id=com.neondrift.bosslevel" target="_blank" rel="noopener noreferrer" aria-label="Get on Google Play">▶</a>
                 </div>
             </div>
 
@@ -278,6 +278,6 @@
     </div><!-- end game-container -->
 
     <script src="i18n.js?v=37"></script>
-    <script src="game.js?v=41"></script>
+    <script src="game.js?v=42"></script>
 </body>
 </html>
