@@ -1,6 +1,6 @@
 {
-  "latestVersion": "1.2.15",
+  "latestVersion": "1.2.16",
   "minVersion": "1.2.6",
-  "notes": "\ud83d\udd25 v1.2.15: Enhanced vibration haptics, smooth revive arena transition & UI refinements!",
+  "notes": "🔥 v1.2.16: Native hardware vibration, smooth mode-aware revive, responsive Top-Down drag & audible music!",
   "playUrl": "https://play.google.com/store/apps/details?id=com.neondrift.bosslevel"
 }
