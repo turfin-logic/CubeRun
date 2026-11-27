@@ -2510,6 +2510,323 @@ h1.glitch {
     border-color: var(--ui-line-loud) !important;
 }
 
+/* ─── SMASHKARTS-INSPIRED ARCADE LOBBY OVERRIDES (v45) ─────────────────── */
+.screen.clean-menu {
+    background:
+        radial-gradient(ellipse at 50% 34%, rgba(255, 0, 60, 0.14), transparent 60%),
+        linear-gradient(180deg, rgba(4, 2, 12, 0.56) 0%, rgba(4, 2, 12, 0.34) 48%, rgba(4, 2, 12, 0.78) 100%);
+}
+.screen.clean-menu[data-active-mode="LASER"] {
+    background:
+        radial-gradient(ellipse at 50% 34%, rgba(255, 215, 0, 0.13), transparent 60%),
+        linear-gradient(180deg, rgba(4, 2, 12, 0.56) 0%, rgba(4, 2, 12, 0.34) 48%, rgba(4, 2, 12, 0.78) 100%);
+}
+.screen.clean-menu[data-active-mode="TOPDOWN"] {
+    background:
+        radial-gradient(ellipse at 50% 34%, rgba(0, 243, 255, 0.14), transparent 60%),
+        linear-gradient(180deg, rgba(4, 2, 12, 0.56) 0%, rgba(4, 2, 12, 0.34) 48%, rgba(4, 2, 12, 0.78) 100%);
+}
+
+#start-screen .menu-top-bar {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    min-height: 44px;
+    gap: 10px;
+}
+
+#start-screen .menu-best {
+    display: flex !important;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(14, 12, 24, 0.72);
+    border: 1px solid rgba(255, 215, 106, 0.36);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
+}
+#start-screen .menu-best-trophy {
+    font-size: 0.9rem;
+    line-height: 1;
+}
+#start-screen .menu-best-label {
+    font-size: 0.62rem;
+    letter-spacing: 1.8px;
+}
+#start-screen #menu-best-value {
+    font-size: 0.98rem;
+}
+
+#start-screen .menu-icon-btn {
+    border-radius: 14px;
+    background: rgba(14, 12, 24, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+}
+
+.lobby-brand-lockup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+#start-screen .lobby-brand-lockup .unified-logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0;
+    border-radius: 18px;
+    flex-shrink: 0;
+}
+#start-screen .lobby-brand-lockup .outer-square {
+    width: 34px;
+    height: 34px;
+}
+#start-screen .lobby-brand-lockup .inner-square {
+    width: 18px;
+    height: 18px;
+}
+.lobby-title-block {
+    text-align: left;
+}
+#start-screen .lobby-title-block .menu-tagline {
+    padding-left: 0;
+    margin-bottom: 2px;
+    font-size: 0.56rem;
+    letter-spacing: 0.16em;
+    color: rgba(232, 238, 250, 0.72);
+}
+#start-screen .lobby-title-block h1 {
+    font-size: clamp(1.85rem, 8.2vw, 2.75rem);
+    line-height: 0.96;
+    letter-spacing: 0.06em;
+    margin: 0;
+}
+
+.mode-cards-section {
+    width: 100%;
+    margin: 4px 0 16px;
+}
+.mode-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+.mode-card {
+    --card-accent: #ff003c;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 78px;
+    padding: 10px 6px;
+    border-radius: 16px;
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    background: rgba(14, 12, 26, 0.72);
+    backdrop-filter: blur(8px);
+    color: rgba(235, 240, 250, 0.76);
+    cursor: pointer;
+    transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
+    overflow: hidden;
+    touch-action: manipulation;
+}
+.mode-card[data-mode="LASER"] { --card-accent: #ffd700; }
+.mode-card[data-mode="TOPDOWN"] { --card-accent: #00f3ff; }
+
+.mode-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 16%;
+    right: 16%;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+    background: var(--card-accent);
+    opacity: 0.25;
+    transition: opacity 0.16s ease;
+}
+.mode-card.active {
+    transform: translateY(-2px);
+    color: #fff;
+    border-color: var(--card-accent);
+    background: linear-gradient(180deg, rgba(25, 20, 42, 0.92), rgba(12, 10, 22, 0.88));
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.42), 0 0 18px color-mix(in srgb, var(--card-accent) 28%, transparent);
+}
+.mode-card.active::before {
+    opacity: 1;
+}
+.mode-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--card-accent);
+}
+.mode-card.active .mode-card-icon {
+    background: color-mix(in srgb, var(--card-accent) 18%, transparent);
+}
+.mode-card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+.mode-card-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.56rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 0.65;
+}
+.mode-card.active .mode-card-tag {
+    color: var(--card-accent);
+    opacity: 1;
+}
+
+.mode-active-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 7px 12px;
+    border-radius: 12px;
+    background: rgba(12, 10, 22, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+#start-screen .mode-pill-label {
+    font-size: 0.74rem;
+    text-align: left;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#start-screen .mode-pill-counter {
+    margin: 0;
+    flex-shrink: 0;
+    color: rgba(255, 255, 255, 0.52);
+}
+
+#start-screen .hero-play-btn {
+    width: 100%;
+    max-width: 340px;
+    height: 58px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #ff1a52 0%, #d40038 72%, #a8002d 100%);
+    box-shadow: 0 5px 0 #6e001f, 0 12px 28px rgba(255, 0, 60, 0.38), inset 0 1px rgba(255, 255, 255, 0.28);
+    font-size: 1.18rem;
+    letter-spacing: 2.4px;
+}
+#start-screen .hero-play-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #6e001f, 0 6px 14px rgba(255, 0, 60, 0.3);
+}
+#start-screen[data-active-mode="TOPDOWN"] .hero-play-btn {
+    background: linear-gradient(135deg, #00e5ff 0%, #0088ff 100%);
+    color: #031018;
+    box-shadow: 0 5px 0 #004e8c, 0 12px 28px rgba(0, 229, 255, 0.32), inset 0 1px rgba(255, 255, 255, 0.4);
+}
+#start-screen[data-active-mode="TOPDOWN"] .hero-play-btn .hero-play-text {
+    text-shadow: none;
+    font-weight: 900;
+}
+#start-screen[data-active-mode="LASER"] .hero-play-btn {
+    background: linear-gradient(135deg, #ffd700 0%, #ff7b00 100%);
+    color: #160900;
+    box-shadow: 0 5px 0 #8a4200, 0 12px 28px rgba(255, 180, 0, 0.32), inset 0 1px rgba(255, 255, 255, 0.4);
+}
+#start-screen[data-active-mode="LASER"] .hero-play-btn .hero-play-text {
+    text-shadow: none;
+    font-weight: 900;
+}
+
+#start-screen .menu-help-btn {
+    margin-top: 10px;
+    padding: 9px 18px;
+    min-height: 44px;
+    font-size: 0.72rem;
+    letter-spacing: 1.6px;
+    background: rgba(14, 12, 26, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+#start-screen .menu-bottom-dock {
+    max-width: 400px;
+    gap: 8px;
+    padding-top: 6px;
+}
+#start-screen .dock-btn {
+    min-height: 44px;
+    border-radius: 14px;
+    background: rgba(14, 12, 26, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+}
+
+@media (max-width: 340px) {
+    .lobby-brand-lockup {
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    #start-screen .lobby-brand-lockup .unified-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+    }
+    #start-screen .lobby-title-block h1 {
+        font-size: 1.65rem;
+    }
+    .mode-cards-grid {
+        gap: 6px;
+    }
+    .mode-card {
+        min-height: 70px;
+        padding: 8px 4px;
+        border-radius: 12px;
+    }
+    .mode-card-title {
+        font-size: 0.58rem;
+        letter-spacing: 0.2px;
+    }
+    .mode-card-tag {
+        font-size: 0.5rem;
+    }
+    #start-screen .hero-play-btn {
+        height: 50px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-height: 670px) {
+    .lobby-brand-lockup {
+        margin-bottom: 8px;
+    }
+    .mode-cards-section {
+        margin: 2px 0 10px;
+    }
+    .mode-card {
+        min-height: 68px;
+        padding: 7px 5px;
+    }
+    #start-screen .hero-play-btn {
+        height: 50px;
+    }
+    #start-screen .menu-help-btn {
+        margin-top: 6px;
+    }
+}
+
 /* Native-synced dynamic banner clearance across ALL 6 screens so menus,
    settings, pause, game-over, awards & tutorial never overlap an active banner
    and never leave dead empty gaps on cold-start or no-fill. */

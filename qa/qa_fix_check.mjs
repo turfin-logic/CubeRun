@@ -67,8 +67,14 @@ try {
   const res = await page.evaluate(async () => {
     const out = {};
 
-    // 1. BUILD_TAG v44 & no TDZ errors
+    // 1. BUILD_TAG v45 & 3-mode card selector
     out.buildTag = typeof BUILD_TAG !== 'undefined' ? BUILD_TAG : null;
+    const modeCards = Array.from(document.querySelectorAll('.mode-card'));
+    out.modeCardCount = modeCards.length;
+    document.querySelector('.mode-card[data-mode="TOPDOWN"]')?.click();
+    out.modeCardSwitched = document.getElementById('mode-select')?.value === 'TOPDOWN' &&
+        document.getElementById('start-screen')?.getAttribute('data-active-mode') === 'TOPDOWN';
+    document.querySelector('.mode-card[data-mode="CLASSIC"]')?.click();
 
     // 2. TOP-DOWN SPEED row removed & #gpg-profile stays hidden even after onPlayGamesProfile
     out.sensBtnRemoved = document.getElementById('topdown-sens-btn') === null;
@@ -201,7 +207,8 @@ try {
   });
 
   assert('No runtime pageerrors', pageErrors.length === 0, pageErrors.join('; '));
-  assert('BUILD_TAG is v44', res.buildTag === 'v44', res.buildTag);
+  assert('BUILD_TAG is v45', res.buildTag === 'v45', res.buildTag);
+  assert('3-card mode selector switches mode directly on tap', res.modeCardCount === 3 && res.modeCardSwitched === true);
   assert('#topdown-sens-btn removed from Settings', res.sensBtnRemoved === true);
   assert('#gpg-profile stays hidden after onPlayGamesProfile', res.gpgHidden === true);
   assert('Vibration toggle ON sends enable + light; OFF sends disable & mutes vibrate()',

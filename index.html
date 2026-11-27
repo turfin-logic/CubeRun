@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=35">
+    <link rel="stylesheet" href="style.css?v=36">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
@@ -89,19 +89,21 @@
                 </div>
             </div>
 
-            <!-- Main Menu Screen (Clean Mobile UI) -->
-            <div id="start-screen" class="screen clean-menu active">
-                <!-- Top Header Bar -->
+            <!-- Main Menu Screen (SmashKarts-Inspired Arcade Lobby) -->
+            <div id="start-screen" class="screen clean-menu active" data-active-mode="CLASSIC">
+                <!-- Top Header Bar: Best Score Trophy Pill + Settings -->
                 <div class="menu-top-bar">
-                    <div class="menu-tagline" data-i18n="ui.tagline">DODGE • FLIP • SURVIVE</div>
+                    <div id="menu-best" class="menu-best has-best" aria-label="Best Score">
+                        <span class="menu-best-trophy" aria-hidden="true">🏆</span>
+                        <span class="menu-best-label" data-i18n="ui.best">BEST</span>
+                        <strong id="menu-best-value">0</strong>
+                    </div>
                     <button id="menu-settings-btn" class="menu-icon-btn" type="button" title="Settings" aria-label="Open settings">
                         <img src="assets/ui/vector/ic_system_gear-ring.svg" alt="">
                     </button>
                 </div>
 
-                <!-- Google Play Games profile pill (filled ONLY with real
-                     native data via window.onPlayGamesProfile; stays hidden
-                     on web / signed-out — never fabricated). -->
+                <!-- Google Play Games profile pill (permanently hidden for clean UI while keeping background sync) -->
                 <div id="gpg-profile" hidden style="display:none;">
                     <div id="gpg-profile-avatar">👤</div>
                     <div id="gpg-profile-text">
@@ -112,26 +114,48 @@
 
                 <!-- Center Hero Area -->
                 <div class="menu-hero-area">
-                    <div class="unified-logo">
-                        <div class="outer-square"></div>
-                        <div class="inner-square"></div>
-                        <div class="center-dot"></div>
+                    <div class="lobby-brand-lockup">
+                        <div class="unified-logo">
+                            <div class="outer-square"></div>
+                            <div class="inner-square"></div>
+                            <div class="center-dot"></div>
+                        </div>
+                        <div class="lobby-title-block">
+                            <div class="menu-tagline" data-i18n="ui.tagline">DODGE • FLIP • SURVIVE</div>
+                            <h1 class="glitch" data-text="CUBE RUN">CUBE RUN</h1>
+                        </div>
                     </div>
-                    <h1 class="glitch" data-text="CUBE RUN">CUBE RUN</h1>
 
-                    <!-- Sleek Mode Selector Pill -->
-                    <div class="clean-mode-pill">
-                        <button id="mode-prev" class="mode-arrow-btn" type="button" aria-label="Previous game mode" title="Previous game mode">◄</button>
-                        <div id="mode-display" class="mode-pill-label" aria-live="polite">CLASSIC (GRAVITY FLIP)</div>
-                        <button id="mode-next" class="mode-arrow-btn" type="button" aria-label="Next game mode" title="Next game mode">►</button>
+                    <!-- 3-Card Arcade Mode Selector -->
+                    <div class="mode-cards-section">
+                        <div class="mode-cards-grid" role="radiogroup" aria-label="Game Modes">
+                            <button type="button" class="mode-card active" data-mode-index="0" data-mode="CLASSIC" aria-checked="true">
+                                <span class="mode-card-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="m8 8 4-4 4 4"/><path d="m8 16 4 4 4-4"/></svg>
+                                </span>
+                                <span class="mode-card-title">CLASSIC</span>
+                                <span class="mode-card-tag">FLIP</span>
+                            </button>
+                            <button type="button" class="mode-card" data-mode-index="1" data-mode="LASER" aria-checked="false">
+                                <span class="mode-card-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+                                </span>
+                                <span class="mode-card-title">LASER</span>
+                                <span class="mode-card-tag">JUMP</span>
+                            </button>
+                            <button type="button" class="mode-card" data-mode-index="2" data-mode="TOPDOWN" aria-checked="false">
+                                <span class="mode-card-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+                                </span>
+                                <span class="mode-card-title">TOP-DOWN</span>
+                                <span class="mode-card-tag">DODGE</span>
+                            </button>
+                        </div>
+                        <div class="mode-active-bar">
+                            <span id="mode-display" class="mode-pill-label" aria-live="polite">CLASSIC (GRAVITY FLIP)</span>
+                            <span id="mode-counter" class="mode-pill-counter" aria-hidden="true">1/3</span>
+                        </div>
                         <input type="hidden" id="mode-select" value="CLASSIC">
-                    </div>
-                    <div id="mode-counter" class="mode-pill-counter" aria-hidden="true">1 / 3</div>
-
-                    <!-- Best score: the one number a score-chase runner should lead with -->
-                    <div id="menu-best" class="menu-best">
-                        <span class="menu-best-label" data-i18n="ui.best">BEST</span>
-                        <strong id="menu-best-value">0</strong>
                     </div>
 
                     <!-- Hero Play Button -->
@@ -276,6 +300,6 @@
     </div><!-- end game-container -->
 
     <script src="i18n.js?v=38"></script>
-    <script src="game.js?v=44"></script>
+    <script src="game.js?v=45"></script>
 </body>
 </html>

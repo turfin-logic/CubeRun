@@ -27,7 +27,7 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // When the death screen appeared - gates the tap-anywhere restart.
 let gameOverAt = 0;
 // Printed at boot so a tester's build is always identifiable in a log.
-const BUILD_TAG = 'v44';
+const BUILD_TAG = 'v45';
 try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
 // Triggers on every 2nd qualifying death OR after a 40s gap — whichever comes first.
@@ -1237,6 +1237,119 @@ function startGameLoop() {
     rafId=requestAnimationFrame(loop);
 }
 
+let menuTick = 0;
+function drawMenuScene(dt) {
+    const W = VIEW_W, H = VIEW_H;
+    if (!W || !H) return;
+    menuTick += dt;
+    ctx.clearRect(0, 0, W, H);
+
+    const activeMode = MODES[currentModeIndex]?.value || 'CLASSIC';
+    const accent = activeMode === 'TOPDOWN' ? '#00f3ff' : (activeMode === 'LASER' ? '#ffd700' : '#ff003c');
+    const secondary = activeMode === 'TOPDOWN' ? '#7000ff' : (activeMode === 'LASER' ? '#ff5500' : '#7000ff');
+
+    // Arena rails matching active mode
+    ctx.strokeStyle = accent;
+    ctx.globalAlpha = 0.42;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, CEILING); ctx.lineTo(W, CEILING);
+    ctx.moveTo(0, FLOOR); ctx.lineTo(W, FLOOR);
+    ctx.stroke();
+
+    // Gently scrolling cyber grid
+    ctx.strokeStyle = accent;
+    ctx.globalAlpha = 0.13;
+    ctx.lineWidth = 1;
+    const off = (menuTick * 2.1) % 48;
+    ctx.beginPath();
+    for (let x = -off; x < W; x += 48) { ctx.moveTo(x, CEILING); ctx.lineTo(x, FLOOR); }
+    for (let y = CEILING; y < FLOOR; y += 48) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+
+    // 3D Synthwave perspective floor lines below FLOOR
+    const horizon = FLOOR;
+    const floorSpan = Math.max(40, H - horizon);
+    const vpX = W / 2;
+    for (let s = -4; s <= 4; s++) {
+        ctx.moveTo(vpX + s * (W * 0.08), horizon);
+        ctx.lineTo(vpX + s * (W * 0.34), H);
+    }
+    const rowOff = (menuTick * 0.03) % 1;
+    for (let r = 0; r < 5; r++) {
+        const p = (r + rowOff) / 5;
+        const ry = horizon + (p * p) * floorSpan;
+        ctx.moveTo(0, ry); ctx.lineTo(W, ry);
+    }
+    ctx.stroke();
+
+    // Parallax neon particles
+    if (bgParticles.length === 0) initBgParticles();
+    ctx.globalAlpha = 0.85;
+    bgParticles.forEach(p => {
+        p.x += p.baseVx * dt * 1.4;
+        if (p.x < 0) { p.x = W; p.y = Math.random() * H; }
+        if (p.sprite) ctx.drawImage(p.sprite, Math.floor(p.x - 2), Math.floor(p.y - 2));
+    });
+
+    // Live mode-preview demo cube & hazard silhouette
+    const cubeSize = 26;
+    const midY = (CEILING + FLOOR) / 2;
+    let demoX = W * 0.22;
+    let demoY = midY;
+    if (activeMode === 'TOPDOWN') {
+        demoY = midY + Math.sin(menuTick * 0.055) * ((FLOOR - CEILING) * 0.32);
+    } else if (activeMode === 'LASER') {
+        const jumpCycle = (menuTick * 0.05) % (Math.PI * 2);
+        const hop = Math.max(0, Math.sin(jumpCycle)) * 46;
+        demoX = W * 0.5 - cubeSize / 2;
+        demoY = FLOOR - 56 - cubeSize - hop;
+        const beamY = CEILING + ((menuTick * 2.8) % Math.max(1, FLOOR - CEILING));
+        ctx.fillStyle = accent;
+        ctx.globalAlpha = 0.22;
+        ctx.fillRect(0, beamY - 2, W, 6);
+    } else {
+        const flipWave = Math.sin(menuTick * 0.045);
+        const norm = Math.max(0, Math.min(1, flipWave * 1.3 + 0.5));
+        demoY = CEILING + 8 + norm * (FLOOR - CEILING - cubeSize - 16);
+    }
+
+    // Subtle trail + demo cube
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = secondary;
+    ctx.fillRect(demoX - 24, demoY, cubeSize, cubeSize);
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = accent;
+    ctx.fillRect(demoX - 11, demoY, cubeSize, cubeSize);
+    ctx.globalAlpha = 0.82;
+    ctx.fillStyle = accent;
+    ctx.fillRect(demoX, demoY, cubeSize, cubeSize);
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(demoX + 6, demoY + 6, cubeSize - 12, cubeSize - 12);
+    ctx.globalAlpha = 1;
+}
+
+function startMenuLoop() {
+    if (GAME_STATE !== STATE.MENU) return;
+    if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+    }
+    initBgParticles();
+    let prevTs = performance.now();
+    function loop(ts) {
+        if (GAME_STATE !== STATE.MENU) {
+            rafId = null;
+            return;
+        }
+        const dt = Math.min((ts - prevTs) / 16.67, 3);
+        prevTs = ts;
+        drawMenuScene(dt);
+        rafId = requestAnimationFrame(loop);
+    }
+    rafId = requestAnimationFrame(loop);
+}
+
 function currentRunPhase() {
     for (let i = RUN_PHASES.length - 1; i >= 0; i--) {
         if (score >= RUN_PHASES[i].score) return i;
@@ -1806,6 +1919,7 @@ function quitToMenu() {
     canvas.classList.remove('aberration');
     document.getElementById('game-container').classList.remove('glitch-shake', 'game-over-flash');
     showScreen('start-screen');
+    startMenuLoop();
 }
 
 function createExplosion(x,y) { for(let i=0;i<25;i++) particlePool.acquire(x,y); }
@@ -2500,13 +2614,12 @@ function updateModeCarousel() {
     const modeInput = document.getElementById('mode-select');
     if (modeDisplay && modeInput) {
         const mode = MODES[currentModeIndex];
+        CURRENT_MODE = mode.value;
         const mkey = 'mode.' + mode.value.toLowerCase();
         const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.IS_APK;
         const locLabel = tt(mkey + '.label', mode.label);
         const locHint = tt(mkey + '.hint', mode.hint);
         const locTouch = tt(mkey + '.touch', mode.touchHint);
-        // Keyboard mentions are untrue on touch — the tutorial help gets its
-        // touch variant when one exists for the language.
         const locHelp = isTouchDevice
             ? tt(mkey + '.touchhelp', tt(mkey + '.help', mode.help))
             : tt(mkey + '.help', mode.help);
@@ -2515,10 +2628,16 @@ function updateModeCarousel() {
         if (counter) counter.textContent = (currentModeIndex + 1) + '/' + MODES.length;
         modeDisplay.setAttribute('aria-label', `Selected mode: ${locLabel}`);
         modeInput.value = mode.value;
+        const startScreen = document.getElementById('start-screen');
+        if (startScreen) startScreen.setAttribute('data-active-mode', mode.value);
+        document.querySelectorAll('.mode-card').forEach((card) => {
+            const idx = Number(card.dataset.modeIndex);
+            const active = idx === currentModeIndex;
+            card.classList.toggle('active', active);
+            card.setAttribute('aria-checked', String(active));
+        });
         const hint = document.getElementById('hero-hint');
         if (hint) {
-            // Tester feedback: "TAP OR SPACEBAR" is untrue on a phone —
-            // drop the desktop half of the hint on touch devices.
             hint.textContent = (isTouchDevice && mode.touchHint) ? locTouch : locHint;
         }
         const tutorialTitle = document.getElementById('tutorial-mode-title');
@@ -2535,7 +2654,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextBtn = document.getElementById('mode-next');
 
     updateModeCarousel();
-    
+    startMenuLoop();
+
+    document.querySelectorAll('.mode-card').forEach((card) => {
+        card.addEventListener('click', () => {
+            const idx = Number(card.dataset.modeIndex);
+            if (!Number.isInteger(idx) || idx < 0 || idx >= MODES.length) return;
+            currentModeIndex = idx;
+            playSfx('ui');
+            updateModeCarousel();
+        });
+    });
+
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
             currentModeIndex = (currentModeIndex - 1 + MODES.length) % MODES.length;
