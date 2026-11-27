@@ -35,8 +35,9 @@ try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // respects Remove Ads, and always waits for game-over to settle.
 const INTERSTITIAL_POLICY = {
     MIN_RUN_MS: 2500,     // 2.5s+ run qualifies (counts normal quick arcade runs)
-    DEATHS: 2,            // every 2nd qualifying death, OR
-    COOLDOWN_MS: 40000,   // 40s gap since last ad — whichever comes first
+    DEATHS: 3,            // every 3rd qualifying death (balanced pacing)
+    MIN_SCORE: 30,        // score must reach at least 30 to trigger ad
+    COOLDOWN_MS: 45000,   // 45s gap since last ad
     REWARDED_GAP_MS: 30000, // minimum 30s gap after a rewarded ad before interstitial
     DELAY_MS: 900,        // let the game-over screen settle first
     RETRY_REARM_MS: 12000 // after a skipped attempt (no ad ready), earliest retry window
@@ -2036,7 +2037,10 @@ function gameOver() {
         const cadenceOk = deathsSinceInterstitial >= INTERSTITIAL_POLICY.DEATHS;
         const cooldownOk = (now - lastInterstitialAt) >= INTERSTITIAL_POLICY.COOLDOWN_MS;
         const rewardedGapOk = (now - lastRewardedAt) >= INTERSTITIAL_POLICY.REWARDED_GAP_MS;
-        if (!rewardedGapOk) {
+        const scoreOk = score >= INTERSTITIAL_POLICY.MIN_SCORE;
+        if (!scoreOk) {
+            console.log(`[Ads] interstitial skip: reason=score<${INTERSTITIAL_POLICY.MIN_SCORE} (score=${score})`);
+        } else if (!rewardedGapOk) {
             console.log('[Ads] interstitial skip: reason=rewarded-gap');
         } else if (!(cadenceOk || cooldownOk)) {
             console.log(`[Ads] interstitial skip: reason=deaths<${INTERSTITIAL_POLICY.DEATHS}&cooldown`);
