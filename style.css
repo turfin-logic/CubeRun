@@ -2537,7 +2537,7 @@ h1.glitch {
 }
 
 #start-screen .menu-best {
-    display: flex !important;
+    display: flex;
     align-items: center;
     gap: 7px;
     margin: 0;

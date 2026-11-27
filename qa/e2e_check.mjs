@@ -5,6 +5,7 @@
  * Verifies: menu boot, canvas, achievements screen, real gameplay round,
  * game-over stats, and collects console errors.
  */
+import fs from 'fs';
 import { chromium } from 'playwright';
 
 const BASE = process.env.QA_URL || 'https://turfin-logic.github.io/CubeRun/';
@@ -14,7 +15,20 @@ const check = (name, pass, detail = '') => {
   console.log(`${pass ? '✅' : '❌'} ${name}${detail ? ' — ' + detail : ''}`);
 };
 
-const browser = await chromium.launch({ args: ['--no-sandbox'] });
+const chromeCandidates = [
+  process.env.QA_CHROME,
+  process.env.PUPPETEER_EXECUTABLE_PATH,
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+].filter(Boolean);
+const executablePath = chromeCandidates.find((p) => fs.existsSync(p));
+const browser = await chromium.launch({
+  ...(executablePath ? { executablePath } : {}),
+  args: ['--no-sandbox'],
+});
 const page = await browser.newPage({ viewport: { width: 400, height: 800 } });
 
 const consoleErrors = [];
@@ -57,8 +71,7 @@ try {
   await page.waitForTimeout(300);
 
   // 5. Real gameplay: switch to LASER (guaranteed beams → death), start
-  await page.click('#mode-next');
-  await page.click('#mode-next');
+  await page.click('.mode-card[data-mode="LASER"]');
   await page.click('#start-btn');
   await page.waitForTimeout(1500);
   const state1 = await page.evaluate(() => window.getGameState && window.getGameState());

@@ -314,8 +314,6 @@ function refreshMenuBest() {
     let best = bestScore;
     if (!best) { try { best = SaveData.load().highScore || 0; } catch (e) { best = 0; } }
     el.textContent = best;
-    const wrap = document.getElementById('menu-best');
-    if (wrap) wrap.classList.toggle('has-best', best > 0);
 }
 function showHUD() { document.getElementById('hud').classList.add('active'); }
 function hideHUD() { document.getElementById('hud').classList.remove('active'); }
