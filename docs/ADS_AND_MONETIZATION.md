@@ -92,3 +92,8 @@ Located at `CubeRun/app-ads.txt` — required by AdMob for authorized seller ver
 - During Google Play **closed testing**, real ad IDs are fine to use. AdMob serves test-like ads based on fill rate.
 - For local development, swap to test IDs: `ca-app-pub-3940256099942544/1033173712` (rewarded) etc.
 - Never ship with test IDs in production builds.
+# Interstitial Pacing & Score Gate Update (2026-11-27)
+
+- **Score Threshold**: Interstitial ads now require a minimum round score of **30** (`INTERSTITIAL_POLICY.MIN_SCORE = 30`). Quick deaths with low scores (< 30) bypass the ad screen without burning cooldowns.
+- **Match Cadence**: Tuned from every 2nd death to **every 3rd qualifying death** (`DEATHS = 3`) and 45s minimum cooldown gap (`COOLDOWN_MS = 45000`).
+- **Remove Ads Protection**: Zero interstitial trigger if `RemoveAds.active()` is true.
