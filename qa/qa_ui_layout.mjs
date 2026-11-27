@@ -30,8 +30,19 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
 const baseUrl = `http://127.0.0.1:${port}/index.html`;
 
+const chromeCandidates = [
+  process.env.QA_CHROME,
+  process.env.PUPPETEER_EXECUTABLE_PATH,
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+].filter(Boolean);
+const executablePath = chromeCandidates.find(p => fs.existsSync(p));
 const browser = await puppeteer.launch({
-  executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  ...(executablePath ? { executablePath } : {}),
   headless: 'new',
   args: ['--no-sandbox', '--mute-audio'],
 });

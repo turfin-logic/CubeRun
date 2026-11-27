@@ -31,8 +31,19 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
 const baseUrl = `http://127.0.0.1:${port}/index.html`;
 
+const chromeCandidates = [
+  process.env.QA_CHROME,
+  process.env.PUPPETEER_EXECUTABLE_PATH,
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+].filter(Boolean);
+const executablePath = chromeCandidates.find(p => fs.existsSync(p));
 const browser = await puppeteer.launch({
-  executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  ...(executablePath ? { executablePath } : {}),
   headless: 'new',
   args: ['--no-sandbox', '--mute-audio'],
 });
@@ -67,10 +78,24 @@ try {
   const res = await page.evaluate(async () => {
     const out = {};
 
-    // 1. BUILD_TAG v45 & 3-mode card selector
+    // 1. BUILD_TAG v46, role="radio" 3-mode card selector, idle pause behind Settings, & i18n switch
     out.buildTag = typeof BUILD_TAG !== 'undefined' ? BUILD_TAG : null;
     const modeCards = Array.from(document.querySelectorAll('.mode-card'));
     out.modeCardCount = modeCards.length;
+    out.modeCardRadioValid = modeCards.every(c => c.getAttribute('role') === 'radio');
+    out.menuLoopActiveAtBoot = rafId !== null;
+    showScreen('settings-screen');
+    hideScreen('start-screen');
+    out.menuLoopStoppedInSettings = rafId === null;
+    hideScreen('settings-screen');
+    showScreen('start-screen');
+    out.menuLoopResumedOnStart = rafId !== null;
+
+    I18n.setLang('es');
+    out.esCardTitle = document.querySelector('.mode-card[data-mode="CLASSIC"] .mode-card-title')?.textContent?.trim();
+    out.esModeDisplay = document.getElementById('mode-display')?.textContent?.trim();
+    I18n.setLang('en');
+
     document.querySelector('.mode-card[data-mode="TOPDOWN"]')?.click();
     out.modeCardSwitched = document.getElementById('mode-select')?.value === 'TOPDOWN' &&
         document.getElementById('start-screen')?.getAttribute('data-active-mode') === 'TOPDOWN';
@@ -207,8 +232,10 @@ try {
   });
 
   assert('No runtime pageerrors', pageErrors.length === 0, pageErrors.join('; '));
-  assert('BUILD_TAG is v45', res.buildTag === 'v45', res.buildTag);
-  assert('3-card mode selector switches mode directly on tap', res.modeCardCount === 3 && res.modeCardSwitched === true);
+  assert('BUILD_TAG is v46', res.buildTag === 'v46', res.buildTag);
+  assert('3-card mode selector uses role="radio" and switches mode on tap', res.modeCardCount === 3 && res.modeCardRadioValid === true && res.modeCardSwitched === true);
+  assert('Menu loop idles behind Settings overlay and resumes on Start', res.menuLoopActiveAtBoot === true && res.menuLoopStoppedInSettings === true && res.menuLoopResumedOnStart === true);
+  assert('Mode cards & display localize dynamically on I18n.setLang("es")', res.esCardTitle === 'CLÁSICO' && /CLÁSICO/.test(res.esModeDisplay || ''), `${res.esCardTitle} | ${res.esModeDisplay}`);
   assert('#topdown-sens-btn removed from Settings', res.sensBtnRemoved === true);
   assert('#gpg-profile stays hidden after onPlayGamesProfile', res.gpgHidden === true);
   assert('Vibration toggle ON sends enable + light; OFF sends disable & mutes vibrate()',

@@ -2680,6 +2680,9 @@ h1.glitch {
     font-weight: 800;
     letter-spacing: 0.4px;
     line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 .mode-card-tag {
@@ -2687,6 +2690,10 @@ h1.glitch {
     font-size: 0.56rem;
     font-weight: 700;
     letter-spacing: 1px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     opacity: 0.65;
 }
 .mode-card.active .mode-card-tag {

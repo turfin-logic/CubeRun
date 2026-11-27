@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=36">
+    <link rel="stylesheet" href="style.css?v=37">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
@@ -129,26 +129,26 @@
                     <!-- 3-Card Arcade Mode Selector -->
                     <div class="mode-cards-section">
                         <div class="mode-cards-grid" role="radiogroup" aria-label="Game Modes">
-                            <button type="button" class="mode-card active" data-mode-index="0" data-mode="CLASSIC" aria-checked="true">
+                            <button type="button" role="radio" class="mode-card active" data-mode-index="0" data-mode="CLASSIC" aria-checked="true">
                                 <span class="mode-card-icon" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="m8 8 4-4 4 4"/><path d="m8 16 4 4 4-4"/></svg>
                                 </span>
-                                <span class="mode-card-title">CLASSIC</span>
-                                <span class="mode-card-tag">FLIP</span>
+                                <span class="mode-card-title" data-i18n="mode.classic.short">CLASSIC</span>
+                                <span class="mode-card-tag" data-i18n="mode.classic.tag">FLIP</span>
                             </button>
-                            <button type="button" class="mode-card" data-mode-index="1" data-mode="LASER" aria-checked="false">
+                            <button type="button" role="radio" class="mode-card" data-mode-index="1" data-mode="LASER" aria-checked="false">
                                 <span class="mode-card-icon" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
                                 </span>
-                                <span class="mode-card-title">LASER</span>
-                                <span class="mode-card-tag">JUMP</span>
+                                <span class="mode-card-title" data-i18n="mode.laser.short">LASER</span>
+                                <span class="mode-card-tag" data-i18n="mode.laser.tag">JUMP</span>
                             </button>
-                            <button type="button" class="mode-card" data-mode-index="2" data-mode="TOPDOWN" aria-checked="false">
+                            <button type="button" role="radio" class="mode-card" data-mode-index="2" data-mode="TOPDOWN" aria-checked="false">
                                 <span class="mode-card-icon" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
                                 </span>
-                                <span class="mode-card-title">TOP-DOWN</span>
-                                <span class="mode-card-tag">DODGE</span>
+                                <span class="mode-card-title" data-i18n="mode.topdown.short">TOP-DOWN</span>
+                                <span class="mode-card-tag" data-i18n="mode.topdown.tag">DODGE</span>
                             </button>
                         </div>
                         <div class="mode-active-bar">
@@ -299,7 +299,7 @@
         <div id="run-start-banner" class="hidden"><span data-i18n="ui.tap_to_start">▶ TAP TO START</span></div>
     </div><!-- end game-container -->
 
-    <script src="i18n.js?v=38"></script>
-    <script src="game.js?v=45"></script>
+    <script src="i18n.js?v=39"></script>
+    <script src="game.js?v=46"></script>
 </body>
 </html>

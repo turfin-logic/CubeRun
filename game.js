@@ -27,7 +27,7 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // When the death screen appeared - gates the tap-anywhere restart.
 let gameOverAt = 0;
 // Printed at boot so a tester's build is always identifiable in a log.
-const BUILD_TAG = 'v45';
+const BUILD_TAG = 'v46';
 try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
 // Triggers on every 2nd qualifying death OR after a 40s gap — whichever comes first.
@@ -276,6 +276,12 @@ function showScreen(id) {
         screenTransitionLockUntil = 0;
     }
     el.classList.add('active');
+    if (id === 'start-screen' && GAME_STATE === STATE.MENU) {
+        startMenuLoop();
+    } else if (id !== 'start-screen' && GAME_STATE === STATE.MENU && rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+    }
 }
 function hideScreen(id) {
     const el = document.getElementById(id);
@@ -1331,14 +1337,20 @@ function drawMenuScene(dt) {
 
 function startMenuLoop() {
     if (GAME_STATE !== STATE.MENU) return;
+    const startEl = document.getElementById('start-screen');
+    if (startEl && !startEl.classList.contains('active')) return;
     if (rafId) {
         cancelAnimationFrame(rafId);
         rafId = null;
     }
     initBgParticles();
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        drawMenuScene(0);
+        return;
+    }
     let prevTs = performance.now();
     function loop(ts) {
-        if (GAME_STATE !== STATE.MENU) {
+        if (GAME_STATE !== STATE.MENU || (startEl && !startEl.classList.contains('active'))) {
             rafId = null;
             return;
         }
@@ -2646,6 +2658,9 @@ function updateModeCarousel() {
         if (tutorialHelp) tutorialHelp.textContent = locHelp;
         const startButton = document.getElementById('start-btn');
         if (startButton) startButton.setAttribute('aria-label', `Start ${mode.value.toLowerCase()} mode`);
+        if (GAME_STATE === STATE.MENU && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            drawMenuScene(0);
+        }
     }
 }
 
