@@ -67,14 +67,13 @@ try {
   const res = await page.evaluate(async () => {
     const out = {};
 
-    // 1. BUILD_TAG v42 & no TDZ errors
+    // 1. BUILD_TAG v43 & no TDZ errors
     out.buildTag = typeof BUILD_TAG !== 'undefined' ? BUILD_TAG : null;
 
     // 2. normalizeTopdownSens & cycling
     out.normStr = normalizeTopdownSens('1.3');
     out.normFloat = normalizeTopdownSens(1.05);
     out.normZero = normalizeTopdownSens(0);
-    out.normNull = normalizeTopdownSens(null);
 
     const sensBtn = document.getElementById('topdown-sens-btn');
     Settings.topdownSens = 0; // corrupt
@@ -87,14 +86,22 @@ try {
     }
     out.sensCycle = cycle;
 
-    // 3. Vibration toggle sends 'vibrate'
+    // 3. Vibration icon toggle & sends 'vibrate'
     window.__hapticMessages = [];
     Settings.vibration = false;
     Settings.toggle('vibration');
     out.vibMsg = window.__hapticMessages.slice();
+    const vibBtn = document.getElementById('vib-toggle');
+    out.vibIsSvgToggle = Boolean(vibBtn?.querySelector('img')) && vibBtn?.getAttribute('aria-pressed') === 'true' && (vibBtn?.getAttribute('aria-label') || '').includes(':');
 
-    // 4. Banner hide on startGame
+    // 4. Banner hide on startGame & native onBannerOverlay sync
     window.__adMessages = [];
+    window.onBannerOverlay(true, 56);
+    out.bannerVar = getComputedStyle(document.documentElement).getPropertyValue('--banner-h').trim();
+    out.bannerClassOn = document.body.classList.contains('banner-visible');
+    window.onBannerOverlay(false, 0);
+    out.bannerClassOff = !document.body.classList.contains('banner-visible');
+
     document.getElementById('mode-select').value = 'TOPDOWN';
     CURRENT_MODE = 'TOPDOWN';
     startGame();
@@ -132,7 +139,6 @@ try {
     Settings.topdownSens = 2.0;
     player.y = (CEILING + FLOOR - player.height) / 2;
     player.targetY = player.y + player.height / 2;
-    const startTarget = player.targetY;
     handleInput(clientYToGame(300), false); // anchor at 300
     const anchoredTarget = player.targetY;
     handleInput(clientYToGame(330), true); // +30px drag @ 2.0x -> +60px
@@ -149,24 +155,38 @@ try {
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
     out.spaceWorksAfter450 = GAME_STATE === STATE.PLAYING;
 
-    // 9. Interstitial OR policy
+    // 9. Interstitial OR policy + MIN_RUN_MS 8000 + debt preservation + 30s rewarded gap
     window.__adMessages = [];
-    deathsSinceInterstitial = 0;
-    lastInterstitialAt = Date.now();
-    lastRetryAt = Date.now() - 5000;
-    // 2s run even with 120s gap -> NO ad
+    deathsSinceInterstitial = 2; // existing death debt
     lastInterstitialAt = Date.now() - 120000;
-    runStartedAt = Date.now() - 2000;
+    lastRewardedAt = 0;
+    lastRetryAt = Date.now() - 5000;
+    runStartedAt = Date.now() - 7000; // < 8000ms -> should skip AND preserve deathsSinceInterstitial = 2
     gameOver();
     await new Promise(r => setTimeout(r, 1100));
     out.shortRunAdShown = window.__adMessages.includes('showInterstitial');
+    out.debtPreserved = deathsSinceInterstitial === 2;
 
-    // 3 qualifying 5s+ deaths even with recent ad -> SHOULD show ad
+    // Rewarded ad within 30s should block interstitial even after 3 qualifying deaths
     window.__adMessages = [];
     deathsSinceInterstitial = 2;
     lastInterstitialAt = Date.now() - 5000;
+    lastRewardedAt = Date.now() - 10000; // only 10s ago (< 30s)
     lastRetryAt = Date.now() - 5000;
-    runStartedAt = Date.now() - 6000;
+    runStartedAt = Date.now() - 9000;
+    activeRunId++;
+    GAME_STATE = STATE.PLAYING;
+    gameOver();
+    await new Promise(r => setTimeout(r, 1100));
+    out.rewardedGapBlocked = !window.__adMessages.includes('showInterstitial');
+
+    // 3 qualifying 9s deaths outside rewarded gap -> SHOULD show ad
+    window.__adMessages = [];
+    deathsSinceInterstitial = 2;
+    lastInterstitialAt = Date.now() - 5000;
+    lastRewardedAt = Date.now() - 35000; // > 30s
+    lastRetryAt = Date.now() - 5000;
+    runStartedAt = Date.now() - 9000; // >= 8000ms
     activeRunId++;
     GAME_STATE = STATE.PLAYING;
     gameOver();
@@ -178,18 +198,18 @@ try {
     openExternal('https://play.google.com/store/apps/details?id=com.neondrift.bosslevel');
     out.openExternalMsg = window.__gameMessages[0] || null;
 
-    // 11. Layout overflow checks (360px & 412px)
     return out;
   });
 
   assert('No runtime pageerrors', pageErrors.length === 0, pageErrors.join('; '));
-  assert('BUILD_TAG is v42', res.buildTag === 'v42', res.buildTag);
+  assert('BUILD_TAG is v43', res.buildTag === 'v43', res.buildTag);
   assert('normalizeTopdownSens("1.3") -> 1.3', res.normStr === 1.3, res.normStr);
   assert('normalizeTopdownSens(1.05) -> 1.0', res.normFloat === 1.0, res.normFloat);
   assert('normalizeTopdownSens(0) -> 1.0 (no 0.6 reset)', res.normZero === 1.0, res.normZero);
   assert('Corrupt value snaps to 1.0 and advances to 1.3', res.afterCorruptClick === 1.3, res.afterCorruptClick);
   assert('Full 6-step sens cycle intact', JSON.stringify(res.sensCycle) === JSON.stringify([1.6, 2.0, 0.6, 0.8, 1.0, 1.3]), JSON.stringify(res.sensCycle));
-  assert('Vibration toggle sends "vibrate"', res.vibMsg.includes('vibrate'), JSON.stringify(res.vibMsg));
+  assert('Vibration toggle sends "vibrate" and uses SVG icon-toggle', res.vibMsg.includes('vibrate') && res.vibIsSvgToggle, JSON.stringify(res.vibMsg));
+  assert('onBannerOverlay(true, 56) sets --banner-h & class', res.bannerVar === '56px' && res.bannerClassOn && res.bannerClassOff, res.bannerVar);
   assert('startGame sends hideBanner', res.hideBannerCalled === true);
   assert('TOPDOWN revive resets y & targetY to center', Math.abs(res.tdReviveY - res.tdExpectedY) < 0.01 && Math.abs(res.tdTargetY - res.tdExpectedTargetY) < 0.01, `y=${res.tdReviveY}`);
   assert('LASER revive resets z=0, zVelocity=0', res.laserZ === 0 && res.laserZV === 0 && Math.abs(res.laserY - res.laserExpectedY) < 0.01);
@@ -197,8 +217,9 @@ try {
   assert('clientYToGame mid maps to VIEW_H/2', Math.abs(res.clientYMid - res.viewH / 2) < 1, `${res.clientYMid}`);
   assert('Space guarded within 450ms of GAMEOVER', res.spaceGuardedImmediately === true);
   assert('Space restarts after 450ms settle', res.spaceWorksAfter450 === true);
-  assert('2s run + 120s gap triggers NO interstitial', res.shortRunAdShown === false);
-  assert('3 qualifying 6s deaths trigger interstitial via OR logic', res.threeDeathsAdShown === true);
+  assert('7s run (<8s) + 120s gap triggers NO ad & preserves debt', res.shortRunAdShown === false && res.debtPreserved === true);
+  assert('30s rewarded->interstitial gap blocks double fullscreen ad', res.rewardedGapBlocked === true);
+  assert('3 qualifying 9s deaths outside rewarded gap trigger interstitial', res.threeDeathsAdShown === true);
   assert('openExternal routes openUrl: to GameChannel', res.openExternalMsg === 'openUrl:https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', res.openExternalMsg);
 
   // Check overflow at 360px

@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=33">
+    <link rel="stylesheet" href="style.css?v=34">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
@@ -189,7 +189,9 @@
                 </div>
                 <div class="setting-row">
                     <label data-i18n="ui.vibration">VIBRATION</label>
-                    <button class="toggle-btn" id="vib-toggle" type="button" data-key="vibration">ON</button>
+                    <button class="toggle-btn icon-toggle" id="vib-toggle" type="button" data-key="vibration" data-label="Vibration" data-icon-on="assets/ui/vector/ic_haptics-on_01.svg" data-icon-off="assets/ui/vector/ic_haptics-off_01.svg" aria-label="Vibration: on" aria-pressed="true">
+                        <img src="assets/ui/vector/ic_haptics-on_01.svg" alt="">
+                    </button>
                 </div>
                 <!-- APK only (game.js shows it when AdChannel is present and
                      the no-ads entitlement is inactive). Click asks Flutter to
@@ -277,7 +279,7 @@
         <div id="run-start-banner" class="hidden"><span data-i18n="ui.tap_to_start">▶ TAP TO START</span></div>
     </div><!-- end game-container -->
 
-    <script src="i18n.js?v=37"></script>
-    <script src="game.js?v=42"></script>
+    <script src="i18n.js?v=38"></script>
+    <script src="game.js?v=43"></script>
 </body>
 </html>

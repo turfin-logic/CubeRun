@@ -6,6 +6,7 @@
     --neon-blue: #00f3ff;
     --text-main: #f0f0f0;
     --glitch-offset: 4px;
+    --banner-h: 0px;
 }
 
 * {
@@ -169,14 +170,16 @@ canvas.aberration {
     align-items: center;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.4s ease;
-    pointer-events: auto;
+    pointer-events: none;
+    transition: opacity 0.15s ease, visibility 0s 0.15s;
     z-index: 20;
 }
 
 .screen.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.15s ease, visibility 0s 0s;
 }
 
 /* Typography */
@@ -2506,4 +2509,55 @@ h1.glitch {
     background: var(--ui-surface-3) !important;
     border-color: var(--ui-line-loud) !important;
 }
+
+/* Native-synced dynamic banner clearance across ALL 6 screens so menus,
+   settings, pause, game-over, awards & tutorial never overlap an active banner
+   and never leave dead empty gaps on cold-start or no-fill. */
+#start-screen,
+#settings-screen,
+#pause-screen,
+#game-over-screen,
+#tutorial-screen,
+#achievements-screen {
+    padding-bottom: calc(max(20px, env(safe-area-inset-bottom)) + var(--banner-h, 0px)) !important;
+}
+
+/* Touch devices hide keyboard Spacebar hints via both body class & coarse pointer */
+@media (pointer: coarse) {
+    .retry-hint {
+        display: none !important;
+    }
+}
+
+/* Multi-locale text-wrap safety & >=44px touch targets with >=8px gaps */
+.cyber-btn,
+.revive-btn,
+.double-btn,
+.retry-btn {
+    min-height: 44px;
+    text-wrap: balance;
+    word-break: break-word;
+    line-height: 1.25;
+}
+
+.setting-row {
+    gap: 10px;
+}
+
+@media (max-width: 340px) {
+    .screen.clean-menu,
+    .screen#settings-screen,
+    .screen#game-over-screen,
+    .screen#achievements-screen {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .setting-row {
+        padding: 10px 12px;
+    }
+    .dock-btn {
+        padding: 6px 8px;
+    }
+}
+
 

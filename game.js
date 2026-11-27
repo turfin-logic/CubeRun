@@ -27,20 +27,22 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // When the death screen appeared - gates the tap-anywhere restart.
 let gameOverAt = 0;
 // Printed at boot so a tester's build is always identifiable in a log.
-const BUILD_TAG = 'v42';
+const BUILD_TAG = 'v43';
 try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
 // Triggers on every 3rd qualifying death OR after a 60s gap — whichever comes first.
-// Never shown on short runs under 5s, never while Remove Ads is active, and always
-// after the game-over screen has settled (natural break, AdMob-policy safe).
+// Never shown on short runs under 8s, never within 30s of a rewarded ad,
+// never while Remove Ads is active, and always after game-over settles.
 const INTERSTITIAL_POLICY = {
-    MIN_RUN_MS: 5000,    // 5s+ run qualifies (short accidental deaths <5s never count or trigger)
-    DEATHS: 3,           // every 3rd qualifying death, OR
-    COOLDOWN_MS: 60000,  // 60s gap since last ad — whichever comes first
-    DELAY_MS: 900,       // let the game-over screen settle first
+    MIN_RUN_MS: 8000,     // 8s+ run qualifies (short accidental deaths <8s never count or trigger)
+    DEATHS: 3,            // every 3rd qualifying death, OR
+    COOLDOWN_MS: 60000,   // 60s gap since last ad — whichever comes first
+    REWARDED_GAP_MS: 30000, // minimum 30s gap after a rewarded ad before interstitial
+    DELAY_MS: 900,        // let the game-over screen settle first
     RETRY_REARM_MS: 20000 // after a skipped attempt (no ad ready), earliest retry window
 };
 let lastInterstitialAt = Date.now(); // launch grace period before the first ad
+let lastRewardedAt = 0; // timestamp of last rewarded ad grant/dismiss
 let deathsSinceInterstitial = 0;
 function loadSessionDeathCount() {
     try {
@@ -222,7 +224,9 @@ const Settings = {
                 const icon = b.querySelector('img');
                 if (icon && b.dataset.iconOn && b.dataset.iconOff) {
                     icon.src = enabled ? b.dataset.iconOn : b.dataset.iconOff;
-                    b.setAttribute('aria-label', `${b.dataset.label}: ${enabled ? 'on' : 'off'}`);
+                    const locName = tt('ui.' + k, b.dataset.label || k);
+                    const locState = tt('ui.' + (enabled ? 'on' : 'off'), enabled ? 'on' : 'off');
+                    b.setAttribute('aria-label', `${locName}: ${locState}`);
                 } else {
                     b.textContent = enabled ? tt('ui.on', 'ON') : tt('ui.off', 'OFF');
                 }
@@ -277,9 +281,34 @@ const SaveData = {
 bestScore = SaveData.load().highScore;
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SCREEN HELPERS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-function showScreen(id) { document.getElementById(id).classList.add('active'); }
-function hideScreen(id) { document.getElementById(id).classList.remove('active'); }
+let screenTransitionLockUntil = 0;
+function showScreen(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    screenTransitionLockUntil = performance.now() + 250;
+    el.classList.add('active');
+}
+function hideScreen(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+}
 function hideAllScreens() { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); }
+
+// Swallow trusted rapid ghost-taps during the 250ms screen switch settle window
+window.addEventListener('click', (e) => {
+    if (e.isTrusted && performance.now() < screenTransitionLockUntil && e.target.closest('.screen')) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+}, true);
+
+// Native -> JS banner overlay sync so menus adjust clearance dynamically with zero canvas resize
+window.onBannerOverlay = function(visible, heightPx) {
+    const on = visible === true || visible === 'true';
+    const px = on ? Math.max(0, Number(heightPx) || 50) : 0;
+    document.documentElement.style.setProperty('--banner-h', px + 'px');
+    document.body.classList.toggle('banner-visible', on && px > 0);
+};
 
 // The menu never showed the player's best score, which is the one number a
 // score-chase runner should lead with. Kept in one place so every path that
@@ -1120,7 +1149,9 @@ const FlutterBridge = {
         // interstitial cooldown so a fullscreen ad never trails a rewarded
         // one within its cooldown window.
         cancelPendingInterstitial();
-        lastInterstitialAt = Date.now();
+        const grantTs = Date.now();
+        lastInterstitialAt = grantTs;
+        lastRewardedAt = grantTs;
         if(window._onRewardGranted) {
             const cb = window._onRewardGranted;
             window._onRewardGranted = null; window._onRewardFailed = null;
@@ -1183,6 +1214,7 @@ function consumePendingRevive() {
 window.onAdClose = (earned) => {
     clearTimeout(window._rewardTimeout);
     if (earned === true || earned === 'true') {
+        lastRewardedAt = Date.now();
         if (window._onRewardGranted && window.FlutterBridge) {
             window.FlutterBridge.onRewardGranted();
         }
@@ -1895,23 +1927,43 @@ function gameOver() {
     sessionDeathCount++;
     saveSessionDeathCount(sessionDeathCount);
     const now=Date.now();
-    // Interstitial engine (OR logic + soft gates):
-    //   1. Runs < MIN_RUN_MS (5s) NEVER count and NEVER trigger an ad.
+    // Interstitial engine (OR logic + soft gates + rewarded gap):
+    //   1. Runs < MIN_RUN_MS (8s) NEVER count and NEVER trigger an ad (existing death debt persists).
     //   2. Every 3rd qualifying death OR after 60s gap — whichever comes first.
-    //   3. Quick-retry guard: 3s lock protects rapid retries.
-    if (runDuration >= INTERSTITIAL_POLICY.MIN_RUN_MS) {
+    //   3. Minimum 30s gap after any rewarded ad.
+    //   4. Quick-retry guard: 3s lock protects rapid retries.
+    if (runDuration < INTERSTITIAL_POLICY.MIN_RUN_MS) {
+        console.log('[Ads] interstitial skip: reason=min-run');
+    } else {
         deathsSinceInterstitial++;
         const cadenceOk = deathsSinceInterstitial >= INTERSTITIAL_POLICY.DEATHS;
         const cooldownOk = (now - lastInterstitialAt) >= INTERSTITIAL_POLICY.COOLDOWN_MS;
-        if (cadenceOk || cooldownOk) {
-            const endedRunId=activeRunId;
-            interstitialTimer=setTimeout(() => {
-                interstitialTimer=null;
-                if(GAME_STATE===STATE.GAMEOVER && activeRunId===endedRunId && !RemoveAds.active()
-                   && reviveRequestRunId===null && !window._pendingRevive
-                   && (Date.now() - lastRetryAt) >= 3000) {
-                    FlutterBridge.showInterstitial();
+        const rewardedGapOk = (now - lastRewardedAt) >= INTERSTITIAL_POLICY.REWARDED_GAP_MS;
+        if (!rewardedGapOk) {
+            console.log('[Ads] interstitial skip: reason=rewarded-gap');
+        } else if (!(cadenceOk || cooldownOk)) {
+            console.log('[Ads] interstitial skip: reason=deaths<3&cooldown');
+        } else {
+            const endedRunId = activeRunId;
+            interstitialTimer = setTimeout(() => {
+                interstitialTimer = null;
+                if (GAME_STATE !== STATE.GAMEOVER || activeRunId !== endedRunId) {
+                    console.log('[Ads] interstitial skip: reason=run-changed');
+                    return;
                 }
+                if (RemoveAds.active()) {
+                    console.log('[Ads] interstitial skip: reason=remove-ads');
+                    return;
+                }
+                if (reviveRequestRunId !== null || window._pendingRevive) {
+                    console.log('[Ads] interstitial skip: reason=revive-inflight');
+                    return;
+                }
+                if ((Date.now() - lastRetryAt) < 3000) {
+                    console.log('[Ads] interstitial skip: reason=retry-lock');
+                    return;
+                }
+                FlutterBridge.showInterstitial();
             }, INTERSTITIAL_POLICY.DELAY_MS);
         }
     }
@@ -2260,7 +2312,11 @@ document.getElementById('settings-back-btn')?.addEventListener('click', ()=>{
 });
 
 // Native Android back key integration (called by Flutter wrapper)
+let lastBackKeyAt = 0;
 window.handleBackKey = function() {
+    const now = performance.now();
+    if (now - lastBackKeyAt < 220) return true;
+    lastBackKeyAt = now;
     const settings = document.getElementById('settings-screen');
     if (settings && settings.classList.contains('active')) {
         hideScreen('settings-screen');

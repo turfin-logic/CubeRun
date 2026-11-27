@@ -1568,7 +1568,20 @@ const I18n = (function () {
         }
     }
 
+    function setLang(newLang) {
+        if (newLang && DICT[newLang]) {
+            lang = newLang;
+        } else {
+            lang = FALLBACK;
+        }
+        applyStatic();
+        if (typeof Settings !== 'undefined' && Settings.syncUI) {
+            Settings.syncUI();
+        }
+        return lang;
+    }
+
     init();
 
-    return { t: t, lang: function () { return lang; }, applyStatic: applyStatic };
+    return { t: t, lang: function () { return lang; }, applyStatic: applyStatic, setLang: setLang, langs: function () { return Object.keys(DICT); } };
 })();
