@@ -67,34 +67,32 @@ try {
   const res = await page.evaluate(async () => {
     const out = {};
 
-    // 1. BUILD_TAG v43 & no TDZ errors
+    // 1. BUILD_TAG v44 & no TDZ errors
     out.buildTag = typeof BUILD_TAG !== 'undefined' ? BUILD_TAG : null;
 
-    // 2. normalizeTopdownSens & cycling
-    out.normStr = normalizeTopdownSens('1.3');
-    out.normFloat = normalizeTopdownSens(1.05);
-    out.normZero = normalizeTopdownSens(0);
+    // 2. TOP-DOWN SPEED row removed & #gpg-profile stays hidden even after onPlayGamesProfile
+    out.sensBtnRemoved = document.getElementById('topdown-sens-btn') === null;
+    window.onPlayGamesProfile({ name: 'TestPlayer', level: 5 });
+    const gpgEl = document.getElementById('gpg-profile');
+    out.gpgHidden = gpgEl ? getComputedStyle(gpgEl).display === 'none' : true;
 
-    const sensBtn = document.getElementById('topdown-sens-btn');
-    Settings.topdownSens = 0; // corrupt
-    sensBtn.click();
-    out.afterCorruptClick = Settings.topdownSens; // nearest is 1.0 -> next is 1.3
-    const cycle = [];
-    for (let i = 0; i < 6; i++) {
-      sensBtn.click();
-      cycle.push(Settings.topdownSens);
-    }
-    out.sensCycle = cycle;
-
-    // 3. Vibration icon toggle & sends 'vibrate'
+    // 3. Vibration icon toggle ON sends 'enable' + 'light', toggle OFF sends 'disable' & silences vibrate()
     window.__hapticMessages = [];
     Settings.vibration = false;
     Settings.toggle('vibration');
-    out.vibMsg = window.__hapticMessages.slice();
+    out.vibOnMsgs = window.__hapticMessages.slice();
+    window.__hapticMessages = [];
+    Settings.toggle('vibration'); // turn OFF
+    out.vibOffMsgs = window.__hapticMessages.slice();
+    window.__hapticMessages = [];
+    vibrate([100, 50, 100]); // MUST NOT vibrate when disabled
+    out.vibAfterOff = window.__hapticMessages.slice();
+    // Re-enable for remaining checks
+    Settings.toggle('vibration');
     const vibBtn = document.getElementById('vib-toggle');
     out.vibIsSvgToggle = Boolean(vibBtn?.querySelector('img')) && vibBtn?.getAttribute('aria-pressed') === 'true' && (vibBtn?.getAttribute('aria-label') || '').includes(':');
 
-    // 4. Banner hide on startGame & native onBannerOverlay sync
+    // 4. Persistent banner on startGame (showBanner) & native onBannerOverlay sync
     window.__adMessages = [];
     window.onBannerOverlay(true, 56);
     out.bannerVar = getComputedStyle(document.documentElement).getPropertyValue('--banner-h').trim();
@@ -105,7 +103,7 @@ try {
     document.getElementById('mode-select').value = 'TOPDOWN';
     CURRENT_MODE = 'TOPDOWN';
     startGame();
-    out.hideBannerCalled = window.__adMessages.includes('hideBanner');
+    out.showBannerOnStart = window.__adMessages.includes('showBanner') && !window.__adMessages.includes('hideBanner');
 
     // 5. TOPDOWN revivePlayer resets to center + targetY
     player.y = FLOOR - player.height;
@@ -133,16 +131,17 @@ try {
     if (reviveCountdownInterval) { clearInterval(reviveCountdownInterval); reviveCountdownInterval = null; }
     if (reviveCountdownElement) { reviveCountdownElement.remove(); reviveCountdownElement = null; }
 
-    // 7. clientYToGame & relative drag delta * sens
+    // 7. clientYToGame & 1:1 relative drag tracking (no drag vibration)
+    window.__hapticMessages = [];
     CURRENT_MODE = 'TOPDOWN';
     GAME_STATE = STATE.PLAYING;
-    Settings.topdownSens = 2.0;
     player.y = (CEILING + FLOOR - player.height) / 2;
     player.targetY = player.y + player.height / 2;
     handleInput(clientYToGame(300), false); // anchor at 300
     const anchoredTarget = player.targetY;
-    handleInput(clientYToGame(330), true); // +30px drag @ 2.0x -> +60px
+    handleInput(clientYToGame(330), true); // +30px drag -> +30px (1:1)
     out.dragDelta = player.targetY - anchoredTarget;
+    out.dragHaptics = window.__hapticMessages.slice();
     out.clientYMid = clientYToGame(915 / 2);
     out.viewH = VIEW_H;
 
@@ -155,43 +154,43 @@ try {
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' }));
     out.spaceWorksAfter450 = GAME_STATE === STATE.PLAYING;
 
-    // 9. Interstitial OR policy + MIN_RUN_MS 8000 + debt preservation + 30s rewarded gap
+    // 9. Interstitial OR policy + MIN_RUN_MS 2500 + debt preservation + 30s rewarded gap
     window.__adMessages = [];
-    deathsSinceInterstitial = 2; // existing death debt
+    deathsSinceInterstitial = 1; // existing death debt
     lastInterstitialAt = Date.now() - 120000;
     lastRewardedAt = 0;
     lastRetryAt = Date.now() - 5000;
-    runStartedAt = Date.now() - 7000; // < 8000ms -> should skip AND preserve deathsSinceInterstitial = 2
+    runStartedAt = Date.now() - 2000; // < 2500ms -> should skip AND preserve deathsSinceInterstitial = 1
     gameOver();
     await new Promise(r => setTimeout(r, 1100));
     out.shortRunAdShown = window.__adMessages.includes('showInterstitial');
-    out.debtPreserved = deathsSinceInterstitial === 2;
+    out.debtPreserved = deathsSinceInterstitial === 1;
 
-    // Rewarded ad within 30s should block interstitial even after 3 qualifying deaths
+    // Rewarded ad within 30s should block interstitial even after 2 qualifying deaths
     window.__adMessages = [];
-    deathsSinceInterstitial = 2;
+    deathsSinceInterstitial = 1;
     lastInterstitialAt = Date.now() - 5000;
     lastRewardedAt = Date.now() - 10000; // only 10s ago (< 30s)
     lastRetryAt = Date.now() - 5000;
-    runStartedAt = Date.now() - 9000;
+    runStartedAt = Date.now() - 4000;
     activeRunId++;
     GAME_STATE = STATE.PLAYING;
     gameOver();
     await new Promise(r => setTimeout(r, 1100));
     out.rewardedGapBlocked = !window.__adMessages.includes('showInterstitial');
 
-    // 3 qualifying 9s deaths outside rewarded gap -> SHOULD show ad
+    // 2 qualifying 4s deaths outside rewarded gap -> SHOULD show ad
     window.__adMessages = [];
-    deathsSinceInterstitial = 2;
+    deathsSinceInterstitial = 1;
     lastInterstitialAt = Date.now() - 5000;
     lastRewardedAt = Date.now() - 35000; // > 30s
     lastRetryAt = Date.now() - 5000;
-    runStartedAt = Date.now() - 9000; // >= 8000ms
+    runStartedAt = Date.now() - 4000; // >= 2500ms
     activeRunId++;
     GAME_STATE = STATE.PLAYING;
     gameOver();
     await new Promise(r => setTimeout(r, 1100));
-    out.threeDeathsAdShown = window.__adMessages.includes('showInterstitial');
+    out.twoDeathsAdShown = window.__adMessages.includes('showInterstitial');
 
     // 10. openExternal sends openUrl:
     window.__gameMessages = [];
@@ -202,24 +201,24 @@ try {
   });
 
   assert('No runtime pageerrors', pageErrors.length === 0, pageErrors.join('; '));
-  assert('BUILD_TAG is v43', res.buildTag === 'v43', res.buildTag);
-  assert('normalizeTopdownSens("1.3") -> 1.3', res.normStr === 1.3, res.normStr);
-  assert('normalizeTopdownSens(1.05) -> 1.0', res.normFloat === 1.0, res.normFloat);
-  assert('normalizeTopdownSens(0) -> 1.0 (no 0.6 reset)', res.normZero === 1.0, res.normZero);
-  assert('Corrupt value snaps to 1.0 and advances to 1.3', res.afterCorruptClick === 1.3, res.afterCorruptClick);
-  assert('Full 6-step sens cycle intact', JSON.stringify(res.sensCycle) === JSON.stringify([1.6, 2.0, 0.6, 0.8, 1.0, 1.3]), JSON.stringify(res.sensCycle));
-  assert('Vibration toggle sends "vibrate" and uses SVG icon-toggle', res.vibMsg.includes('vibrate') && res.vibIsSvgToggle, JSON.stringify(res.vibMsg));
+  assert('BUILD_TAG is v44', res.buildTag === 'v44', res.buildTag);
+  assert('#topdown-sens-btn removed from Settings', res.sensBtnRemoved === true);
+  assert('#gpg-profile stays hidden after onPlayGamesProfile', res.gpgHidden === true);
+  assert('Vibration toggle ON sends enable + light; OFF sends disable & mutes vibrate()',
+    res.vibOnMsgs.includes('enable') && res.vibOnMsgs.includes('light') &&
+    res.vibOffMsgs.includes('disable') && res.vibAfterOff.length === 0 && res.vibIsSvgToggle,
+    JSON.stringify({ on: res.vibOnMsgs, off: res.vibOffMsgs, afterOff: res.vibAfterOff }));
   assert('onBannerOverlay(true, 56) sets --banner-h & class', res.bannerVar === '56px' && res.bannerClassOn && res.bannerClassOff, res.bannerVar);
-  assert('startGame sends hideBanner', res.hideBannerCalled === true);
+  assert('startGame keeps banner visible (showBanner, not hideBanner)', res.showBannerOnStart === true);
   assert('TOPDOWN revive resets y & targetY to center', Math.abs(res.tdReviveY - res.tdExpectedY) < 0.01 && Math.abs(res.tdTargetY - res.tdExpectedTargetY) < 0.01, `y=${res.tdReviveY}`);
   assert('LASER revive resets z=0, zVelocity=0', res.laserZ === 0 && res.laserZV === 0 && Math.abs(res.laserY - res.laserExpectedY) < 0.01);
-  assert('Relative drag delta * sens (30px @ 2.0x = 60px)', Math.abs(res.dragDelta - 60) < 0.5, `delta=${res.dragDelta}`);
+  assert('TOPDOWN 1:1 relative drag (30px = 30px) with zero drag vibration', Math.abs(res.dragDelta - 30) < 0.5 && res.dragHaptics.length === 0, `delta=${res.dragDelta}`);
   assert('clientYToGame mid maps to VIEW_H/2', Math.abs(res.clientYMid - res.viewH / 2) < 1, `${res.clientYMid}`);
   assert('Space guarded within 450ms of GAMEOVER', res.spaceGuardedImmediately === true);
   assert('Space restarts after 450ms settle', res.spaceWorksAfter450 === true);
-  assert('7s run (<8s) + 120s gap triggers NO ad & preserves debt', res.shortRunAdShown === false && res.debtPreserved === true);
+  assert('2s run (<2.5s) + 120s gap triggers NO ad & preserves debt', res.shortRunAdShown === false && res.debtPreserved === true);
   assert('30s rewarded->interstitial gap blocks double fullscreen ad', res.rewardedGapBlocked === true);
-  assert('3 qualifying 9s deaths outside rewarded gap trigger interstitial', res.threeDeathsAdShown === true);
+  assert('2 qualifying 4s deaths outside rewarded gap trigger interstitial', res.twoDeathsAdShown === true);
   assert('openExternal routes openUrl: to GameChannel', res.openExternalMsg === 'openUrl:https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', res.openExternalMsg);
 
   // Check overflow at 360px

@@ -27,21 +27,21 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // When the death screen appeared - gates the tap-anywhere restart.
 let gameOverAt = 0;
 // Printed at boot so a tester's build is always identifiable in a log.
-const BUILD_TAG = 'v43';
+const BUILD_TAG = 'v44';
 try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
-// Triggers on every 3rd qualifying death OR after a 60s gap — whichever comes first.
-// Never shown on short runs under 8s, never within 30s of a rewarded ad,
-// never while Remove Ads is active, and always after game-over settles.
+// Triggers on every 2nd qualifying death OR after a 40s gap — whichever comes first.
+// Ignores accidental instant spawns (<2.5s), keeps 30s gap after rewarded ads,
+// respects Remove Ads, and always waits for game-over to settle.
 const INTERSTITIAL_POLICY = {
-    MIN_RUN_MS: 8000,     // 8s+ run qualifies (short accidental deaths <8s never count or trigger)
-    DEATHS: 3,            // every 3rd qualifying death, OR
-    COOLDOWN_MS: 60000,   // 60s gap since last ad — whichever comes first
+    MIN_RUN_MS: 2500,     // 2.5s+ run qualifies (counts normal quick arcade runs)
+    DEATHS: 2,            // every 2nd qualifying death, OR
+    COOLDOWN_MS: 40000,   // 40s gap since last ad — whichever comes first
     REWARDED_GAP_MS: 30000, // minimum 30s gap after a rewarded ad before interstitial
     DELAY_MS: 900,        // let the game-over screen settle first
-    RETRY_REARM_MS: 20000 // after a skipped attempt (no ad ready), earliest retry window
+    RETRY_REARM_MS: 12000 // after a skipped attempt (no ad ready), earliest retry window
 };
-let lastInterstitialAt = Date.now(); // launch grace period before the first ad
+let lastInterstitialAt = Date.now() - 25000; // 15s initial launch grace period
 let lastRewardedAt = 0; // timestamp of last rewarded ad grant/dismiss
 let deathsSinceInterstitial = 0;
 function loadSessionDeathCount() {
@@ -168,44 +168,41 @@ if(typeof initSprites === 'function') initSprites();
 
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SETTINGS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-// Declared BEFORE Settings so Settings.load() never hits TDZ
-const TOPDOWN_SENS_STEPS = [0.6, 0.8, 1.0, 1.3, 1.6, 2.0];
-function normalizeTopdownSens(val) {
-    const n = Number(val);
-    if (!Number.isFinite(n) || n <= 0) return 1.0;
-    const clamped = Math.max(0.6, Math.min(2.0, n));
-    let nearest = TOPDOWN_SENS_STEPS[0];
-    let minDiff = Math.abs(clamped - nearest);
-    for (let i = 1; i < TOPDOWN_SENS_STEPS.length; i++) {
-        const diff = Math.abs(clamped - TOPDOWN_SENS_STEPS[i]);
-        if (diff < minDiff) {
-            minDiff = diff;
-            nearest = TOPDOWN_SENS_STEPS[i];
-        }
+function syncNativeHapticsState(enabled) {
+    const on = enabled === true;
+    if (window.GameHaptics) {
+        try { window.GameHaptics.postMessage(on ? 'enable' : 'disable'); } catch (e) {}
     }
-    return nearest;
+    if (!on) {
+        try { if (navigator.vibrate) navigator.vibrate(0); } catch (e) {}
+    }
 }
 
 const Settings = {
     sfx: true, music: true, vibration: true,
-    topdownSens: 1.0, // TOP-DOWN speed multiplier
     load() {
         try { Object.assign(this, JSON.parse(localStorage.getItem('ndSettings') || '{}')); } catch(e){}
-        this.topdownSens = normalizeTopdownSens(this.topdownSens);
+        this.sfx = this.sfx !== false && this.sfx !== 'false';
+        this.music = this.music !== false && this.music !== 'false';
+        this.vibration = this.vibration !== false && this.vibration !== 'false';
+        syncNativeHapticsState(this.vibration);
         this.syncUI();
     },
     save() {
-        this.topdownSens = normalizeTopdownSens(this.topdownSens);
-        localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration, topdownSens:this.topdownSens}));
+        this.sfx = Boolean(this.sfx);
+        this.music = Boolean(this.music);
+        this.vibration = Boolean(this.vibration);
+        localStorage.setItem('ndSettings', JSON.stringify({sfx:this.sfx, music:this.music, vibration:this.vibration}));
     },
     toggle(key) {
         if (!key) return;
-        this[key] = !this[key];
+        this[key] = !Boolean(this[key]);
         this.save();
         this.syncUI();
         playSfx('ui');
-        if (key === 'vibration' && this.vibration) {
-            vibrate([150, 50, 150]);
+        if (key === 'vibration') {
+            syncNativeHapticsState(this.vibration);
+            if (this.vibration) vibrate([15]);
         }
         // The MUSIC toggle used to apply only at the next run start, so flipping
         // it mid-run did nothing either way (tester: "music on but I hear
@@ -215,8 +212,6 @@ const Settings = {
         }
     },
     syncUI() {
-        const sensBtn = document.getElementById('topdown-sens-btn');
-        if (sensBtn) sensBtn.textContent = normalizeTopdownSens(this.topdownSens).toFixed(1).replace(/\.0$/, '.0') + 'x';
         ['sfx','music','vibration'].forEach(k => {
             const b = document.querySelector(`[data-key="${k}"]`);
             if (b) {
@@ -238,16 +233,6 @@ const Settings = {
 };
 Settings.load();
 document.querySelectorAll('.toggle-btn[data-key]').forEach(b => b.addEventListener('click', () => Settings.toggle(b.dataset.key)));
-// TOP-DOWN SPEED: cycles sensitivity cleanly using nearest-step snap.
-document.getElementById('topdown-sens-btn')?.addEventListener('click', () => {
-    const cur = normalizeTopdownSens(Settings.topdownSens);
-    const i = TOPDOWN_SENS_STEPS.indexOf(cur);
-    Settings.topdownSens = TOPDOWN_SENS_STEPS[(i + 1) % TOPDOWN_SENS_STEPS.length];
-    Settings.save();
-    Settings.syncUI();
-    playSfx('ui');
-    vibrate([20]);
-});
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SAVE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const SaveData = {
@@ -285,7 +270,11 @@ let screenTransitionLockUntil = 0;
 function showScreen(id) {
     const el = document.getElementById(id);
     if (!el) return;
-    screenTransitionLockUntil = performance.now() + 250;
+    if (id === 'game-over-screen' || id === 'pause-screen') {
+        screenTransitionLockUntil = performance.now() + 250;
+    } else {
+        screenTransitionLockUntil = 0;
+    }
     el.classList.add('active');
 }
 function hideScreen(id) {
@@ -294,9 +283,9 @@ function hideScreen(id) {
 }
 function hideAllScreens() { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); }
 
-// Swallow trusted rapid ghost-taps during the 250ms screen switch settle window
+// Swallow trusted rapid ghost-taps during the 250ms screen switch settle window (never block settings toggles)
 window.addEventListener('click', (e) => {
-    if (e.isTrusted && performance.now() < screenTransitionLockUntil && e.target.closest('.screen')) {
+    if (e.isTrusted && performance.now() < screenTransitionLockUntil && e.target.closest('.screen') && !e.target.closest('.toggle-btn, #settings-screen')) {
         e.preventDefault();
         e.stopPropagation();
     }
@@ -407,12 +396,16 @@ function stopDrone() {
 }
 
 function vibrate(pattern=[50]) {
-    if (!Settings.vibration) return;
+    if (Settings.vibration !== true) return;
     if (window.GameHaptics) {
         const isArray = Array.isArray(pattern);
         const maxVal = isArray ? Math.max(...pattern) : Number(pattern) || 50;
         const isCrash = isArray && (maxVal >= 90 || pattern.length > 2);
-        const msg = isCrash ? 'vibrate' : (isArray && (pattern.length > 1 || maxVal >= 40) ? 'heavy' : 'medium');
+        const msg = isCrash
+            ? 'vibrate'
+            : (isArray && pattern.length > 1) || maxVal >= 55
+                ? 'heavy'
+                : (maxVal >= 25 ? 'medium' : 'light');
         window.GameHaptics.postMessage(msg);
         return;
     }
@@ -989,27 +982,8 @@ window.onPlayGamesProfile = (profile) => {
     let p = profile;
     if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { p = null; } }
     const pill = document.getElementById('gpg-profile');
-    if (!pill) { GPGSync.onProfile(p); return; }
-    if (p && p.name) {
-        document.getElementById('gpg-profile-name').textContent = tt('gpg.hey', 'Hey there, {n}', { n: p.name });
-        document.getElementById('gpg-profile-level').textContent =
-            (p.level && Number(p.level) > 0) ? tt('gpg.level', 'Level {n}', { n: p.level }) : '';
-        // The avatar was never filled in, so the chip always showed a 👤.
-        // Native sends the Play Games icon as a URI; only http(s) ones can be
-        // loaded in the WebView, content:// ones keep the emoji fallback.
-        const avatar = document.getElementById('gpg-profile-avatar');
-        if (avatar && typeof p.icon === 'string' && /^https?:/i.test(p.icon)) {
-            avatar.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = p.icon;
-            img.alt = '';
-            img.onerror = () => { avatar.textContent = '\uD83D\uDC64'; };
-            avatar.appendChild(img);
-        }
-        pill.style.display = 'flex';
-    } else {
-        pill.style.display = 'none';
-    }
+    // Keep start screen clean — hide Play Games profile pill while preserving background sync.
+    if (pill) pill.style.display = 'none';
     GPGSync.onProfile(p);
 };
 window.onGpgSyncResult = (key, ok) => GPGSync.onResult(key, ok === true || ok === 'true');
@@ -1388,8 +1362,7 @@ function update(dt) {
     if (CURRENT_MODE === 'TOPDOWN') {
         if (player.targetY !== undefined) {
             const dy = player.targetY - (player.y + player.height/2);
-            const sens = normalizeTopdownSens(Settings.topdownSens);
-            player.y += dy * (1 - Math.pow(0.45, dt * sens));
+            player.y += dy * (1 - Math.pow(0.28, dt));
         }
         // Clamp to screen bounds
         if (player.y < CEILING) player.y = CEILING;
@@ -1767,7 +1740,7 @@ function swapGravity() {
     bgParticles.forEach(p=>p.vx-=10);
     const ex=player.x+player.width/2, ey=player.y+(player.gravityDir===1?0:player.height);
     for(let i=0;i<20;i++) particlePool.acquire(ex,ey);
-    playSfx('jump'); vibrate([30]);
+    playSfx('jump');
 }
 
 function consumePendingFlip() {
@@ -1942,7 +1915,7 @@ function gameOver() {
         if (!rewardedGapOk) {
             console.log('[Ads] interstitial skip: reason=rewarded-gap');
         } else if (!(cadenceOk || cooldownOk)) {
-            console.log('[Ads] interstitial skip: reason=deaths<3&cooldown');
+            console.log(`[Ads] interstitial skip: reason=deaths<${INTERSTITIAL_POLICY.DEATHS}&cooldown`);
         } else {
             const endedRunId = activeRunId;
             interstitialTimer = setTimeout(() => {
@@ -2142,7 +2115,7 @@ function startGame() {
 
     resetGame();
     hideAllScreens(); showHUD();
-    if (window.AdChannel) { try { window.AdChannel.postMessage('hideBanner'); } catch(e){} }
+    if (window.AdChannel) { try { window.AdChannel.postMessage('showBanner'); } catch(e){} }
     GAME_STATE=STATE.PLAYING;
     runStartedAt=Date.now();
     // Tap-to-start grace: the cube drifts through an empty arena; spawning,
@@ -2172,30 +2145,22 @@ function handleInput(yPos, isDrag = false) {
     }
     if (CURRENT_MODE === 'TOPDOWN') {
         const halfHeight=player.height/2;
-        const sens = normalizeTopdownSens(Settings.topdownSens);
         let nextTarget;
         if (isDrag && lastDragGameY !== null) {
             const deltaY = yPos - lastDragGameY;
             const baseTarget = player.targetY !== undefined ? player.targetY : (player.y + halfHeight);
-            nextTarget = baseTarget + deltaY * sens;
+            nextTarget = baseTarget + deltaY;
         } else {
             nextTarget = yPos;
         }
         lastDragGameY = yPos;
         const targetY=Math.max(CEILING+halfHeight,Math.min(FLOOR-halfHeight,nextTarget));
         player.targetY=targetY;
-        const now=performance.now();
-        if (Math.abs(targetY-lastTopDownHapticY)>=player.height && now-lastTopDownHapticAt>=160) {
-            vibrate([20]);
-            lastTopDownHapticAt=now;
-            lastTopDownHapticY=targetY;
-        }
     } else if (CURRENT_MODE === 'LASER') {
         // Jump only when on ground (z==0)
         if (player.z <= 0) {
             player.zVelocity = 12;
             playSfx('jump');
-            vibrate([30]);
         }
     } else {
         swapGravity();

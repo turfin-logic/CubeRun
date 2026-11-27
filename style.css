@@ -1793,9 +1793,9 @@ body.touch-device .retry-hint {
     }
 }
 
-/* ─── GOOGLE PLAY GAMES PROFILE PILL (real data only) ─────────────────── */
+/* ─── GOOGLE PLAY GAMES PROFILE PILL (hidden per UI cleanup) ─────────────── */
 #gpg-profile {
-    display: flex;
+    display: none !important;
     align-items: center;
     gap: 10px;
     margin: 6px auto 2px;

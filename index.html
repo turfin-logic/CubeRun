@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=34">
+    <link rel="stylesheet" href="style.css?v=35">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
@@ -102,7 +102,7 @@
                 <!-- Google Play Games profile pill (filled ONLY with real
                      native data via window.onPlayGamesProfile; stays hidden
                      on web / signed-out — never fabricated). -->
-                <div id="gpg-profile" style="display:none;">
+                <div id="gpg-profile" hidden style="display:none;">
                     <div id="gpg-profile-avatar">👤</div>
                     <div id="gpg-profile-text">
                         <div id="gpg-profile-name"></div>
@@ -182,10 +182,6 @@
                     <button class="toggle-btn icon-toggle" id="music-toggle" type="button" data-key="music" data-label="Music" data-icon-on="assets/ui/vector/ic_media_volume-on_01.svg" data-icon-off="assets/ui/vector/ic_media_volume-off_01.svg" aria-label="Music: on" aria-pressed="true">
                         <img src="assets/ui/vector/ic_media_volume-on_01.svg" alt="">
                     </button>
-                </div>
-                <div class="setting-row">
-                    <label data-i18n="ui.td_speed">TOP-DOWN SPEED</label>
-                    <button class="toggle-btn" id="topdown-sens-btn" type="button" aria-label="TOP-DOWN speed">1.0x</button>
                 </div>
                 <div class="setting-row">
                     <label data-i18n="ui.vibration">VIBRATION</label>
@@ -280,6 +276,6 @@
     </div><!-- end game-container -->
 
     <script src="i18n.js?v=38"></script>
-    <script src="game.js?v=43"></script>
+    <script src="game.js?v=44"></script>
 </body>
 </html>

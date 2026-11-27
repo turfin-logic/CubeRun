@@ -1,6 +1,6 @@
 {
-  "latestVersion": "1.2.17",
+  "latestVersion": "1.2.16",
   "minVersion": "1.2.6",
-  "notes": "🔥 v1.2.17: Edge-to-edge fullscreen notch support, dark launch splash, zero-jump banner overlay, improved ad recovery & UI polish!",
+  "notes": "🔥 v1.2.18: Cleaner UI, fixed haptics toggle, smooth 1:1 top-down controls & better ad pacing!",
   "playUrl": "https://play.google.com/store/apps/details?id=com.neondrift.bosslevel"
 }
