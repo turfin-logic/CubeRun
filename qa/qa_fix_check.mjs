@@ -228,11 +228,83 @@ try {
     openExternal('https://play.google.com/store/apps/details?id=com.neondrift.bosslevel');
     out.openExternalMsg = window.__gameMessages[0] || null;
 
+    // 11. Two-tier Remove Ads: legacy migration, tier gates & VIP free perks
+    out.legacyMigrationTier = (function(){ try { localStorage.setItem('ndRemoveAds','true'); } catch(e){} return RemoveAds.load(); })();
+    window.setNoAdsTier('forced');
+    out.forcedTier = RemoveAds.tier() === 'forced' && RemoveAds.active() === true && RemoveAds.isVip() === false;
+    out.forcedGetNoAds = window.getNoAds() === true;
+    window.__adMessages = [];
+    FlutterBridge.showInterstitial();
+    out.forcedBlocksInterstitial = window.__adMessages.length === 0; // hard stop inside showInterstitial
+    window.setNoAdsTier('all');
+    out.vipTier = RemoveAds.tier() === 'all' && RemoveAds.isVip() === true;
+    out.vipAdliteBtnOwned = document.getElementById('remove-ads-btn').disabled === true;
+    out.vipBtnOwned = /ACTIVE/.test(document.getElementById('remove-all-ads-btn').textContent || '');
+    // VIP revive: instant countdown start, zero 'showRewarded' traffic
+    window.__adMessages = [];
+    GAME_STATE = STATE.GAMEOVER;
+    reviveRequestRunId = null;
+    window._pendingRevive = false;
+    const rBtn = document.getElementById('revive-btn');
+    rBtn.disabled = false;
+    rBtn.click();
+    out.vipReviveInstant = reviveCountdownInterval !== null && !window.__adMessages.includes('showRewarded');
+    if (reviveCountdownInterval) { clearInterval(reviveCountdownInterval); reviveCountdownInterval = null; }
+    if (reviveCountdownElement) { reviveCountdownElement.remove(); reviveCountdownElement = null; }
+    // VIP 2x: instant grant (60 -> 120), zero 'showRewarded' traffic
+    window.__adMessages = [];
+    GAME_STATE = STATE.GAMEOVER;
+    score = 60;
+    const dBtn = document.getElementById('double-score-btn');
+    dBtn.disabled = false;
+    dBtn.classList.remove('double-done');
+    dBtn.click();
+    out.vipDoubleInstant = String(document.getElementById('finalScore').textContent) === '120' && !window.__adMessages.includes('showRewarded');
+    // Tier reset + UI state sanity
+    window.setNoAdsTier('none');
+    out.noneTier = RemoveAds.tier() === 'none' && window.getNoAds() === false;
+    out.noneBtnEnabled = document.getElementById('remove-ads-btn').disabled === false;
+
+    // 12. VIP perk ledger: exactly 1 free revive + 1 free 2x per RUN.
+    //     (Repeat-death exploit fix: a 2nd death in the SAME run must hide
+    //     both VIP buttons; only a fresh run — resetGame() — re-arms them.)
+    window.setNoAdsTier('all');
+    resetGame(); // fresh run — the ledger resets HERE (and only here)
+    activeRunId++;
+    GAME_STATE = STATE.PLAYING;
+    score = 60;
+    runStartedAt = Date.now() - 5000;
+    const rvBtn = document.getElementById('revive-btn');
+    const dbBtn = document.getElementById('double-score-btn');
+    gameOver(); // death #1 in this run
+    out.vipDeath1ReviveShown = rvBtn.style.display !== 'none';
+    out.vipDeath1DoubleShown = dbBtn.style.display !== 'none';
+    // Spend the free VIP revive (instant countdown, zero ad traffic).
+    rvBtn.disabled = false;
+    rvBtn.click();
+    if (reviveCountdownInterval) { clearInterval(reviveCountdownInterval); reviveCountdownInterval = null; }
+    if (reviveCountdownElement) { reviveCountdownElement.remove(); reviveCountdownElement = null; }
+    // Spend the free VIP 2x (instant grant, zero ad traffic).
+    dbBtn.disabled = false;
+    dbBtn.classList.remove('double-done');
+    dbBtn.click();
+    gameOver(); // death #2, SAME run — both free perks must now hide
+    out.vipDeath2ReviveHidden = rvBtn.style.display === 'none';
+    out.vipDeath2DoubleHidden = dbBtn.style.display === 'none';
+    // A brand-new run (resetGame) re-arms both perks.
+    resetGame();
+    GAME_STATE = STATE.PLAYING;
+    score = 60;
+    gameOver();
+    out.vipNewRunReviveBack = rvBtn.style.display !== 'none';
+    out.vipNewRunDoubleBack = dbBtn.style.display !== 'none';
+    window.setNoAdsTier('none');
+
     return out;
   });
 
   assert('No runtime pageerrors', pageErrors.length === 0, pageErrors.join('; '));
-  assert('BUILD_TAG is v46', res.buildTag === 'v46', res.buildTag);
+  assert('BUILD_TAG is v47', res.buildTag === 'v47', res.buildTag);
   assert('3-card mode selector uses role="radio" and switches mode on tap', res.modeCardCount === 3 && res.modeCardRadioValid === true && res.modeCardSwitched === true);
   assert('Menu loop idles behind Settings overlay and resumes on Start', res.menuLoopActiveAtBoot === true && res.menuLoopStoppedInSettings === true && res.menuLoopResumedOnStart === true);
   assert('Mode cards & display localize dynamically on I18n.setLang("es")', res.esCardTitle === 'CLÁSICO' && /CLÁSICO/.test(res.esModeDisplay || ''), `${res.esCardTitle} | ${res.esModeDisplay}`);
@@ -254,6 +326,22 @@ try {
   assert('30s rewarded->interstitial gap blocks double fullscreen ad', res.rewardedGapBlocked === true);
   assert('2 qualifying 4s deaths outside rewarded gap trigger interstitial', res.twoDeathsAdShown === true);
   assert('openExternal routes openUrl: to GameChannel', res.openExternalMsg === 'openUrl:https://play.google.com/store/apps/details?id=com.neondrift.bosslevel', res.openExternalMsg);
+  assert('Legacy ndRemoveAds=true migrates to the forced (AD-LITE) tier', res.legacyMigrationTier === 'forced', res.legacyMigrationTier);
+  assert('setNoAdsTier("forced") = AD-LITE: active, not VIP, getNoAds() true', res.forcedTier === true && res.forcedGetNoAds === true, JSON.stringify({ tier: res.forcedTier, getNoAds: res.forcedGetNoAds }));
+  assert('AD-LITE tier hard-stops the interstitial (no showInterstitial)', res.forcedBlocksInterstitial === true);
+  assert('setNoAdsTier("all") = VIP: tier gates + both tier buttons owned', res.vipTier === true && res.vipAdliteBtnOwned === true && res.vipBtnOwned === true);
+  assert('VIP revive grants instantly with zero showRewarded traffic', res.vipReviveInstant === true);
+  assert('VIP 2x doubles score instantly (60 -> 120) with zero showRewarded traffic', res.vipDoubleInstant === true);
+  assert('setNoAdsTier("none") resets gates & re-enables UPGRADE', res.noneTier === true && res.noneBtnEnabled === true);
+  assert('VIP perk ledger: death #1 in a fresh run shows BOTH free perks',
+    res.vipDeath1ReviveShown === true && res.vipDeath1DoubleShown === true,
+    JSON.stringify({ revive: res.vipDeath1ReviveShown, double: res.vipDeath1DoubleShown }));
+  assert('VIP perk ledger: 2nd death in the SAME run hides BOTH VIP buttons',
+    res.vipDeath2ReviveHidden === true && res.vipDeath2DoubleHidden === true,
+    JSON.stringify({ reviveHidden: res.vipDeath2ReviveHidden, doubleHidden: res.vipDeath2DoubleHidden }));
+  assert('VIP perk ledger: a brand-new run (resetGame) re-arms both perks',
+    res.vipNewRunReviveBack === true && res.vipNewRunDoubleBack === true,
+    JSON.stringify({ revive: res.vipNewRunReviveBack, double: res.vipNewRunDoubleBack }));
 
   // Check overflow at 360px
   await page.setViewport({ width: 360, height: 740, hasTouch: true, isMobile: true });

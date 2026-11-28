@@ -193,7 +193,37 @@ try {
   }
   assert('6 screens x 3 viewports (320/360/412) x 2 banner states: zero overflow, clipping or button overlaps', matrixFails.length === 0, matrixFails.join(' | '));
 
-  // 5. Multi-locale stress test (EN, RU, ES, PT, DE, FR, ID) on 320px & 360px
+  // 5. Floating modals re-center above the banner (never bottom-stretch):
+  //    the center shifts up by exactly banner-h/2 with symmetric padding.
+  const modalCenter = await page.evaluate(async () => {
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    hideAllScreens();
+    window.onBannerOverlay(false, 0);
+    showScreen('settings-screen');
+    await sleep(280);
+    const offEl = document.getElementById('settings-screen');
+    const off = offEl.getBoundingClientRect();
+    const offPad = `${getComputedStyle(offEl).paddingTop}/${getComputedStyle(offEl).paddingBottom}`;
+    window.onBannerOverlay(true, 50);
+    await sleep(280);
+    const onEl = document.getElementById('settings-screen');
+    const on = onEl.getBoundingClientRect();
+    const onCS = getComputedStyle(onEl);
+    window.onBannerOverlay(false, 0);
+    hideAllScreens();
+    showScreen('start-screen');
+    return {
+      shift: off.top - on.top,
+      padOff: offPad,
+      padOn: `${onCS.paddingTop}/${onCS.paddingBottom}`,
+      maxHeight: onCS.maxHeight,
+    };
+  });
+  assert('Settings modal re-centers above the banner (shift = banner-h/2) with symmetric padding',
+    Math.abs(modalCenter.shift - 25) < 2 && modalCenter.padOn === modalCenter.padOff,
+    JSON.stringify(modalCenter));
+
+  // 6. Multi-locale stress test (EN, RU, ES, PT, DE, FR, ID) on 320px & 360px
   await page.setViewport({ width: 320, height: 640, hasTouch: true, isMobile: true });
   await new Promise(r => setTimeout(r, 200));
   const localeFails = await page.evaluate(() => {
@@ -210,10 +240,20 @@ try {
         }
         const remRow = document.getElementById('remove-ads-row');
         if (sid === 'settings-screen' && remRow) {
-          const btn = document.getElementById('remove-ads-btn')?.getBoundingClientRect();
-          const wrap = remRow.querySelector('.remove-ads-label-wrap')?.getBoundingClientRect();
-          if (btn && wrap && wrap.right > btn.left + 2 && wrap.top < btn.bottom - 2 && wrap.bottom > btn.top + 2) {
-            issues.push(`${l}:remove-ads-overlap`);
+          // Both tier cards must stay inside the modal with their buttons
+          // fully inside their own cards in every locale at the smallest
+          // supported width.
+          remRow.style.display = 'flex';
+          const rowRect = remRow.getBoundingClientRect();
+          for (const bid of ['remove-ads-btn', 'remove-all-ads-btn']) {
+            const btnEl = document.getElementById(bid);
+            const b = btnEl?.getBoundingClientRect();
+            const card = btnEl?.closest('.ads-tier-card')?.getBoundingClientRect();
+            if (!b || !card || b.width === 0) { issues.push(`${l}:${bid}:missing`); continue; }
+            if (b.right > card.right + 2 || b.bottom > card.bottom + 2 || b.left < card.left - 2 || b.top < card.top - 2) {
+              issues.push(`${l}:${bid}:button-escapes-card`);
+            }
+            if (rowRect.right < b.right - 1) { issues.push(`${l}:${bid}:outside-row`); }
           }
         }
       }

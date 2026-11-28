@@ -27,7 +27,7 @@ let bestScore = 0, runStartedAt = 0, shakeFrames = 0, phaseIndex = 0, phaseFlash
 // When the death screen appeared - gates the tap-anywhere restart.
 let gameOverAt = 0;
 // Printed at boot so a tester's build is always identifiable in a log.
-const BUILD_TAG = 'v46';
+const BUILD_TAG = 'v47';
 try { console.log('[CubeRun] build ' + BUILD_TAG); } catch (e) {}
 // ─── INTERSTITIAL POLICY ──────────────────────────────────────────────────
 // Triggers on every 2nd qualifying death OR after a 40s gap — whichever comes first.
@@ -63,6 +63,14 @@ function saveSessionDeathCount(count) {
 let sessionDeathCount = loadSessionDeathCount();
 let activeRunId = 0, interstitialTimer = null, reviveCountdownInterval = null, reviveCountdownElement = null;
 let reviveRequestRunId = null;
+// VIP perk ledger (Tier-2 remove_all_ads): exactly ONE free revive and ONE
+// free 2x score per run. Reset ONLY in resetGame(); revivePlayer() must
+// never clear them — otherwise a revived VIP dying again in the SAME run
+// would re-earn both free perks on every repeat death (infinite free
+// revive/2x exploit). Ad-watchers are unaffected: they keep the rewarded
+// path (REWARDED_GAP_MS pacing) with no per-run limit.
+let revivesUsedThisRun = false;
+let doubledThisRun = false;
 let lastTopDownHapticAt = 0, lastTopDownHapticY = 0;
 // Touch responsiveness: buffer one mid-air tap and a short lock that swallows
 // the tail of a tap-to-restart gesture (pointerdown -> touchstart -> mousedown
@@ -590,36 +598,72 @@ function loadGameDistributionSdk() {
     return loadingPromise;
 }
 
-// ─── REMOVE ADS (IAP entitlement) ─────────────────────────────────────────
-// Single source of truth for the no-ads state. Native Flutter verifies the
-// purchase (or restores it on every launch) and calls window.setNoAds(true).
-// When active: interstitials are fully disabled. The rewarded revive stays
-// available — it is always player-initiated and opt-in.
+// ─── REMOVE ADS (IAP entitlement tiers) ───────────────────────────────────
+// Single source of truth for the no-ads tier. Native Flutter verifies the
+// purchase (or restores it on every launch) and calls window.setNoAdsTier():
+//   'none'   — free: every format active (banner, interstitial, app-open,
+//              opt-in rewarded revive/2x).
+//   'forced' — AD-LITE (remove_ads): banner + interstitial + app-open OFF,
+//              the opt-in rewarded revive/2x stays (player-initiated).
+//   'all'    — VIP AD-FREE (remove_all_ads): every ad OFF and the revive/2x
+//              offers become instant FREE perks (no ad, no waiting).
 const RemoveAds = {
     KEY: 'ndRemoveAds',
-    _active: false,
+    _tier: 'none',
+    TIERS: ['none', 'forced', 'all'],
     load() {
-        try { this._active = localStorage.getItem(this.KEY) === 'true'; }
-        catch(error) { this._active = false; }
-        return this._active;
+        let v = null;
+        try { v = localStorage.getItem(this.KEY); } catch(error) { v = null; }
+        // Legacy boolean format (pre-two-tier builds): true → 'forced'.
+        this._tier = (v === 'all') ? 'all' : ((v === 'true' || v === 'forced') ? 'forced' : 'none');
+        return this._tier;
     },
-    active() { return this._active === true; },
-    set(enabled) {
-        try { localStorage.setItem(this.KEY, enabled ? 'true' : 'false'); } catch(error) {}
+    tier() { return this._tier; },
+    // Any paid tier blocks the forced/interruption ads — the gate every
+    // interstitial and banner path already checks.
+    active() { return this._tier !== 'none'; },
+    // VIP AD-FREE tier: zero ads + the free revive/2x perks.
+    isVip() { return this._tier === 'all'; },
+    setTier(tier) {
+        const t = this.TIERS.indexOf(String(tier)) !== -1 ? String(tier) : 'none';
+        try { localStorage.setItem(this.KEY, t); } catch(error) {}
         this.load();
         this.syncUI();
-        return this._active;
+        return this._tier;
+    },
+    // Legacy boolean API (kept for backward compatibility): true can only
+    // ever mean the AD-LITE tier and never downgrades an owned 'all'.
+    set(enabled) {
+        if (enabled === true && this._tier === 'all') return this._tier;
+        return this.setTier(enabled === true ? 'forced' : 'none');
     },
     syncUI() {
         const row=document.getElementById('remove-ads-row');
-        if(row) row.style.display=(window.IS_APK && !this._active) ? 'flex' : 'none';
+        // The row stays visible under any paid tier so the owned tier shows
+        // its ACTIVE state (and AD-LITE owners can still upgrade to VIP).
+        if(row) row.style.display=window.IS_APK ? 'flex' : 'none';
+        if (typeof RemoveAdsUi !== 'undefined') RemoveAdsUi.apply();
     }
 };
 RemoveAds.load();
 
 // Native bridge hooks (Flutter → JS):
-//   setNoAds(true)  → after successful IAP verification or purchase restore
-//   getNoAds()      → Flutter can read current entitlement state
+//   setNoAdsTier('none'|'forced'|'all') → verified tier from BillingService
+//   setNoAds(true)  → legacy hook (maps to 'forced'; never downgrades 'all')
+//   getNoAds()      → Flutter can read whether any paid tier is active
+//   getNoAdsTier()  → Flutter can read the exact tier
+window.setNoAdsTier = (tier) => {
+    const wasActive = RemoveAds.active();
+    const wasVip = RemoveAds.isVip();
+    const now = RemoveAds.setTier(tier);
+    // Only toast on a real upgrade, so silent launch-time restores don't nag.
+    if ((RemoveAds.active() && !wasActive) || (RemoveAds.isVip() && !wasVip)) {
+        showAdToast(RemoveAds.isVip()
+            ? tt('toast.vip_active', 'VIP AD-FREE active — all ads removed. Thank you! 💜')
+            : tt('toast.ads_removed', 'Ads removed — thank you for supporting Cube Run! 💜'));
+    }
+    return now;
+};
 window.setNoAds = (verified) => {
     const wasActive = RemoveAds.active();
     const nowActive = RemoveAds.set(verified === true);
@@ -628,6 +672,7 @@ window.setNoAds = (verified) => {
     return nowActive;
 };
 window.getNoAds = () => RemoveAds.active();
+window.getNoAdsTier = () => RemoveAds.tier();
 
 // ─── ACHIEVEMENTS & LIFETIME STATS ─────────────────────────────────────────
 // No achievement system existed in Cube Run before this block (verified
@@ -999,17 +1044,26 @@ window.getAchievementsState = () => JSON.stringify({
 });
 
 // Purchase UI states driven by native Billing (price/busy/result feedback).
+// Two permanent tiers, one button each — the button itself carries the
+// state: localized price / UPGRADE while unowned, ACTIVE ✓ once owned.
 const RemoveAdsUi = {
-    price: null,
+    price: null,        // AD-LITE (remove_ads) localized price
+    priceAll: null,     // VIP AD-FREE (remove_all_ads) localized price
     busy: false,
-    available: null,
-    apply() {
-        const btn = document.getElementById('remove-ads-btn');
+    available: null,    // AD-LITE availability (null = unknown, false = missing)
+    availableAll: null, // VIP availability
+    _btnState(btn, owned, label, unavailable) {
         if (!btn) return;
         if (this.busy) { btn.disabled = true; btn.textContent = tt('bill.processing', 'PROCESSING…'); return; }
-        if (this.available === false) { btn.disabled = true; btn.textContent = tt('bill.unavailable', 'UNAVAILABLE'); return; }
+        if (owned) { btn.disabled = true; btn.textContent = tt('ui.tier_active', 'ACTIVE ✓'); return; }
+        if (unavailable === false) { btn.disabled = true; btn.textContent = tt('bill.unavailable', 'UNAVAILABLE'); return; }
         btn.disabled = false;
-        btn.textContent = this.price || tt('ui.upgrade', 'UPGRADE');
+        btn.textContent = label || tt('ui.upgrade', 'UPGRADE');
+    },
+    apply() {
+        const tier = (typeof RemoveAds !== 'undefined' && RemoveAds.tier) ? RemoveAds.tier() : 'none';
+        this._btnState(document.getElementById('remove-ads-btn'), tier !== 'none', this.price, this.available);
+        this._btnState(document.getElementById('remove-all-ads-btn'), tier === 'all', this.priceAll, this.availableAll);
     }
 };
 window.setRemoveAdsPrice = (label) => {
@@ -1017,7 +1071,13 @@ window.setRemoveAdsPrice = (label) => {
     RemoveAdsUi.available = !!label;
     RemoveAdsUi.apply();
 };
+window.setRemoveAllAdsPrice = (label) => {
+    RemoveAdsUi.priceAll = label || null;
+    RemoveAdsUi.availableAll = !!label;
+    RemoveAdsUi.apply();
+};
 window.setRemoveAdsUnavailable = () => { RemoveAdsUi.available = false; RemoveAdsUi.apply(); };
+window.setRemoveAllAdsUnavailable = () => { RemoveAdsUi.availableAll = false; RemoveAdsUi.apply(); };
 window.setPurchaseBusy = (busy) => {
     RemoveAdsUi.busy = busy === true || busy === 'true';
     // Safety net: a lost terminal event (webview race, OS kill…) must never
@@ -1205,7 +1265,12 @@ window.onAdClose = (earned) => {
             return;
         }
         const btn = document.getElementById('revive-btn');
-        if (btn && !window._pendingRevive) { btn.textContent = tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)'); btn.disabled = false; }
+        if (btn && !window._pendingRevive) {
+            btn.textContent = RemoveAds.isVip()
+                ? tt('ui.vip_revive', '\u26A1 VIP REVIVE (FREE)')
+                : tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)');
+            btn.disabled = false;
+        }
     }, 0);
 };
 
@@ -1993,22 +2058,30 @@ function gameOver() {
     showScreen('game-over-screen');
 
     // Keep the optional rewarded revive secondary to the instant retry action.
+    // VIP ledger gate: once the free Tier-2 revive was spent this run, a
+    // repeat death in the SAME run hides the offer (no infinite free revives).
     const reviveBtn = document.getElementById('revive-btn');
-    const reviveAvailable=score>=30;
+    const reviveAvailable = score >= 30 && !(RemoveAds.isVip() && revivesUsedThisRun);
     reviveBtn.style.display=reviveAvailable?'block':'none';
     reviveBtn.classList.toggle('clutch-revive',reviveAvailable);
     if (reviveAvailable) {
-        reviveBtn.textContent = tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)');
+        reviveBtn.textContent = RemoveAds.isVip()
+            ? tt('ui.vip_revive', '\u26A1 VIP REVIVE (FREE)')
+            : tt('ui.revive_ad', '\u26A1 CLUTCH REVIVE (WATCH AD)');
         reviveBtn.disabled = false;
     }
 
-    // 2x SCORE offer (Voodoo playbook #1) — rewarded, once per game-over
+    // 2x SCORE offer (Voodoo playbook #1) — rewarded, once per game-over.
+    // VIP ledger gate: the free Tier-2 2x is once per run, so a repeat death
+    // in the SAME run hides the offer (no exponential free doubling).
     const doubleBtn = document.getElementById('double-score-btn');
     if (doubleBtn) {
-        const doubleAvailable = score >= 50;
+        const doubleAvailable = score >= 50 && !(RemoveAds.isVip() && doubledThisRun);
         doubleBtn.style.display = doubleAvailable ? 'block' : 'none';
         doubleBtn.disabled = !doubleAvailable;
-        doubleBtn.textContent = tt('ui.double_score', '\uD83C\uDFAC 2x SCORE');
+        doubleBtn.textContent = RemoveAds.isVip()
+            ? tt('ui.vip_double', '\u2728 VIP 2x SCORE (FREE)')
+            : tt('ui.double_score', '\uD83C\uDFAC 2x SCORE');
     }
 
     // In-app review prompt (after 3+ rounds, once per install, good moment)
@@ -2153,6 +2226,9 @@ window.getGameState = () => GAME_STATE;
 // none this session. The native wrapper reads it before an app-open ad so two
 // fullscreen ads can never fire back-to-back on a warm resume.
 window.getLastInterstitialAtMs = () => lastInterstitialAt || 0;
+// Rewarded mirror for the native ad-on-ad guard (an app-open ad never stacks
+// within 2 minutes of a rewarded ad) — see wrapper _showAppOpenAdAsync().
+window.getLastRewardedAtMs = () => lastRewardedAt || 0;
 window.pauseGame = pauseGame;
 
 // ─── IN-APP UPDATE POPUP (wrapper-driven) ─────────────────────────────────
@@ -2213,7 +2289,10 @@ function resetGame() {
     phaseIndex=0; phaseFlashUntil=0; shakeFrames=0;
     canvas.classList.remove('aberration');
     patternQueue=[]; patternTimer=72; patternIndex=0; classicLane='top'; floatTexts=[];
-    window._freeRevives = 0;
+    // Per-run VIP perk ledger resets with the run itself: a NEW run re-arms
+    // the free revive/2x perks; revives inside the SAME run never do.
+    revivesUsedThisRun = false;
+    doubledThisRun = false;
     runObstaclesPassed=0; runCloseCalls=0; runLasersPassed=0;
     obstaclePool.releaseAll(); particlePool.releaseAll();
     initBgParticles();
@@ -2432,18 +2511,23 @@ window.handleBackKey = function() {
     return false;
 };
 
-// Remove Ads (APK only): ask Flutter to run the native IAP flow. On success
-// Flutter calls window.setNoAds(true), which flips the entitlement, hides
-// every interstitial path and hides this row until uninstall/refund.
-document.getElementById('remove-ads-btn')?.addEventListener('click', ()=>{
-    if (RemoveAdsUi.busy || RemoveAdsUi.available === false) return;
+// Remove Ads tiers (APK only): ask Flutter to run the native IAP flow. On
+// success Flutter calls window.setNoAdsTier('forced'|'all'), which flips the
+// entitlement, hides every forced-ad path and (for 'all') turns the rewarded
+// offers into instant free VIP perks.
+const _startTierPurchase = (message, unavailable) => {
+    if (RemoveAdsUi.busy || unavailable === false) return;
     if (window.AdChannel) {
-        window.AdChannel.postMessage('purchaseRemoveAds');
+        window.AdChannel.postMessage(message);
         showAdToast(tt('toast.opening_billing', 'Opening Google Play Billing…'));
     } else {
         showAdToast(tt('toast.noads_app_only', 'Remove Ads is available in the Android app.'));
     }
-});
+};
+document.getElementById('remove-ads-btn')?.addEventListener('click', ()=>
+    _startTierPurchase('purchaseRemoveAds', RemoveAdsUi.available));
+document.getElementById('remove-all-ads-btn')?.addEventListener('click', ()=>
+    _startTierPurchase('purchaseRemoveAllAds', RemoveAdsUi.availableAll));
 
 // Achievements screen (menu Awards button + back)
 document.getElementById('menu-achievements-btn')?.addEventListener('click', ()=>{
@@ -2459,42 +2543,57 @@ document.getElementById('gpg-sync-status')?.addEventListener('click', ()=>{
     }
 });
 
-// 2x SCORE button (rewarded) — doubles the final score, once per game-over
+// 2x SCORE button — doubles the final score, once per game-over. The VIP
+// AD-FREE tier grants it instantly with NO ad (perk of remove_all_ads,
+// once per run — doubledThisRun guards repeat deaths).
+function grantDoubleScore(btn, requestRunId) {
+    if (requestRunId === activeRunId && GAME_STATE === STATE.GAMEOVER) {
+        score = score * 2;
+        updateScoreDisplay();
+        SaveData.updateHighScore(score);
+        document.getElementById('finalScore').textContent = score;
+        bestScore = SaveData.load().highScore;
+        document.getElementById('highScore').textContent = bestScore;
+        Stats.data.totalScore += score;
+        Stats.data.bestScore = Math.max(Stats.data.bestScore, score);
+        Stats.save();
+        Achievements.evaluate();
+        btn.textContent = '\u2728 SCORE DOUBLED!';
+        btn.classList.add('double-done');
+        vibrate([60, 60, 60]);
+        showAdToast(tt('toast.score_doubled', 'Score doubled! \uD83C\uDF89 {n}', { n: score }));
+    } else {
+        btn.textContent = RemoveAds.isVip()
+            ? tt('ui.vip_double', '\u2728 VIP 2x SCORE (FREE)')
+            : tt('ui.double_score', '\uD83C\uDFAC 2x SCORE');
+        btn.disabled = false;
+    }
+}
 document.getElementById('double-score-btn')?.addEventListener('click', async ()=>{
     const btn = document.getElementById('double-score-btn');
     const requestRunId = activeRunId;
     if (btn.disabled) return;
     btn.disabled = true;
-    btn.textContent = '\u23F3 LOADING...';
-    cancelPendingInterstitial();
     const reviveBtn = document.getElementById('revive-btn');
     if (reviveBtn) reviveBtn.disabled = true;
+    if (RemoveAds.isVip()) {
+        doubledThisRun = true; // free Tier-2 2x: once per run
+        grantDoubleScore(btn, requestRunId);
+        if (reviveBtn) reviveBtn.disabled = false;
+        return;
+    }
+    btn.textContent = '\u23F3 LOADING...';
+    cancelPendingInterstitial();
     try {
         await FlutterBridge.showRewarded();
         if (requestRunId === activeRunId && GAME_STATE === STATE.GAMEOVER) {
-            score = score * 2;
-            updateScoreDisplay();
-            SaveData.updateHighScore(score);
-            document.getElementById('finalScore').textContent = score;
-            bestScore = SaveData.load().highScore;
-            document.getElementById('highScore').textContent = bestScore;
-            Stats.data.totalScore += score;
-            Stats.data.bestScore = Math.max(Stats.data.bestScore, score);
-            Stats.save();
-            Achievements.evaluate();
             // Ad-on-ad guard: the player JUST watched a rewarded ad — any
             // interstitial queued behind this death is canceled and the
             // cooldown re-armed, so two full-screen ads can never stack.
             cancelPendingInterstitial();
             lastInterstitialAt = Date.now();
-            btn.textContent = '\u2728 SCORE DOUBLED!';
-            btn.classList.add('double-done');
-            vibrate([60, 60, 60]);
-            showAdToast(tt('toast.score_doubled', 'Score doubled! \uD83C\uDF89 {n}', { n: score }));
-        } else {
-            btn.textContent = tt('ui.double_score', '\uD83C\uDFAC 2x SCORE');
-            btn.disabled = false;
         }
+        grantDoubleScore(btn, requestRunId);
     } catch (e) {
         btn.textContent = '\u274C TRY AGAIN';
         showAdToast(tt('toast.ad_unavailable', 'Ad unavailable \u2014 try again in a moment.'));
@@ -2508,13 +2607,22 @@ document.getElementById('double-score-btn')?.addEventListener('click', async ()=
     if (reviveBtn) reviveBtn.disabled = false;
 });
 
-// Revive button
+// Revive button — the VIP AD-FREE tier gets an instant free revive (perk
+// of remove_all_ads, once per run — revivesUsedThisRun guards repeat
+// deaths); everyone else takes the opt-in rewarded path.
 document.getElementById('revive-btn')?.addEventListener('click', async ()=>{
     const btn=document.getElementById('revive-btn');
     const requestRunId=activeRunId;
-    // Player chose the rewarded path — kill any pending auto interstitial so
+    // Player chose the revive path — kill any pending auto interstitial so
     // the two full-screen ads can never overlap.
     cancelPendingInterstitial();
+    if (RemoveAds.isVip()) {
+        revivesUsedThisRun = true; // free Tier-2 revive: once per run
+        reviveRequestRunId=requestRunId;
+        window._pendingRevive=true;
+        consumePendingRevive();
+        return;
+    }
     reviveRequestRunId=requestRunId;
     window._pendingRevive=false; // clear any orphaned flag from a prior attempt
     btn.disabled=true; btn.textContent='⏳ LOADING...';

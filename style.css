@@ -1017,7 +1017,10 @@ button, .hud-btn, .cyber-btn, .mode-nav-btn, .toggle-btn, .social-btn,
     transform: rotate(45deg);
 }
 
-/* 2. Center Hero Area */
+/* 2. Center Hero Area — the middle stage absorbs ALL extra height (auto
+   margins + flex-grow) while the top bar and bottom dock stay anchored to
+   their corners: nothing ever gets pulled or stretched apart on tall or
+   wide screens; only the middle breathes. */
 .menu-hero-area {
     display: flex;
     flex-direction: column;
@@ -1026,6 +1029,8 @@ button, .hud-btn, .cyber-btn, .mode-nav-btn, .toggle-btn, .social-btn,
     width: 100%;
     max-width: 400px;
     flex-grow: 1;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 /* Sleek Mode Pill */
@@ -1486,10 +1491,16 @@ button:focus-visible {
 #game-over-screen {
     width: min(460px, calc(100% - 28px));
     height: auto;
-    max-height: calc(100% - 28px);
-    top: 50%;
+    /* Re-center over the VISIBLE area above the native banner and never
+       extend under it — full-height screens take the banner bottom padding,
+       these floating modals re-center instead (symmetric padding, zero
+       bottom-stretch when the banner appears). */
+    max-height: calc(100% - 28px - var(--banner-h, 0px));
+    top: calc(50% - (var(--banner-h, 0px) / 2));
     left: 50%;
     transform: translate(-50%, -50%);
+    /* Smooth, non-irritating shift when the banner loads/unloads. */
+    transition: opacity 0.15s ease, top 0.18s ease, max-height 0.18s ease;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 30px 24px;
@@ -2049,19 +2060,60 @@ body.touch-device .retry-hint {
     box-shadow: 0 0 14px rgba(0, 255, 102, 0.4);
 }
 
-/* Remove Ads row: the nowrap subtext slid under the UPGRADE button on
-   narrow screens — let it wrap and pin the button in place instead. */
-#settings-screen .remove-ads-subtext {
-    white-space: normal;
-    font-size: 0.58rem;
+/* Two permanent Remove-Ads tiers — compact stacked cards with >=44px
+   targets and wrap-safe copy at 320px in all 16 locales. Each button
+   carries its own state: localized price / UPGRADE while unowned, and
+   ACTIVE ✓ (disabled) once that tier is owned. */
+#settings-screen .ads-tier-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+#settings-screen .ads-tier-card {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    background: linear-gradient(100deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
+}
+#settings-screen .ads-tier-card.vip {
+    border-color: rgba(255, 215, 106, 0.42);
+    background: linear-gradient(100deg, rgba(255, 215, 106, 0.07), rgba(255, 255, 255, 0.015));
+}
+#settings-screen .ads-tier-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+#settings-screen .ads-tier-name {
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
+}
+#settings-screen .ads-tier-tag {
+    font-size: 0.54rem;
     letter-spacing: 0.8px;
+    color: rgba(255, 215, 106, 0.75);
+    white-space: nowrap;
 }
-#settings-screen .remove-ads-label-wrap {
-    flex-shrink: 1;
-    padding-right: 8px;
+#settings-screen .ads-tier-sub {
+    font-size: 0.62rem;
+    line-height: 1.5;
+    color: rgba(240, 240, 240, 0.62);
 }
-#settings-screen #remove-ads-btn {
+#settings-screen .ads-tier-btn {
     flex-shrink: 0;
+    min-height: 44px;
+    margin-top: 2px;
+}
+#settings-screen .ads-tier-card.vip .ads-tier-btn {
+    background: linear-gradient(135deg, #ffd76a, #ffb347);
+    color: #160900;
+    border-color: rgba(255, 215, 106, 0.6);
 }
 
 /* ── Tap-to-start banner (run grace window) ── */
@@ -2534,6 +2586,9 @@ h1.glitch {
     padding: 0;
     min-height: 44px;
     gap: 10px;
+    /* One crisp column: top bar, hero stage and dock share the same width
+       so nothing drifts toward opposite corners on wide screens. */
+    max-width: 400px;
 }
 
 #start-screen .menu-best {
@@ -2834,14 +2889,12 @@ h1.glitch {
     }
 }
 
-/* Native-synced dynamic banner clearance across ALL 6 screens so menus,
-   settings, pause, game-over, awards & tutorial never overlap an active banner
-   and never leave dead empty gaps on cold-start or no-fill. */
+/* Native-synced dynamic banner clearance for the two FULL-HEIGHT screens
+   only. The four floating centered modals (settings/pause/game-over/tutorial)
+   never take asymmetric bottom padding — they re-center over the visible
+   area via the --banner-h modal rule above, so their cards never look
+   bottom-stretched while still clearing the banner. */
 #start-screen,
-#settings-screen,
-#pause-screen,
-#game-over-screen,
-#tutorial-screen,
 #achievements-screen {
     padding-bottom: calc(max(20px, env(safe-area-inset-bottom)) + var(--banner-h, 0px)) !important;
 }

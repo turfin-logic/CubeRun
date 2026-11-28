@@ -23,7 +23,7 @@
     <meta property="twitter:description" content="Sensory overload is here. Are you ready to drift?">
     <meta property="twitter:image" content="https://turfin-logic.github.io/CubeRun/logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=37">
+    <link rel="stylesheet" href="style.css?v=38">
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
@@ -213,16 +213,30 @@
                         <img src="assets/ui/vector/ic_haptics-on_01.svg" alt="">
                     </button>
                 </div>
-                <!-- APK only (game.js shows it when AdChannel is present and
-                     the no-ads entitlement is inactive). Click asks Flutter to
-                     run the Google Play Billing flow; on success Flutter calls
-                     window.setNoAds(true). -->
-                <div class="setting-row" id="remove-ads-row" style="display:none;">
-                    <div class="remove-ads-label-wrap">
-                        <label data-i18n="ui.remove_ads">REMOVE ADS</label>
-                        <span class="remove-ads-subtext" data-i18n="ui.remove_ads_sub">ONE-TIME • LIFETIME • NO SUBSCRIPTION</span>
+                <!-- APK only (game.js shows it when the app is present).
+                     Two permanent one-time tiers:
+                     AD-LITE (remove_ads): banner + interstitial + app-open
+                       OFF, optional opt-in rewarded revive/2x stays.
+                     VIP AD-FREE (remove_all_ads): ALL ads OFF + instant
+                       free REVIVE / 2x perks. On success Flutter calls
+                       window.setNoAdsTier('forced'|'all'). -->
+                <div class="ads-tier-row" id="remove-ads-row" style="display:none;">
+                    <div class="ads-tier-card" id="adlite-card">
+                        <div class="ads-tier-head">
+                            <span class="ads-tier-name" data-i18n="ui.adlite_title">AD-LITE</span>
+                            <span class="ads-tier-tag" data-i18n="ui.adlite_tag">NO POPUPS • NO BANNER</span>
+                        </div>
+                        <span class="ads-tier-sub" data-i18n="ui.adlite_sub">Banner, interstitial &amp; app-open ads removed forever. Optional rewarded revives stay.</span>
+                        <button class="cyber-btn ads-tier-btn" id="remove-ads-btn" type="button">UPGRADE</button>
                     </div>
-                    <button class="cyber-btn" id="remove-ads-btn" type="button" style="background: var(--neon-pink); color: #000;" data-i18n="ui.upgrade">UPGRADE</button>
+                    <div class="ads-tier-card vip" id="vip-card">
+                        <div class="ads-tier-head">
+                            <span class="ads-tier-name" data-i18n="ui.vip_title">VIP AD-FREE</span>
+                            <span class="ads-tier-tag" data-i18n="ui.vip_tag">ZERO ADS • FREE REVIVE &amp; 2x</span>
+                        </div>
+                        <span class="ads-tier-sub" data-i18n="ui.vip_sub">ALL ads removed forever + instant free REVIVE and 2x SCORE perks.</span>
+                        <button class="cyber-btn ads-tier-btn" id="remove-all-ads-btn" type="button">UPGRADE</button>
+                    </div>
                 </div>
                 <button class="cyber-btn" id="settings-back-btn" style="margin-top:20px;" data-i18n="ui.back">BACK</button>
                 <div class="legal-links">
@@ -299,7 +313,7 @@
         <div id="run-start-banner" class="hidden"><span data-i18n="ui.tap_to_start">▶ TAP TO START</span></div>
     </div><!-- end game-container -->
 
-    <script src="i18n.js?v=39"></script>
-    <script src="game.js?v=46"></script>
+    <script src="i18n.js?v=40"></script>
+    <script src="game.js?v=47"></script>
 </body>
 </html>
