@@ -214,9 +214,13 @@ const Settings = {
         }
         // The MUSIC toggle used to apply only at the next run start, so flipping
         // it mid-run did nothing either way (tester: "music on but I hear
-        // nothing"). Apply it immediately.
+        // nothing"). Apply it immediately. The drone is gameplay ambience and
+        // the menu is intentionally silent (quitToMenu stops it), so start it
+        // only inside an active or paused run — toggling ON from the menu used
+        // to leave the drone humming there forever.
         if (key === 'music') {
-            if (this.music) startDrone(); else stopDrone();
+            if (this.music && (GAME_STATE === STATE.PLAYING || GAME_STATE === STATE.PAUSED)) startDrone();
+            else stopDrone();
         }
     },
     syncUI() {
@@ -2097,11 +2101,14 @@ function gameOver() {
     sessionDeathCount++;
     saveSessionDeathCount(sessionDeathCount);
     const now=Date.now();
-    // Interstitial engine (OR logic + soft gates + rewarded gap):
-    //   1. Runs < MIN_RUN_MS (8s) NEVER count and NEVER trigger an ad (existing death debt persists).
-    //   2. Every 3rd qualifying death OR after 60s gap — whichever comes first.
-    //   3. Minimum 30s gap after any rewarded ad.
-    //   4. Quick-retry guard: 3s lock protects rapid retries.
+    // Interstitial engine (OR logic + soft gates + rewarded gap). Values live
+    // in INTERSTITIAL_POLICY above — keep this comment in sync with it:
+    //   1. Runs < MIN_RUN_MS never count and never trigger an ad (existing
+    //      death debt persists for the next qualifying run).
+    //   2. Every DEATHS-th qualifying death OR after COOLDOWN_MS gap since the
+    //      last interstitial — whichever comes first.
+    //   3. Minimum REWARDED_GAP_MS after any rewarded ad (never stack fullscreen).
+    //   4. 3s retry-lock protects the instant the death screen appears.
     if (runDuration < INTERSTITIAL_POLICY.MIN_RUN_MS) {
         console.log('[Ads] interstitial skip: reason=min-run');
     } else {
